@@ -1,0 +1,108 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="topnav" style="top:{{nav.statusBar}}px;height:{{nav.navH}}px">
+  <view class="round" bindtap="back" hover-class="btn-hover"><ui-icon name="left" size="36" color="#0F172A" stroke="2.6" /></view>
+</view>
+
+<view wx:if="{{p}}">
+  <view class="gallery">
+    <swiper wx:if="{{p.images.length}}" class="swiper" bindchange="onSwipe">
+      <swiper-item wx:for="{{p.images}}" wx:key="*this">
+        <image src="{{item}}" mode="aspectFill" bindtap="preview" data-src="{{item}}" />
+      </swiper-item>
+    </swiper>
+    <view wx:else class="swiper ph"><ui-icon name="image" size="96" color="#B6C0CD" stroke="1.4" /><text>{{L['No photo']}}</text></view>
+    <view wx:if="{{p.images.length > 1}}" class="counter">{{current + 1}} / {{p.images.length}}</view>
+  </view>
+
+  <view class="page sheet">
+    <view class="card head">
+      <view class="name">{{p.name}}</view>
+      <view class="price"><text class="cur">{{p.currency}}</text>{{pp.int}}<text class="dec">.{{pp.dec}}</text><text class="per"> / {{unitText}}</text></view>
+      <view wx:if="{{p.description}}" class="desc"><ui-icon name="tag" size="30" color="{{th.brand}}" /><text>{{p.description}}</text></view>
+      <view class="specs">
+        <view class="spec">
+          <view class="icon-tile"><ui-icon name="ruler" size="32" color="{{th.brand}}" /></view>
+          <view><view class="k">{{L['Size']}}</view><view class="v">{{p.size || '—'}}</view></view>
+        </view>
+        <view class="spec">
+          <view class="icon-tile"><ui-icon name="box" size="32" color="{{th.brand}}" /></view>
+          <view><view class="k">{{L['Minimum order']}}</view><view class="v">{{p.minOrder}} {{unitText}}</view></view>
+        </view>
+      </view>
+      <view class="moq">
+        <text>{{L['Value at minimum order']}}</text>
+        <text class="moq-v">{{p.currency}}{{moqValue.int}}.{{moqValue.dec}}</text>
+      </view>
+    </view>
+    <view class="datecard">
+      <view class="dc-cal"><view class="dc-mon">{{dc.mon}}</view><view class="dc-day">{{dc.day}}</view><view class="dc-year">{{dc.year}}</view></view>
+      <view class="dc-main">
+        <view class="dc-k"><ui-icon name="calendar" size="26" color="{{th.brand}}" />{{L['Date registered']}}</view>
+        <view class="dc-date">{{dc.date}}</view>
+        <view class="dc-meta"><text class="dc-time">{{dc.time}}</text><text class="dc-ago">{{dc.ago}}</text></view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-head">
+        <view class="card-title"><view class="icon-tile"><ui-icon name="store" size="32" color="{{th.brand}}" /></view>{{L['Where to buy']}}</view>
+      </view>
+      <view class="row">
+        <view class="row-icon"><ui-icon name="market" size="34" color="#64748B" /></view>
+        <view class="row-text"><view class="k">{{L['Market']}}</view><view class="v {{p.marketName ? '' : 'none'}}">{{p.marketName || L['Not set']}}</view></view>
+      </view>
+      <view class="row">
+        <view class="row-icon"><ui-icon name="store" size="34" color="#64748B" /></view>
+        <view class="row-text"><view class="k">{{L['Shop']}}</view><view class="v">{{p.shopName}}</view><view wx:if="{{p.shopNote}}" class="hint shopnote">{{p.shopNote}}</view></view>
+      </view>
+      <view wx:if="{{p.shopWechat}}" class="row">
+        <view class="row-icon"><ui-icon name="wechat" size="34" color="#16A34A" /></view>
+        <view class="row-text">
+          <view class="k">{{L['WeChat']}}</view>
+          <view wx:if="{{p.shopWechat === 'yes'}}" class="wx-row"><text class="v">{{p.wechatId}}</text><view class="btn soft wx-copy" bindtap="copyWechat" hover-class="btn-hover"><ui-icon name="copy" size="28" color="{{th.brand}}" />{{L['Copy']}}</view></view>
+          <view wx:else class="v none">{{L['No WeChat']}}</view>
+        </view>
+      </view>
+      <view class="row">
+        <view class="row-icon"><ui-icon name="pin" size="34" color="#64748B" /></view>
+        <view class="row-text">
+          <view class="k">{{L['Location']}}</view>
+          <view class="v {{p.location ? '' : 'none'}}">{{p.location ? p.location.name : L['Not set']}}</view>
+          <view wx:if="{{p.location}}" class="hint">{{p.location.address}}</view>
+        </view>
+      </view>
+
+      <block wx:if="{{p.location}}">
+        <map class="map" latitude="{{p.location.latitude}}" longitude="{{p.location.longitude}}"
+             markers="{{markers}}" scale="16" enable-zoom="{{false}}" enable-scroll="{{false}}" bindtap="openAmap" />
+        <view class="map-actions">
+          <view class="btn soft" bindtap="copyAmap" hover-class="btn-hover"><ui-icon name="copy" size="32" color="{{th.brand}}" />{{L['Copy link']}}</view>
+          <view class="btn primary" bindtap="openAmap" hover-class="btn-hover"><ui-icon name="nav" size="32" color="#FFFFFF" />{{L['Open in Amap']}}</view>
+        </view>
+        <view class="hint tip">{{L['When the map opens, tap 导航 (navigate) at the bottom, then choose 高德地图.']}}</view>
+      </block>
+    </view>
+
+    <view wx:if="{{same.length}}" class="card anim-card">
+      <view class="card-head">
+        <view class="card-title"><view class="icon-tile"><ui-icon name="similar" size="32" color="{{th.brand}}" /></view>{{L['Same product elsewhere']}}</view>
+        <text class="hint">{{othersText}}</text>
+      </view>
+      <view wx:for="{{same}}" wx:key="id" class="mini" bindtap="openOther" data-id="{{item.id}}" hover-class="btn-hover">
+        <image wx:if="{{item.img}}" src="{{item.img}}" mode="aspectFill" />
+        <view wx:else class="ph"><ui-icon name="image" size="36" color="#B6C0CD" /></view>
+        <view class="mini-main"><view class="mini-name ellipsis">{{item.name}}</view><view class="mini-sub ellipsis">{{item.where}}</view></view>
+        <view class="mini-price">{{item.price}}<view class="mini-sub cmp-{{item.cmpKey === 'cheaper' ? 'low' : item.cmpKey === 'dearer' ? 'high' : 'eq'}}">{{item.cmp}}</view></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="actionbar">
+    <view class="btn danger icon-only" bindtap="del" hover-class="btn-hover"><ui-icon name="trash" size="38" color="#E11D48" /></view>
+    <view class="btn primary grow" bindtap="edit" hover-class="btn-hover"><ui-icon name="edit" size="34" color="#FFFFFF" />{{L['Edit product']}}</view>
+  </view>
+</view>
+
+<view wx:else class="page notfound">
+  <view class="muted">{{L['Product not found.']}}</view>
+</view>

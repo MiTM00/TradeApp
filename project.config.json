@@ -1,0 +1,15 @@
+{
+  "description": "Diiwaangelinta alaabta iyo dukaamada",
+  "appid": "touristappid",
+  "projectname": "trade",
+  "compileType": "miniprogram",
+  "libVersion": "3.4.0",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": true
+  },
+  "condition": {}
+}

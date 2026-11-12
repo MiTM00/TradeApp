@@ -1,0 +1,48 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="hero" style="padding-top:{{nav.statusBar}}px">
+  <view class="navrow" style="height:{{nav.navH}}px;padding-right:{{nav.capsule}}px">
+    <view class="brand"><view class="logo"><ui-icon name="settings" size="30" color="#FFFFFF" stroke="2.4" /></view><text>{{L['Trade']}}</text></view>
+    <view class="globe" catchtap="pickLanguage" hover-class="btn-hover"><ui-icon name="globe" size="34" color="#FFFFFF" /><text>{{L['__code']}}</text></view>
+  </view>
+  <view class="hero-title">{{L['Settings']}}</view>
+  <view class="hero-sub">{{L['Themes, storage and backup']}}</view>
+</view>
+
+<view class="page tab-page lift">
+
+  <view class="card">
+    <view class="card-head">
+      <view class="card-title"><view class="icon-tile"><ui-icon name="palette" size="32" color="{{th.brand}}" /></view>{{L['Theme']}}</view>
+    </view>
+    <view class="themes">
+      <view wx:for="{{themes}}" wx:key="id" class="theme {{current === item.id ? 'on' : ''}}" bindtap="pickTheme" data-id="{{item.id}}" hover-class="btn-hover">
+        <view class="theme-sw" style="{{item.sw}}"><view class="theme-bar" style="{{item.bar}}"></view></view>
+        <view class="theme-name">{{item.name}}{{item.dark ? ' 🌙' : ''}}
+          <view wx:if="{{current === item.id}}" class="tick"><ui-icon name="check" size="22" color="#FFFFFF" stroke="3.4" /></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="setrow">
+      <view class="icon-tile"><ui-icon name="sparkle" size="32" color="{{th.brand}}" /></view>
+      <view class="set-main"><view class="set-title">{{L['Animations']}}</view><view class="hint">{{L['Smooth page and list motion']}}</view></view>
+      <view class="switch {{anim ? 'on' : ''}}" bindtap="toggleAnim"></view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-head">
+      <view class="card-title"><view class="icon-tile"><ui-icon name="shield" size="32" color="{{th.brand}}" /></view>{{L['Your data']}}</view>
+    </view>
+    <view class="status"><ui-icon name="shield" size="36" color="{{th.brand}}" />{{storageText}}</view>
+    <view class="bar"><view class="fill" style="width:{{info.pct}}%"></view></view>
+    <view class="hint data-note">{{dataNote}}</view>
+    <view class="row-btns">
+      <view class="btn soft" bindtap="backup" hover-class="btn-hover"><ui-icon name="download" size="34" color="{{th.brand}}" />{{L['Backup']}}</view>
+      <view class="btn soft" bindtap="restore" hover-class="btn-hover"><ui-icon name="upload" size="34" color="{{th.brand}}" />{{L['Restore']}}</view>
+    </view>
+    <view wx:if="{{lastBackup}}" class="hint center-hint">{{lastBackup}}</view>
+  </view>
+</view>

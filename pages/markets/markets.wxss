@@ -1,0 +1,13 @@
+.mk-input { margin-bottom: 18rpx; }
+.addmk { display: flex; gap: 16rpx; }
+.input.flex { flex: 1; }
+.add-btn { width: auto; padding: 0 32rpx; height: 92rpx; flex-shrink: 0; }
+.search { display: flex; align-items: center; gap: 16rpx; padding: 0 28rpx; height: 96rpx; }
+.search input { flex: 1; font-size: 28rpx; color: var(--ink); }
+.mk { display: flex; align-items: center; gap: 22rpx; background: var(--card); border-radius: var(--radius); padding: 24rpx; margin-bottom: 20rpx; box-shadow: var(--shadow); }
+.mk-icon { width: 92rpx; height: 92rpx; border-radius: 28rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 36rpx; font-weight: 800; background: linear-gradient(135deg, var(--brand-2), var(--brand)); box-shadow: 0 10rpx 24rpx rgba(var(--brand-rgb), .28); }
+.mk-main { flex: 1; min-width: 0; }
+.mk-name { font-size: 30rpx; font-weight: 800; }
+.mk-sub { font-size: 23rpx; color: var(--ink-2); margin-top: 4rpx; }
+.mk-total { color: var(--price); font-weight: 700; }
+.mk-act { width: 68rpx; height: 68rpx; border-radius: 20rpx; background: var(--soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }

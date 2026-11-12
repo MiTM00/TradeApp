@@ -1,0 +1,21 @@
+.themes { display: flex; flex-wrap: wrap; gap: 20rpx; }
+.theme { width: calc((100% - 40rpx) / 3); border-radius: 28rpx; overflow: hidden; border: 4rpx solid transparent; background: var(--soft); box-sizing: border-box; transition: border-color .2s, transform .2s; }
+.theme.on { border-color: var(--brand); }
+.theme-sw { height: 116rpx; position: relative; }
+.theme-bar { position: absolute; left: 16rpx; right: 16rpx; bottom: 16rpx; height: 28rpx; border-radius: 10rpx; }
+.theme-name { font-size: 24rpx; font-weight: 700; padding: 14rpx 18rpx; display: flex; align-items: center; justify-content: space-between; }
+.tick { width: 36rpx; height: 36rpx; border-radius: 50%; background: var(--brand); display: flex; align-items: center; justify-content: center; animation: zoom .3s; }
+.setrow { display: flex; align-items: center; gap: 22rpx; }
+.set-main { flex: 1; }
+.set-title { font-size: 28rpx; font-weight: 700; }
+.switch { width: 92rpx; height: 56rpx; border-radius: 999rpx; background: var(--line); position: relative; flex-shrink: 0; transition: background .25s; }
+.switch::after { content: ''; position: absolute; left: 6rpx; top: 6rpx; width: 44rpx; height: 44rpx; border-radius: 50%; background: #fff; box-shadow: 0 4rpx 10rpx rgba(0,0,0,.2); transition: transform .25s; }
+.switch.on { background: var(--brand); }
+.switch.on::after { transform: translateX(36rpx); }
+.bar { height: 12rpx; border-radius: 999rpx; background: var(--soft); margin: 20rpx 0 4rpx; overflow: hidden; }
+.fill { height: 100%; border-radius: 999rpx; background: linear-gradient(90deg, var(--brand-2), var(--brand)); }
+.data-note { margin: 16rpx 4rpx 4rpx; line-height: 1.55; }
+.center-hint { text-align: center; margin-top: 18rpx; }
+.langs { display: flex; gap: 16rpx; }
+.lang { flex: 1; text-align: center; padding: 24rpx 8rpx; border-radius: 24rpx; background: var(--soft); font-size: 28rpx; font-weight: 800; border: 4rpx solid transparent; transition: all .2s; }
+.lang.on { background: var(--mint); color: var(--brand); border-color: var(--brand); }

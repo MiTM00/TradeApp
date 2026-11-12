@@ -1,0 +1,88 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "apk-share",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8090",
+        "--directory",
+        "C:/Users/aa/AppData/Local/Temp/claude/e019e2d4f1052e5e/7fef6b52-9508-4473-b5cd-5eebc0e1a085/scratchpad/apk"
+      ],
+      "port": 8090
+    },
+    {
+      "name": "preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "preview/serve.js"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "preview-alt",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "preview/serve.js",
+        "5174"
+      ],
+      "port": 5174
+    },
+    {
+      "name": "preview-test",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "preview/serve.js",
+        "5181"
+      ],
+      "port": 5181
+    },
+    {
+      "name": "pinyin-web",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8141",
+        "--directory",
+        "C:/Users/aa/Projects/Pinyin/app"
+      ],
+      "port": 8141
+    },
+    {
+      "name": "trade-test",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "preview/serve.js",
+        "5182"
+      ],
+      "port": 5182,
+      "env": {
+        "TRADE_DATA_DIR": "C:/Users/aa/AppData/Local/Temp/claude/5e86c91bb50524e8/7a91fbe2-e79d-49f0-a629-30a88b9ea26a/scratchpad/data"
+      }
+    },
+    {
+      "name": "iphone",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "preview/serve.js",
+        "--iphone"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "trade-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "preview/serve.js",
+        "5183"
+      ],
+      "port": 5183,
+      "env": {
+        "TRADE_DATA_DIR": "C:/Users/aa/AppData/Local/Temp/claude/de4b7f57094b58e9/282b612c-8c5b-4679-9139-5085a70cffb2/scratchpad/data"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+<view class="tabbar" style="{{themeStyle}}">
+  <block wx:for="{{tabs}}" wx:key="path">
+    <view wx:if="{{index === 2}}" class="center" bindtap="add" hover-class="center-hover">
+      <view class="plus"><ui-icon name="plus" size="52" color="#FFFFFF" stroke="2.6" /></view>
+    </view>
+    <view class="tab {{selected === index ? 'on' : ''}}" bindtap="go" data-index="{{index}}">
+      <ui-icon name="{{item.icon}}" size="44" color="{{selected === index ? th.brand : '#94A3B8'}}" />
+      <text>{{L[item.text]}}</text>
+    </view>
+  </block>
+</view>

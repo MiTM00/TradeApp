@@ -1,0 +1,49 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="hero" style="padding-top:{{nav.statusBar}}px">
+  <view class="navrow" style="height:{{nav.navH}}px;padding-right:{{nav.capsule}}px">
+    <view class="brand"><view class="logo"><ui-icon name="market" size="30" color="#FFFFFF" stroke="2.4" /></view><text>{{L['Trade']}}</text></view>
+    <view class="globe" catchtap="pickLanguage" hover-class="btn-hover"><ui-icon name="globe" size="34" color="#FFFFFF" /><text>{{L['__code']}}</text></view>
+  </view>
+  <view class="hero-title">{{L['Markets']}}</view>
+  <view class="hero-sub">{{L['Register the markets you visit — pick them when adding a product']}}</view>
+  <view class="stats">
+    <view class="stat"><view class="stat-v">{{count}}</view><view class="stat-k">{{L['Markets']}}</view></view>
+    <view class="stat"><view class="stat-v">{{shopCount}}</view><view class="stat-k">{{L['Shops']}}</view></view>
+    <view class="stat"><view class="stat-v">{{productCount}}</view><view class="stat-k">{{L['Products']}}</view></view>
+  </view>
+</view>
+
+<view class="page tab-page lift">
+  <view class="card">
+    <view class="card-head">
+      <view class="card-title"><view class="icon-tile"><ui-icon name="plus" size="32" color="{{th.brand}}" stroke="2.4" /></view>{{L['Register a market']}}</view>
+    </view>
+    <input class="input mk-input" placeholder-class="input-ph" value="{{name}}" bindinput="onName" placeholder="{{L['Market name, e.g. Yiwu Futian Market – District 1']}}" />
+    <view class="addmk">
+      <input class="input flex" placeholder-class="input-ph" value="{{note}}" bindinput="onNote" placeholder="{{L['Area / floor / note (optional)']}}" confirm-type="done" bindconfirm="add" />
+      <view class="btn primary add-btn" bindtap="add" hover-class="btn-hover"><ui-icon name="plus" size="32" color="#FFFFFF" stroke="2.6" />{{L['Add']}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{count > 5}}" class="search card">
+    <ui-icon name="search" size="36" color="#94A3B8" />
+    <input placeholder="{{L['Search markets...']}}" placeholder-class="input-ph" value="{{q}}" bindinput="onSearch" />
+  </view>
+
+  <view wx:if="{{!list.length}}" class="card empty">
+    <view class="empty-art"><ui-icon name="market" size="68" color="{{th.brand}}" stroke="1.6" /></view>
+    <view class="empty-title">{{q ? L['No market found'] : L['No markets yet']}}</view>
+    <view class="muted">{{q ? L['Try another word.'] : L['Register the markets you work with. When adding a product you just pick one — or type a new one there.']}}</view>
+  </view>
+
+  <view wx:for="{{list}}" wx:key="id" class="mk anim-card" style="animation-delay:{{index < 12 ? index * 45 : 540}}ms" bindtap="open" data-id="{{item.id}}" hover-class="btn-hover">
+    <view class="mk-icon">{{item.initial}}</view>
+    <view class="mk-main">
+      <view class="mk-name ellipsis">{{item.name}}</view>
+      <view class="mk-sub ellipsis">{{item.sub}}</view>
+      <view wx:if="{{item.totals}}" class="mk-sub mk-total">{{item.totals}}</view>
+    </view>
+    <view class="mk-act" catchtap="edit" data-id="{{item.id}}"><ui-icon name="edit" size="32" color="#64748B" /></view>
+    <view class="mk-act" catchtap="del" data-id="{{item.id}}"><ui-icon name="trash" size="32" color="#E11D48" /></view>
+  </view>
+</view>

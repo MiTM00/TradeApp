@@ -1,0 +1,12 @@
+data/
+node_modules/
+email.config.json
+ai.config.json
+dist/
+server.lock
+android/build/
+android/Trade.apk
+android/trade.keystore
+android/keystore.properties
+.publish/
+hub.config.json

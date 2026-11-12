@@ -1,0 +1,132 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="page">
+  <!-- Photos -->
+  <view class="card">
+    <view class="card-head">
+      <view class="card-title"><view class="icon-tile"><ui-icon name="image" size="32" color="{{th.brand}}" /></view>{{L['Photos']}}</view>
+      <text class="count">{{form.images.length}}/{{max}}</text>
+    </view>
+
+    <view wx:if="{{!form.images.length}}" class="drop" bindtap="addPhoto" hover-class="btn-hover">
+      <view class="drop-icon"><ui-icon name="camera" size="52" color="{{th.brand}}" /></view>
+      <view class="drop-title">{{L['Add photo']}}</view>
+      <view class="hint">{{L['Take a photo or choose from your gallery']}}</view>
+    </view>
+
+    <view wx:else class="images">
+      <view wx:for="{{form.images}}" wx:key="*this" class="img-box">
+        <image src="{{item}}" mode="aspectFill" bindtap="preview" data-src="{{item}}" />
+        <view wx:if="{{index === 0}}" class="cover-tag">{{L['Cover']}}</view>
+        <view wx:else class="cover-tag set" catchtap="makeCover" data-index="{{index}}">{{L['Set cover']}}</view>
+        <view class="del" catchtap="removeImage" data-index="{{index}}"><ui-icon name="x" size="22" color="#FFFFFF" stroke="3" /></view>
+      </view>
+      <view wx:if="{{form.images.length < max}}" class="img-box add" bindtap="addPhoto" hover-class="btn-hover">
+        <ui-icon name="plus" size="44" color="{{th.brand}}" stroke="2.4" />
+        <text>{{L['Add photo']}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Product -->
+  <view class="card">
+    <view class="card-head">
+      <view class="card-title"><view class="icon-tile"><ui-icon name="tag" size="32" color="{{th.brand}}" /></view>{{L['Product details']}}</view>
+    </view>
+    <view class="field">
+      <view class="label">{{L['Product name']}} <text class="req">*</text></view>
+      <input class="input" placeholder-class="input-ph" value="{{form.name}}" data-field="name" bindinput="onInput" placeholder="{{L['e.g. Sports shoes']}}" />
+    </view>
+    <view class="field">
+      <view class="label">{{L['Description']}}</view>
+      <textarea class="input textarea" placeholder-class="input-ph" value="{{form.description}}" data-field="description" bindinput="onInput" maxlength="1000" auto-height placeholder="{{L['Material, colour, quality, packing, notes…']}}" />
+    </view>
+    <view class="field">
+      <view class="label">{{L['Size']}}</view>
+      <input class="input" placeholder-class="input-ph" value="{{form.size}}" data-field="size" bindinput="onInput" placeholder="{{L['e.g. 38-45 / M, L, XL / 30x40cm']}}" />
+    </view>
+    <view class="field">
+      <view class="label">{{L['Price']}} <text class="req">*</text></view>
+      <view class="joined">
+        <picker range="{{currencies}}" bindchange="onCurrency"><view class="addon">{{form.currency}} ▾</view></picker>
+        <input class="input flex" placeholder-class="input-ph" type="digit" value="{{form.price}}" data-field="price" bindinput="onInput" placeholder="0.00" />
+      </view>
+    </view>
+    <view class="field last">
+      <view class="label">{{L['Minimum order (MOQ)']}} <text class="req">*</text></view>
+      <view class="joined">
+        <input class="input flex" placeholder-class="input-ph" type="number" value="{{form.minOrder}}" data-field="minOrder" bindinput="onInput" placeholder="1" />
+        <picker range="{{unitNames}}" bindchange="onUnit"><view class="addon right">{{L[form.unit] || form.unit}} ▾</view></picker>
+      </view>
+    </view>
+  </view>
+
+  <!-- Market & shop -->
+  <view class="card">
+    <view class="card-head">
+      <view class="card-title"><view class="icon-tile"><ui-icon name="market" size="32" color="{{th.brand}}" /></view>{{L['Market & shop']}}</view>
+    </view>
+    <view class="field">
+      <view class="label">{{L['Market']}}</view>
+      <view wx:if="{{markets.length}}" class="quick first">
+        <view wx:for="{{markets}}" wx:key="*this" class="qchip {{!other && form.marketName === item ? 'on' : ''}}" bindtap="pickMarket" data-name="{{item}}">{{item}}</view>
+        <view class="qchip other {{other ? 'on' : ''}}" bindtap="pickOther">{{L['＋ Not in the list']}}</view>
+      </view>
+      <view wx:else class="hint">{{L['No markets registered yet — type the market name below. It will be added to your Markets list.']}}</view>
+      <view wx:if="{{other || !markets.length}}" class="reveal">
+        <input class="input" placeholder-class="input-ph" value="{{form.marketName}}" data-field="marketName" bindinput="onInput" focus="{{other}}" placeholder="{{L['Type the market name']}}" />
+        <view class="hint reveal-hint">{{L['New markets are saved to your Markets list automatically.']}}</view>
+      </view>
+    </view>
+    <view class="field">
+      <view class="label">{{L['Shop name']}} <text class="req">*</text></view>
+      <input class="input" placeholder-class="input-ph" value="{{form.shopName}}" data-field="shopName" bindinput="onInput" placeholder="{{L['e.g. Shop No. 1234']}}" />
+    </view>
+    <view class="label">{{L['Shop location']}}</view>
+    <view class="loc {{form.location ? 'set' : ''}}" bindtap="chooseLocation" hover-class="btn-hover">
+      <view class="loc-icon"><ui-icon name="pin" size="36" color="{{form.location ? '#FFFFFF' : th.brand}}" /></view>
+      <view class="loc-text">
+        <block wx:if="{{form.location}}">
+          <view class="loc-name ellipsis">{{form.location.name || L['Selected location']}}</view>
+          <view class="hint ellipsis">{{form.location.address}}</view>
+        </block>
+        <block wx:else>
+          <view class="loc-name">{{L['Pick on map']}}</view>
+          <view class="hint">{{L['Tap to choose the shop location']}}</view>
+        </block>
+      </view>
+      <ui-icon name="right" size="30" color="#94A3B8" />
+    </view>
+  </view>
+    <view class="field">
+      <view class="label">{{L['Shop on WeChat?']}}</view>
+      <view class="ticks">
+        <view class="tick-btn {{form.shopWechat === 'yes' ? 'on yes' : ''}}" bindtap="pickWechat" data-v="yes"><view class="box">{{form.shopWechat === 'yes' ? '✓' : ''}}</view><ui-icon name="wechat" size="34" color="{{form.shopWechat === 'yes' ? '#FFFFFF' : '#16A34A'}}" />{{L['Yes, on WeChat']}}</view>
+        <view class="tick-btn {{form.shopWechat === 'no' ? 'on no' : ''}}" bindtap="pickWechat" data-v="no"><view class="box">{{form.shopWechat === 'no' ? '✕' : ''}}</view>{{L['No WeChat']}}</view>
+      </view>
+      <view wx:if="{{form.shopWechat === 'yes'}}" class="wx-in">
+        <ui-icon name="wechat" size="34" color="#16A34A" />
+        <input class="input flex" placeholder-class="input-ph" value="{{form.wechatId}}" data-field="wechatId" bindinput="onInput" focus="{{!form.wechatId}}" placeholder="{{L['WeChat ID or number']}}" />
+      </view>
+      <view wx:if="{{form.shopWechat === 'yes'}}" class="hint wx-hint">{{L['Saved with the shop — copy it later to add them on WeChat.']}}</view>
+    </view>
+    <view class="field">
+      <view class="label">{{L['Shop notes']}}</view>
+      <textarea class="input textarea" placeholder-class="input-ph" value="{{form.shopNote}}" data-field="shopNote" bindinput="onInput" maxlength="600" auto-height placeholder="{{L['Owner name, opening hours, how they deliver…']}}" />
+    </view>
+
+  <view class="datecard">
+    <view class="dc-cal"><view class="dc-mon">{{dc.mon}}</view><view class="dc-day">{{dc.day}}</view><view class="dc-year">{{dc.year}}</view></view>
+    <view class="dc-main">
+      <view class="dc-k"><ui-icon name="calendar" size="26" color="{{th.brand}}" />{{L['Date registered']}}</view>
+      <view class="dc-date">{{dc.date}}</view>
+      <view class="dc-meta"><text class="dc-time">{{dc.time}}</text><text class="dc-ago">{{dc.ago}}</text></view>
+      <view class="dc-note">{{regInfo}}</view>
+    </view>
+  </view>
+</view>
+
+<view class="savebar">
+  <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="save" hover-class="btn-hover">
+    <ui-icon name="check" size="36" color="#FFFFFF" stroke="2.8" />{{saving ? L['Saving…'] : L['Save product']}}
+  </view>
+</view>

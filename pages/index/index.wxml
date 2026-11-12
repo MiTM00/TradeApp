@@ -1,0 +1,75 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="hero" style="padding-top:{{nav.statusBar}}px">
+  <view class="navrow" style="height:{{nav.navH}}px;padding-right:{{nav.capsule}}px">
+    <view class="brand">
+      <view class="logo"><ui-icon name="box" size="30" color="#FFFFFF" stroke="2.4" /></view>
+      <text>{{L['Trade']}}</text>
+    </view>
+  </view>
+    <view class="globe" catchtap="pickLanguage" hover-class="btn-hover"><ui-icon name="globe" size="34" color="#FFFFFF" /><text>{{L['__code']}}</text></view>
+
+  <view class="hero-title">{{L['Products']}}</view>
+  <view class="hero-sub">{{L['Everything you sourced, in one place']}}</view>
+
+  <view class="stats">
+    <view class="stat"><view class="stat-v">{{total}}</view><view class="stat-k">{{L['Products']}}</view></view>
+    <view class="stat"><view class="stat-v">{{marketCount}}</view><view class="stat-k">{{L['Markets']}}</view></view>
+    <view class="stat"><view class="stat-v">{{shopCount}}</view><view class="stat-k">{{L['Shops']}}</view></view>
+  </view>
+</view>
+
+<view class="search-wrap">
+  <view class="search">
+    <ui-icon name="search" size="36" color="#94A3B8" />
+    <input placeholder="{{L['Search product, market, shop...']}}" placeholder-class="input-ph" value="{{q}}" bindinput="onSearch" confirm-type="search" />
+    <view wx:if="{{q}}" class="clear" bindtap="clearSearch"><ui-icon name="x" size="26" color="#64748B" stroke="2.4" /></view>
+  </view>
+</view>
+
+<scroll-view wx:if="{{markets.length}}" class="filters" scroll-x enable-flex show-scrollbar="{{false}}">
+  <view class="filter {{market === '' ? 'on' : ''}}" bindtap="pickMarket" data-name="">{{L['All']}} <text class="n">{{total}}</text></view>
+  <view wx:for="{{markets}}" wx:key="name" class="filter {{market === item.name ? 'on' : ''}}" bindtap="pickMarket" data-name="{{item.name}}">
+    {{item.name}} <text class="n">{{item.count}}</text>
+  </view>
+</scroll-view>
+
+<view class="page tab-page list">
+  <view wx:if="{{!list.length}}" class="empty card">
+    <view class="empty-art"><ui-icon name="{{q ? 'search' : 'box'}}" size="72" color="{{th.brand}}" stroke="1.6" /></view>
+    <view class="empty-title">{{q ? L['No results found'] : L['No products yet']}}</view>
+    <view class="muted">{{q ? L['Try another word or clear the search.'] : L['Add your first product with photos, price, market and shop.']}}</view>
+    <view wx:if="{{!q}}" class="btn primary empty-btn" bindtap="add" hover-class="btn-hover">
+      <ui-icon name="plus" size="34" color="#FFFFFF" stroke="2.6" />{{L['Add product']}}
+    </view>
+  </view>
+
+  <view wx:for="{{list}}" wx:key="id" class="pcard anim-card" style="animation-delay:{{index < 12 ? index * 45 : 540}}ms" bindtap="open" data-id="{{item.id}}" hover-class="pcard-hover">
+    <view class="thumb">
+      <image wx:if="{{item.images.length}}" src="{{item.images[0]}}" mode="aspectFill" />
+      <view wx:else class="thumb-ph"><ui-icon name="image" size="56" color="#B6C0CD" stroke="1.6" /></view>
+      <view wx:if="{{item.images.length > 1}}" class="thumb-count">
+        <ui-icon name="camera" size="22" color="#FFFFFF" stroke="2.4" />{{item.images.length}}
+      </view>
+    </view>
+    <view class="body">
+      <view class="name">{{item.name}}</view>
+      <view wx:if="{{item.description}}" class="pdesc ellipsis">{{item.description}}</view>
+      <view class="chips">
+        <text class="chip teal">{{L['MOQ']}} {{item.minOrder}} {{item.unit}}</text>
+        <text wx:if="{{item.size}}" class="chip">{{item.size}}</text>
+      </view>
+      <view class="where">
+        <ui-icon name="{{item.marketName ? 'market' : 'store'}}" size="26" color="#94A3B8" />
+        <text class="ellipsis">{{item.marketName ? item.marketName + ' · ' : ''}}{{item.shopName}}</text>
+      </view>
+      <view class="where date">
+        <view class="dchip"><ui-icon name="calendar" size="22" color="{{th.brand}}" />{{item.reg}} · {{item.regAgo}}</view>
+        <view wx:if="{{item.shopWechat === 'yes'}}" class="wxchip"><ui-icon name="wechat" size="22" color="#16A34A" />{{L['WeChat']}}</view>
+      </view>
+      <view class="bottom">
+        <view class="price"><text class="cur">{{item.currency}}</text>{{item.pp.int}}<text class="dec">.{{item.pp.dec}}</text><text class="per"> /{{item.unit}}</text></view>
+        <view class="go"><ui-icon name="right" size="28" color="{{th.brand}}" stroke="2.6" /></view>
+      </view>
+    </view>
+  </view>
+</view>

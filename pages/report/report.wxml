@@ -1,0 +1,215 @@
+<page-meta page-style="{{themeStyle}}" />
+<view class="hero" style="padding-top:{{nav.statusBar}}px">
+  <view class="navrow" style="height:{{nav.navH}}px;padding-right:{{nav.capsule}}px">
+    <view class="brand">
+      <view class="logo"><ui-icon name="chart" size="30" color="#FFFFFF" stroke="2.4" /></view>
+      <text>{{L['Trade']}}</text>
+    </view>
+  </view>
+    <view class="globe" catchtap="pickLanguage" hover-class="btn-hover"><ui-icon name="globe" size="34" color="#FFFFFF" /><text>{{L['__code']}}</text></view>
+  <view class="hero-title">{{L['Reports']}}</view>
+  <view class="hero-sub">{{s.updated}}</view>
+  <view class="hero-total">
+    <view>
+      <view class="ht-k">{{L['Total value at minimum order']}}</view>
+      <view class="ht-v" wx:if="{{s.totals.length}}">
+        <text wx:for="{{s.totals}}" wx:key="currency" class="ht-amt">{{item.currency}}{{item.value}}</text>
+      </view>
+      <view class="ht-v" wx:else>—</view>
+    </view>
+    <view class="ht-icon"><ui-icon name="coins" size="44" color="#FFFFFF" stroke="2" /></view>
+  </view>
+</view>
+
+<view class="page tab-page body">
+  <scroll-view class="seg" scroll-x enable-flex show-scrollbar="{{false}}">
+    <view wx:for="{{tabs}}" wx:key="id" class="seg-i {{tab === item.id ? 'on' : ''}}" bindtap="pickTab" data-t="{{item.id}}">{{item.label}}</view>
+  </scroll-view>
+
+  <!-- Overview -->
+  <block wx:if="{{tab === 'overview'}}">
+    <view class="kpis">
+      <view class="kpi anim-card"><view class="icon-tile c1"><ui-icon name="box" size="34" color="{{th.brand}}" /></view><view class="kpi-v">{{s.count}}</view><view class="kpi-k">{{L['Products']}}</view></view>
+      <view class="kpi anim-card" style="animation-delay:50ms"><view class="icon-tile c2"><ui-icon name="market" size="34" color="#B45309" /></view><view class="kpi-v">{{s.marketCount}}</view><view class="kpi-k">{{L['Markets']}}</view></view>
+      <view class="kpi anim-card" style="animation-delay:100ms"><view class="icon-tile c3"><ui-icon name="store" size="34" color="#4F46E5" /></view><view class="kpi-v">{{s.shopCount}}</view><view class="kpi-k">{{L['Shops']}}</view></view>
+      <view class="kpi anim-card" style="animation-delay:150ms"><view class="icon-tile c4"><ui-icon name="image" size="34" color="#E11D48" /></view><view class="kpi-v">{{s.photoCount}}</view><view class="kpi-k">{{L['Photos']}}</view></view>
+    </view>
+
+    <view class="card anim-card">
+      <view class="card-head">
+        <view class="card-title"><view class="icon-tile"><ui-icon name="download" size="32" color="{{th.brand}}" /></view>{{L['Export full report']}}</view>
+      </view>
+      <view class="exports">
+        <view class="export pdf" bindtap="exportPdf" hover-class="btn-hover">
+          <view class="ex-icon"><ui-icon name="pdf" size="44" color="#E11D48" /></view>
+          <view class="ex-name">{{L['PDF']}}</view>
+          <view class="ex-sub">{{L['Printable report with photos']}}</view>
+        </view>
+        <view class="export xls" bindtap="exportExcel" hover-class="btn-hover">
+          <view class="ex-icon"><ui-icon name="sheet" size="44" color="#16A34A" /></view>
+          <view class="ex-name">{{L['Excel']}}</view>
+          <view class="ex-sub">{{L['All data + pictures (.xlsx)']}}</view>
+        </view>
+      </view>
+      <view class="hint ex-note">{{L['Every product grouped by market. For one day, month or year use the tabs above. Send by email, save on the phone or send to a chat.']}}</view>
+    </view>
+
+    <view class="card anim-card">
+      <view class="card-head">
+        <view class="card-title"><view class="icon-tile"><ui-icon name="layers" size="32" color="{{th.brand}}" /></view>{{L['By market']}}</view>
+        <text class="hint">{{s.groupsText}}</text>
+      </view>
+      <view wx:if="{{!s.markets.length}}" class="muted">{{L['No products yet.']}}</view>
+      <view wx:for="{{s.markets}}" wx:key="name" class="mrow">
+        <view class="mrow-top">
+          <text class="mname ellipsis {{item.none ? 'none' : ''}}">{{item.name}}</text>
+          <text class="mcount">{{item.products}}</text>
+        </view>
+        <view class="bar"><view class="fill" style="width:{{item.pct}}%;animation-delay:{{index * 60}}ms"></view></view>
+        <view class="mmeta">{{item.meta}}</view>
+      </view>
+    </view>
+
+    <view class="card anim-card">
+      <view class="card-head">
+        <view class="card-title"><view class="icon-tile"><ui-icon name="pin" size="32" color="{{th.brand}}" /></view>{{L['Locations']}}</view>
+      </view>
+      <view class="loc-line"><text>{{s.locText}}</text></view>
+      <view class="bar big"><view class="fill" style="width:{{s.count ? s.located * 100 / s.count : 0}}%"></view></view>
+    </view>
+  </block>
+
+  <!-- Daily / Monthly / Yearly -->
+  <block wx:elif="{{tab !== 'similar'}}">
+    <view wx:if="{{!periods.length}}" class="card empty">
+      <view class="empty-art"><ui-icon name="calendar" size="68" color="{{th.brand}}" stroke="1.6" /></view>
+      <view class="empty-title">{{L['No products yet']}}</view>
+      <view class="muted">{{L['Reports appear here as you add products.']}}</view>
+    </view>
+    <block wx:else>
+      <view class="card anim-card">
+        <view class="card-head">
+          <view class="card-title"><view class="icon-tile"><ui-icon name="chart" size="32" color="{{th.brand}}" /></view>{{perTitle}}</view>
+          <text class="hint">{{lastText}}</text>
+        </view>
+        <view class="chart">
+          <view wx:for="{{chart}}" wx:key="key" class="col {{openKey === item.key ? 'on' : ''}}" bindtap="togglePeriod" data-key="{{item.key}}">
+            <view class="col-n">{{item.n}}</view>
+            <view class="col-bar" style="height:{{item.h}}rpx;animation-delay:{{index * 50}}ms"></view>
+            <view class="col-k">{{item.k}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:for="{{periods}}" wx:key="key" class="period anim-card {{openKey === item.key ? 'open' : ''}}" style="animation-delay:{{index < 12 ? index * 45 : 540}}ms">
+        <view class="period-head" bindtap="togglePeriod" data-key="{{item.key}}" hover-class="btn-hover">
+          <view class="p-badge"><text class="b1">{{item.b1}}</text><text class="b2">{{item.b2}}</text></view>
+          <view class="p-main">
+            <view class="p-title ellipsis">{{item.label}}</view>
+            <view class="p-meta">{{item.meta}}</view>
+          </view>
+          <view class="p-total"><view wx:for="{{item.totals}}" wx:for-item="t" wx:key="*this">{{t}}</view></view>
+          <view class="chev"><ui-icon name="right" size="30" color="#94A3B8" stroke="2.4" /></view>
+        </view>
+        <view wx:if="{{openKey === item.key}}" class="p-body">
+          <view wx:for="{{item.products}}" wx:for-item="x" wx:key="id" class="mini" bindtap="openProduct" data-id="{{x.id}}">
+            <image wx:if="{{x.img}}" src="{{x.img}}" mode="aspectFill" lazy-load />
+            <view wx:else class="ph"><ui-icon name="image" size="36" color="#B6C0CD" /></view>
+            <view class="mini-main"><view class="mini-name ellipsis">{{x.name}}</view><view class="mini-sub ellipsis">{{x.where}}</view></view>
+            <view class="mini-price">{{x.price}}<view class="mini-sub">{{x.moq}}</view></view>
+          </view>
+          <view class="row-btns">
+            <view class="btn sm soft" bindtap="exportPeriod" data-key="{{item.key}}" data-kind="pdf" hover-class="btn-hover"><ui-icon name="pdf" size="30" color="#E11D48" />{{L['PDF']}}</view>
+            <view class="btn sm soft" bindtap="exportPeriod" data-key="{{item.key}}" data-kind="xlsx" hover-class="btn-hover"><ui-icon name="sheet" size="30" color="#16A34A" />{{L['Excel']}}</view>
+          </view>
+        </view>
+      </view>
+    </block>
+  </block>
+
+  <!-- Same products -->
+  <block wx:else>
+    <view class="card anim-card">
+      <view class="card-head">
+        <view class="card-title"><view class="icon-tile"><ui-icon name="similar" size="32" color="{{th.brand}}" /></view>{{L['Same products']}}</view>
+        <text class="hint">{{groupsText}}</text>
+      </view>
+      <view class="hint sim-note">{{L['Products that look the same — by name or by photo — from different shops, so you can compare prices. The cheapest is marked.']}}</view>
+      <view class="modes">
+        <view class="qchip {{simMode === 'both' ? 'on' : ''}}" bindtap="pickMode" data-mode="both">{{L['Name + photo']}}</view>
+        <view class="qchip {{simMode === 'name' ? 'on' : ''}}" bindtap="pickMode" data-mode="name">{{L['Same name']}}</view>
+        <view class="qchip {{simMode === 'photo' ? 'on' : ''}}" bindtap="pickMode" data-mode="photo">{{L['Same look']}}</view>
+      </view>
+      <view wx:if="{{groups.length}}" class="row-btns">
+        <view class="btn sm primary" bindtap="exportSimilar" data-kind="pdf" hover-class="btn-hover"><ui-icon name="pdf" size="30" color="#FFFFFF" />{{L['PDF report']}}</view>
+        <view class="btn sm soft" bindtap="exportSimilar" data-kind="xlsx" hover-class="btn-hover"><ui-icon name="sheet" size="30" color="#16A34A" />{{L['Excel']}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{loadingSimilar}}" class="card empty"><view class="spinner"></view><view class="muted sim-wait">{{L['Comparing names and photos…']}}</view></view>
+    <view wx:elif="{{!groups.length}}" class="card empty">
+      <view class="empty-art"><ui-icon name="similar" size="68" color="{{th.brand}}" stroke="1.6" /></view>
+      <view class="empty-title">{{L['No matches']}}</view>
+      <view class="muted">{{L['When two products have a similar name or photo they are grouped here.']}}</view>
+    </view>
+    <view wx:for="{{groups}}" wx:key="n" class="card anim-card" style="animation-delay:{{index < 12 ? index * 45 : 540}}ms">
+      <view class="card-head g-head">
+        <view class="p-main"><view class="p-title ellipsis">{{item.name}}</view>
+          <view class="p-meta">{{item.meta}}</view></view>
+        <text class="chip teal">#{{item.n}}</text>
+      </view>
+      <view class="chips"><text wx:for="{{item.prices}}" wx:for-item="pr" wx:key="*this" class="chip green">{{pr}}</text></view>
+      <scroll-view class="strip" scroll-x enable-flex show-scrollbar="{{false}}">
+        <block wx:for="{{item.products}}" wx:for-item="x" wx:key="id">
+          <image wx:if="{{x.img}}" src="{{x.img}}" mode="aspectFill" class="{{x.best ? 'best' : ''}}" lazy-load />
+          <view wx:else class="ph {{x.best ? 'best' : ''}}"><ui-icon name="image" size="36" color="#B6C0CD" /></view>
+        </block>
+      </scroll-view>
+      <view wx:for="{{item.products}}" wx:for-item="x" wx:key="id" class="mini" bindtap="openProduct" data-id="{{x.id}}">
+        <view class="mini-main">
+          <view class="mini-name ellipsis">{{x.name}} <text wx:if="{{x.best}}" class="chip green">{{L['Best price']}}</text></view>
+          <view class="mini-sub ellipsis">{{x.where}} · {{x.moq}}</view>
+        </view>
+        <view class="mini-price">{{x.price}}</view>
+      </view>
+    </view>
+  </block>
+</view>
+
+<!-- Off-screen canvas used to render the report -->
+<canvas type="2d" id="rc" class="offscreen"></canvas>
+
+<!-- Progress -->
+<view wx:if="{{busy}}" class="mask" catchtouchmove="noop">
+  <view class="busy">
+    <view class="spinner"></view>
+    <view class="busy-title">{{busyLabel}}</view>
+    <view class="bar big"><view class="fill progress" style="width:{{progress}}%"></view></view>
+    <view class="hint">{{progress}}%</view>
+  </view>
+</view>
+
+<!-- Result sheet -->
+<view wx:if="{{result}}" class="mask bottom" bindtap="closeResult" catchtouchmove="noop">
+  <view class="sheet sheet-up" catchtap="noop">
+    <view class="grip"></view>
+    <view class="ok"><ui-icon name="check" size="44" color="#FFFFFF" stroke="3" /></view>
+    <view class="sheet-title">{{L['Report ready']}}</view>
+    <view class="file">
+      <view class="ex-icon {{result.kind}}"><ui-icon name="{{result.kind === 'pdf' ? 'pdf' : 'sheet'}}" size="40" color="{{result.kind === 'pdf' ? '#E11D48' : '#16A34A'}}" /></view>
+      <view class="file-info">
+        <view class="file-name ellipsis">{{result.name}}</view>
+        <view class="hint">{{result.size}} · {{result.detail}}</view>
+      </view>
+    </view>
+    <view class="sheet-actions">
+      <view class="btn primary" bindtap="emailFile" hover-class="btn-hover"><ui-icon name="send" size="34" color="#FFFFFF" />{{L['Send by email']}}</view>
+      <view class="btn soft" bindtap="saveFile" hover-class="btn-hover"><ui-icon name="download" size="34" color="{{th.brand}}" />{{L['Save on phone']}}</view>
+    </view>
+    <view class="sheet-actions">
+      <view class="btn" bindtap="sendFile" hover-class="btn-hover"><ui-icon name="send" size="32" color="{{th.ink}}" />{{L['Send to chat']}}</view>
+      <view class="btn" bindtap="openDoc" hover-class="btn-hover"><ui-icon name="open" size="32" color="{{th.ink}}" />{{L['Open']}}</view>
+    </view>
+    <view class="done" bindtap="closeResult">{{L['Done']}}</view>
+  </view>
+</view>

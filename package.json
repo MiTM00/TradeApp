@@ -1,0 +1,19 @@
+{
+  "name": "trade",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Trade \u2014 record the products you source. Web app server (sync, email, AI scanner) + WeChat mini program.",
+  "scripts": {
+    "start": "node preview/serve.js",
+    "build": "node preview/build.js",
+    "apk": "node android/build.js",
+    "iphone": "node preview/serve.js --iphone",
+    "pages": "node preview/publish.js",
+    "autostart": "node preview/autostart.js",
+    "autostart:off": "node preview/autostart.js off"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.7.0",
+    "zod": "^4.6.7"
+  }
+}

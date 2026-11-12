@@ -1,0 +1,54 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/markets/markets",
+    "pages/report/report",
+    "pages/settings/settings",
+    "pages/add/add",
+    "pages/detail/detail"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#F5F7FA",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "Trade",
+    "backgroundColor": "#F5F7FA",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#94A3B8",
+    "selectedColor": "#0F766E",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "Products"
+      },
+      {
+        "pagePath": "pages/markets/markets",
+        "text": "Markets"
+      },
+      {
+        "pagePath": "pages/report/report",
+        "text": "Reports"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "Settings"
+      }
+    ]
+  },
+  "usingComponents": {
+    "ui-icon": "/components/ui-icon/index"
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "Used to pick the shop location"
+    }
+  },
+  "requiredPrivateInfos": [
+    "chooseLocation"
+  ],
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
