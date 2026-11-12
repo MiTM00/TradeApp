@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Trade</title>
-<meta name="theme-color" content="#0F766E">
+<meta name="theme-color" content="#DC2626">
 <meta name="description" content="Record the products you source: photos, price, MOQ, market and shop.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -32,8 +32,8 @@
 <style>
   :root {
     --ink:#0F172A; --ink-2:#475569; --ink-3:#94A3B8; --line:#E9EDF2; --bg:#F5F7FA; --card:#fff; --soft:#F1F5F9; --field:#F8FAFC; --ph:#B6C0CD;
-    --brand:#0F766E; --brand-2:#14B8A6; --brand-dark:#134E4A; --mint:#F0FDFA; --mint-2:#CCFBF1; --price:#E11D48; --brand-rgb:15,118,110;
-    --tabbar:rgba(255,255,255,.96); --hero:linear-gradient(150deg,#0F766E 0%,#134E4A 100%);
+    --brand:#DC2626; --brand-2:#F87171; --brand-dark:#991B1B; --mint:#FEF2F2; --mint-2:#FEE2E2; --price:#B91C1C; --brand-rgb:220,38,38;
+    --tabbar:rgba(255,255,255,.96); --hero:linear-gradient(150deg,#DC2626 0%,#991B1B 100%);
     --radius:16px; --shadow:0 1px 2px rgba(16,24,40,.04),0 6px 16px rgba(16,24,40,.07);
     --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
     --ease:cubic-bezier(.2,.8,.2,1);
@@ -406,7 +406,31 @@
   .map-actions { display:flex; gap:9px; }
 
   .picker-wrap { position:absolute; inset:0; background:var(--card); z-index:1000; display:flex; flex-direction:column; animation:up .3s var(--ease); }
-  .picker-map { flex:1; }
+  .picker-map { flex:1; position:relative; }
+  .pin-c { position:absolute; left:50%; top:50%; z-index:500; transform:translate(-50%,-100%); pointer-events:none; filter:drop-shadow(0 4px 6px rgba(0,0,0,.3)); transition:transform .15s; }
+  .pin-c.up { transform:translate(-50%,-125%); }
+  .pin-dot { position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px; border-radius:50%; background:rgba(0,0,0,.35); z-index:499; pointer-events:none; }
+  .loc-me { position:absolute; right:14px; bottom:14px; z-index:600; width:46px; height:46px; border-radius:14px; background:var(--card); box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .loc-acc { font-size:12px; color:var(--ink-3); }
+  .loc-acc b { color:var(--brand); }
+  /* duplicates: side-by-side compare */
+  .cmp { overflow-x:auto; margin:10px -4px 0; scrollbar-width:thin; }
+  .cmp table { border-collapse:separate; border-spacing:0; width:100%; font-size:12.5px; }
+  .cmp th, .cmp td { padding:8px 6px; text-align:left; vertical-align:top; border-bottom:.5px solid var(--line); min-width:96px; }
+  .cm { display:inline-flex; width:16px; height:16px; border-radius:50%; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#fff; margin-right:5px; vertical-align:-2px; flex-shrink:0; }
+  .cm.same { background:#16A34A; } .cm.diff { background:#F59E0B; }
+  .cmp th:first-child, .cmp td:first-child { min-width:78px; position:sticky; left:0; background:var(--card); font-weight:700; color:var(--ink-2); z-index:1; }
+  .cmp td.r { min-width:70px; font-weight:800; white-space:nowrap; }
+  .cmp .same { color:#16A34A; }
+  .cmp .diff { color:#B45309; }
+  .cmp tr.d td:not(:first-child):not(.r) { background:rgba(245,158,11,.10); font-weight:700; }
+  .cmp img, .cmp .ph { width:88px; height:88px; border-radius:12px; object-fit:cover; background:var(--soft); display:flex; align-items:center; justify-content:center; }
+  .dup-score { display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .dup-score .bar { flex:1; height:6px; border-radius:3px; background:var(--soft); overflow:hidden; }
+  .dup-score .bar i { display:block; height:100%; background:linear-gradient(90deg,#F59E0B,#16A34A); }
+  .name-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .name-chips span { padding:6px 10px; border-radius:999px; background:var(--soft); font-size:12.5px; font-weight:700; color:var(--ink); cursor:pointer; border:1px solid var(--line); }
+  .name-chips span.own { border-color:var(--brand); color:var(--brand); }
   .picker-form { padding:12px 16px calc(18px + var(--safe-bottom)); border-top:1px solid var(--line); display:flex; flex-direction:column; gap:8px; }
   /* ---------- install the app (shows by itself on phones that can install) ---------- */
   .inst-bar { position:absolute; left:12px; right:12px; bottom:calc(76px + var(--safe-bottom)); z-index:900; display:flex; align-items:center; gap:11px; padding:10px 10px 10px 12px; background:var(--card); border-radius:16px; box-shadow:0 12px 30px rgba(15,23,42,.18), inset 0 0 0 1px var(--line); animation:up .35s var(--ease); }
@@ -1023,7 +1047,7 @@ const Sync = {
     let r;
     try {
       r = await fetch('api/sync/link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: c.signal,
-        body: JSON.stringify({ token, phoneKey: this.ownKey(), device: this.device(), deviceName: this.deviceName() }) });
+        body: JSON.stringify({ token, phoneKey: this.ownKey(), device: this.device(), deviceName: this.deviceName(), gh: Cloud.hand() }) });
     } catch (e) { throw new Error(t('The computer cannot be reached — is Trade running on it, on the same Wi-Fi?')); }
     finally { clearTimeout(tm); }
     const j = await r.json().catch(() => ({}));
@@ -1050,7 +1074,7 @@ const Sync = {
     code = String(code || '').trim();
     let key = '';
     if (/^\d[\d\s]{4,8}\d$/.test(code)) {
-      const r = await fetch('api/sync/pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: code, phoneKey: this.ownKey(), device: this.device(), deviceName: this.deviceName() }) }).catch(() => null);
+      const r = await fetch('api/sync/pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: code, phoneKey: this.ownKey(), device: this.device(), deviceName: this.deviceName(), gh: Cloud.hand() }) }).catch(() => null);
       if (!r) throw new Error(t('The computer cannot be reached — is Trade running on it, on the same Wi-Fi?'));
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(r.status === 429 ? t('Too many wrong codes — wait 2 minutes and use the new code on the computer') : t('Wrong code — check the 6 digits on the computer'));
@@ -1238,7 +1262,7 @@ const Cloud = {
   enc(s) { const b = new TextEncoder().encode(s); let out = ''; for (let i = 0; i < b.length; i += 0x8000) out += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(out); },
   dec(b64) { const s = atob(String(b64).replace(/\s/g, '')); const b = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return new TextDecoder().decode(b); },
   text(rec) { const x = Object.assign({}, rec); delete x._rev; return JSON.stringify(x); },
-  // Set up from Settings → Your data: checks the token and that the repository is private, then uploads everything once
+  // Set up from Settings → Storage: checks the token and that the repository is private, then uploads everything once
   async setup(owner, repo, token) {
     owner = String(owner || '').trim(); repo = String(repo || '').trim().replace(/\.git$/, ''); token = String(token || '').trim();
     const m = /github\.com\/([\w.-]+)\/([\w.-]+)/.exec(owner); if (m) { owner = m[1]; repo = repo || m[2].replace(/\.git$/, ''); }
@@ -1256,6 +1280,28 @@ const Cloud = {
     const d = this.dirty(); SYNC_KINDS.forEach(k => DB[k].forEach(x => { d[k][x.id] = d[k][x.id] || 1; }));
     await DB.setKV('ghDirty', d);
     return this.run();
+  },
+  // Repository details handed to the computer while linking (the computer then reads the same repository)
+  hand() { const c = this.cfg(); return c ? { owner: c.owner, repo: c.repo, token: c.token } : undefined; },
+  // Link that opens this phone's repository on the computer. The details are after #, which browsers never send to a server.
+  linkFor() {
+    const c = this.cfg(); if (!c) return '';
+    const app = /\.github\.io$/i.test(location.hostname) ? location.origin + location.pathname : 'https://mitm00.github.io/TradeApp/';
+    return app + '#gh=' + this.enc(JSON.stringify({ o: c.owner, r: c.repo, t: c.token })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  },
+  parseLink(s) {
+    const m = /[#&]gh=([\w-]{20,})/.exec(String(s || '')); if (!m) return null;
+    try { const j = JSON.parse(this.dec(m[1].replace(/-/g, '+').replace(/_/g, '/'))); return j && j.o && j.r && j.t ? { owner: j.o, repo: j.r, token: j.t } : null; } catch (e) { return null; }
+  },
+  // Link from the iPhone opened here: on the Trade computer the server reads the repository, anywhere else this browser does
+  async openLink(L) {
+    if (Sync.server && Sync.server.key) {
+      const r = await fetch('api/github/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(L) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(t(j.error || 'Could not save'));
+      Sync.server.github = true; PcLogin.check(); Sync.run();
+    } else await this.setup(L.owner, L.repo, L.token);
+    toast(t('Opening your iPhone’s products from GitHub ✓'));
+    route(true);
   },
   async off() { await DB.setKV('gh', null); await DB.setKV('ghDirty', {}); await DB.setKV('ghShas', {}); this.status = 'off'; this.etag = ''; },
   run() {
@@ -1434,6 +1480,7 @@ const T = () => TradeThemes.get(DB.kv.theme);
 const B = () => T().brand;   // brand colour for icons
 const INK = () => T().ink;   // text colour for icons
 
+const whereOf = p => [p.marketName, p.shopName].map(x => String(x || '').trim()).filter(Boolean).join(' · ');
 function amapUrl(loc, name) {
   return 'https://uri.amap.com/marker?position=' + loc.longitude + ',' + loc.latitude +
     '&name=' + encodeURIComponent(name || loc.name || '') + '&src=trade_app&coordinate=gaode&callnative=1';
@@ -1632,7 +1679,7 @@ function renderIndex() {
   const counts = {}; all.forEach(p => { if (p.marketName) counts[p.marketName] = (counts[p.marketName] || 0) + 1; });
   const mlist = Object.keys(counts).sort();
   if (!counts[market]) market = '';
-  const shops = new Set(all.map(p => (p.marketName || '') + '|' + p.shopName));
+  const shops = new Set(all.filter(p => (p.shopName || '').trim()).map(p => (p.marketName || '') + '|' + p.shopName));
   $body.innerHTML = `
     ${hero('box', 'Products', 'Everything you sourced, in one place', `<div class="stats">
         <div class="stat"><div class="stat-v" data-count="${all.length}">${all.length}</div><div class="stat-k">Products</div></div>
@@ -1667,7 +1714,7 @@ function productCard(p) {
     <div class="body">
       <div class="name" data-notr>${esc(p.name)}</div>
       <div class="chips"><span class="chip teal">MOQ ${esc(p.minOrder)} ${esc(p.unit)}</span>${p.size ? `<span class="chip">${esc(p.size)}</span>` : ''}</div>
-      <div class="where">${ic(p.marketName ? 'market' : 'store', '#94A3B8', 13)}<span class="ellipsis">${p.marketName ? esc(p.marketName) + ' · ' : ''}${esc(p.shopName)}</span></div>
+      <div class="where">${ic(p.marketName ? 'market' : 'store', '#94A3B8', 13)}<span class="ellipsis">${esc(whereOf(p) || '—')}</span></div>
       <div class="where date">${dateChip(TradeReport.registeredAt(p))}${p.shopWechat === 'yes' ? `<span class="wxchip">${ic('wechat', '#16A34A', 11)}WeChat</span>` : ''}</div>
       <div class="bottom">${priceHtml(p.currency, p.price, p.unit, 'price')}<div class="go">${ic('right', B(), 14, 2.6)}</div></div>
     </div>
@@ -1703,7 +1750,7 @@ function renderMarkets() {
   simpleNav(''); tabbar('markets');
   const all = store.all();
   const used = {}; all.forEach(p => { if (p.marketName) (used[p.marketName] = used[p.marketName] || []).push(p); });
-  const shops = new Set(all.filter(p => p.marketName).map(p => p.marketName + '|' + p.shopName));
+  const shops = new Set(all.filter(p => p.marketName && (p.shopName || '').trim()).map(p => p.marketName + '|' + p.shopName));
   $body.innerHTML = `
     ${hero('market', 'Markets', 'Register the markets you visit — pick them when adding a product', `<div class="stats">
       <div class="stat"><div class="stat-v" data-count="${DB.markets.length}">${DB.markets.length}</div><div class="stat-k">Markets</div></div>
@@ -1778,7 +1825,7 @@ function drawMarkets(used) {
 
 // ---------- pages/report ----------
 let rtab = 'overview', simMode = 'both';
-const RTABS = [['overview', 'Overview'], ['day', 'Daily'], ['month', 'Monthly'], ['year', 'Yearly'], ['similar', 'Similar']];
+const RTABS = [['overview', 'Overview'], ['day', 'Daily'], ['month', 'Monthly'], ['year', 'Yearly'], ['dups', 'Duplicates'], ['similar', 'Similar']];
 function renderReport() {
   simpleNav(''); tabbar('report');
   const s = TradeReport.summarize(store.all());
@@ -1814,6 +1861,7 @@ function drawReportView(s) {
   const el = document.getElementById('rview');
   if (rtab === 'overview') drawOverview(el, s || TradeReport.summarize(store.all()));
   else if (rtab === 'similar') drawSimilar(el);
+  else if (rtab === 'dups') drawDuplicates(el);
   else drawPeriods(el, rtab);
   el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter');
   countUp(el);
@@ -1872,7 +1920,7 @@ function drawPeriods(el, kind) {
         <div class="p-body"><div class="p-inner"><div class="p-inner-pad">
           ${p.products.map(x => `<div class="mini" onclick="location.hash='detail/${x.id}'">
             ${thumbOf(x) ? `<img src="${thumbOf(x)}" loading="lazy">` : `<div class="ph">${ic('image', '#B6C0CD', 18)}</div>`}
-            <div style="flex:1;min-width:0"><div class="mini-name ellipsis" data-notr>${esc(x.name)}</div><div class="mini-sub ellipsis" data-notr>${esc(x.marketName ? x.marketName + ' · ' : '')}${esc(x.shopName)}</div></div>
+            <div style="flex:1;min-width:0"><div class="mini-name ellipsis" data-notr>${esc(x.name)}</div><div class="mini-sub ellipsis" data-notr>${esc(whereOf(x))}</div></div>
             <div class="mini-price">${money(x.currency, x.price)}<div class="mini-sub">MOQ ${esc(x.minOrder)} ${esc(x.unit)}</div></div></div>`).join('')}
           <div class="row-btns">
             <button class="btn sm soft" data-ex="1">${ic('download', B(), 15, 2.4)}Export<span class="exo-fmt sm"><i class="p">PDF</i><i class="x">XLS</i></span></button>
@@ -1918,6 +1966,43 @@ async function ensureHashes() {
     await DB.write('products', 'put', p);
   }
 }
+// Side-by-side table of products that are the same item: every detail marked Same / Different
+function compareHtml(list, rows) {
+  rows = rows || TradeSimilar.compare(list);
+  const head = `<tr><th></th>${list.map(p => `<th>${thumbOf(p) ? `<img src="${thumbOf(p)}" loading="lazy">` : `<div class="ph">${ic('image', '#B6C0CD', 22)}</div>`}
+    <div class="hint" style="margin-top:4px">${p.id && TradeReport.registeredAt(p) ? esc(TradeReport.dateLabel(TradeReport.registeredAt(p))) : esc(t('New'))}</div></th>`).join('')}</tr>`;
+  const mark = same => `<span class="cm ${same ? 'same' : 'diff'}" title="${esc(t(same ? 'Same' : 'Different'))}">${same ? '✓' : '≠'}</span>`;
+  const body = rows.filter(r => r.key !== 'photo').map(r => `<tr class="${r.same ? '' : 'd'}"><td>${mark(r.same)}${esc(t(r.label))}</td>${r.values.map(v => `<td data-notr>${esc(v || '—')}</td>`).join('')}</tr>`).join('');
+  const ph = rows.find(r => r.key === 'photo');
+  const photoRow = ph ? `<tr class="${ph.same ? '' : 'd'}"><td>${mark(ph.same)}${esc(t('Photo'))}</td>${list.map(() => `<td>${ph.same ? esc(t('Same look')) : esc(t('Looks different'))}</td>`).join('')}</tr>` : '';
+  return `<div class="cmp"><table>${head}${photoRow}${body}</table></div>
+    <div class="hint" style="margin-top:6px"><span class="cm same">✓</span>${esc(t('Same'))} &nbsp; <span class="cm diff">≠</span>${esc(t('Different'))}</div>`;
+}
+async function drawDuplicates(el) {
+  el.innerHTML = `<div class="card" style="text-align:center;padding:30px"><div class="spinner"></div><div class="muted" style="margin-top:10px">${esc(t('Looking for products registered twice…'))}</div></div>`;
+  await ensureHashes();
+  if (rtab !== 'dups') return;
+  const groups = TradeSimilar.duplicates(store.all());
+  el.innerHTML = `<div class="card">
+      <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('similar', B(), 16)}</div>${esc(t('Duplicates'))}</div><span class="hint">${plural(groups.length, 'group')}</span></div>
+      <div class="hint" style="line-height:1.5;margin:-4px 0 6px">${esc(t('The same item registered more than once (same name and photo). Each group is compared side by side: green = the same, orange = different.'))}</div>
+      ${groups.length ? `<div class="row-btns"><button class="btn sm primary" id="dupEx">${ic('download', '#fff', 15, 2.4)}${esc(t('Export comparison'))}<span class="exo-fmt sm on"><i class="p">PDF</i><i class="x">XLS</i></span></button></div>` : ''}
+    </div>
+    <div id="dlist">${groups.length ? groups.map((g, gi) => `<div class="card">
+      <div class="card-head" style="margin-bottom:2px"><div style="min-width:0"><div class="p-title ellipsis" data-notr>${esc(g.name)}</div>
+        <div class="p-meta">${esc(t('Registered {n} times', { n: g.products.length }))} · ${esc(t('{a} of {b} the same', { a: g.same, b: g.total }))}</div></div>
+        <span class="chip" style="background:#FEF3C7;color:#B45309">#${gi + 1}</span></div>
+      <div class="dup-score"><div class="bar"><i style="width:${Math.round(g.same / g.total * 100)}%"></i></div><b style="font-size:12px">${Math.round(g.same / g.total * 100)}%</b></div>
+      ${compareHtml(g.products, g.rows)}
+      <div class="row-btns">${g.products.map((p, i) => `<button class="btn sm soft" onclick="location.hash='detail/${p.id}'">${esc(t('Open'))} ${i + 1}</button>`).join('')}</div>
+    </div>`).join('') : `<div class="card empty"><div class="empty-art">${ic('similar', B(), 34, 1.6)}</div><div class="empty-title">${esc(t('No duplicates'))}</div><div class="muted">${esc(t('When the same item is registered twice it is collected here.'))}</div></div>`}</div>`;
+  stagger(document.getElementById('dlist'));
+  const ex = document.getElementById('dupEx');
+  if (ex) ex.onclick = () => exportMenu([].concat(...groups.map(g => g.products)), {
+    title: t('Duplicates'), kicker: t('Side-by-side comparison'), sectionsTitle: t('Duplicates'), fileTag: 'Duplicates-' + TradeReport.ymd(Date.now()), duplicates: groups,
+    sections: groups.map((g, i) => ({ name: '#' + (i + 1) + '  ' + g.name, sub: t('{a} of {b} the same', { a: g.same, b: g.total }), products: g.products, best: [] }))
+  }, t('Duplicates'));
+}
 async function drawSimilar(el) {
   el.innerHTML = `<div class="card" style="text-align:center;padding:30px"><div class="spinner"></div><div class="muted" style="margin-top:10px">Comparing names and photos…</div></div>`;
   await ensureHashes();
@@ -1942,7 +2027,7 @@ async function drawSimilar(el) {
         <div class="group-strip">${g.products.map(p => thumbOf(p) ? `<img src="${thumbOf(p)}" class="${best.has(p) ? 'best' : ''}" loading="lazy">` : `<div class="ph ${best.has(p) ? 'best' : ''}">${ic('image', '#B6C0CD', 18)}</div>`).join('')}</div>
         ${g.products.map(p => `<div class="mini" onclick="location.hash='detail/${p.id}'">
           <div style="flex:1;min-width:0"><div class="mini-name ellipsis"><span data-notr>${esc(p.name)}</span> ${best.has(p) ? '<span class="chip green">Best price</span>' : ''}</div>
-            <div class="mini-sub ellipsis">${esc(p.marketName ? p.marketName + ' · ' : '')}${esc(p.shopName)} · MOQ ${esc(p.minOrder)} ${esc(p.unit)}</div></div>
+            <div class="mini-sub ellipsis">${esc(whereOf(p) ? whereOf(p) + ' · ' : '')}MOQ ${esc(p.minOrder)} ${esc(p.unit)}</div></div>
           <div class="mini-price">${money(p.currency, p.price)}</div></div>`).join('')}
       </div>`;
     }).join('') : `<div class="card empty"><div class="empty-art">${ic('similar', B(), 34, 1.6)}</div><div class="empty-title">No matches</div><div class="muted">When two products have a similar name or photo they are grouped here.</div></div>`}</div>`;
@@ -2000,6 +2085,7 @@ async function runExport(kind, list, opts) {
   try {
     const env = browserEnv();
     opts = Object.assign({ colors: { brand: T().brand, brandDark: T().brandDark } }, opts || {});
+    if (kind !== 'pdf' && !opts.duplicates) { await ensureHashes(); opts.duplicates = TradeSimilar.duplicates(list); }
     const out = kind === 'pdf' ? await TradeReport.buildPdf(list, env, prog, opts) : await TradeReport.buildExcel(list, env, prog, opts);
     const type = kind === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     const blob = new Blob([out.bytes], { type });
@@ -2007,7 +2093,7 @@ async function runExport(kind, list, opts) {
     lastExport = { kind, name: out.fileName, url: URL.createObjectURL(blob), blob };
     window.__lastExport = { kind, bytes: out.bytes, name: out.fileName };
     const size = blob.size > 1048576 ? (blob.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(blob.size / 1024)) + ' KB';
-    const detail = kind === 'pdf' ? plural(out.pages, 'page') : t('2 sheets · with photos');
+    const detail = kind === 'pdf' ? plural(out.pages, 'page') : t('{n} sheets · with photos', { n: out.sheets || 2 });
     const file = new File([blob], out.fileName, { type });
     const canShare = navigator.canShare && navigator.canShare({ files: [file] });
     $overlay.innerHTML = `<div class="mask bottom" id="rmask"><div class="sheet" onclick="event.stopPropagation()">
@@ -2344,7 +2430,7 @@ function drawGoCard() {
   const devText = isPc ? t('Show the code for phones and tablets') : paired ? Sync.label() : t('Not connected — tap to connect');
   el.innerHTML = `
     <div class="go-row tap" id="goDt"><div class="go-ic dt">${ic('layers', '#fff', 20, 2.3)}</div>
-      <div style="flex:1;min-width:0"><div class="go-t">${esc(t('Your data'))}</div>
+      <div style="flex:1;min-width:0"><div class="go-t">${esc(t('Storage'))}</div>
         <div class="go-s"><i class="${isPc || paired ? 'ok' : 'old'}"></i><span class="ellipsis">${esc(dataText)}</span></div></div>
       ${ic('right', '#94A3B8', 18, 2.6)}</div>
     <div class="go-row tap" id="goDv"><div class="go-ic dv">${ic('devices', '#fff', 20, 2.3)}</div>
@@ -2365,10 +2451,10 @@ function drawGoCard() {
   document.getElementById('goTr').onclick = () => location.hash = 'trash';
 }
 function renderData() {
-  simpleNav(t('Your data')); tabbar(null);
+  simpleNav(t('Storage')); tabbar(null);
   $body.innerHTML = `<div class="page" style="padding-top:12px">
       <div class="card">
-        <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('shield', B(), 16)}</div>Your data</div></div>
+        <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('shield', B(), 16)}</div>Storage</div></div>
         <div id="persist" class="status">${ic('shield', B(), 18)}Checking storage…</div>
         <div class="saved3">
           <div class="s3"><div class="s3-ic">${ic('phone', B(), 18)}</div><b>${esc(t('This phone'))}</b><span>${esc(t('Opens without internet'))}</span></div>
@@ -2393,7 +2479,8 @@ async function drawGhCard() {
   if (on) {
     el.innerHTML = head + `<div class="status${(pc ? pc.error : Cloud.status === 'error') ? ' warn' : ''}" id="ghStatus">${esc(label)}</div>
       <div class="hint" style="margin:10px 2px;line-height:1.55" data-notr>github.com/${esc(c.owner)}/${esc(c.repo)} · ${esc(t('private'))}</div>
-      <div class="row-btns"><button class="btn sm soft" id="ghNow">${ic('refresh', B(), 15)}${esc(t('Sync now'))}</button><button class="btn sm" id="ghOff">${esc(t('Stop saving to GitHub'))}</button></div>`;
+      <div class="row-btns"><button class="btn sm soft" id="ghNow">${ic('refresh', B(), 15)}${esc(t('Sync now'))}</button><button class="btn sm" id="ghOff">${esc(t('Stop saving to GitHub'))}</button></div>
+      ${pc ? '' : `<button class="btn primary" style="margin-top:10px" id="ghLink">${ic('devices', '#fff', 16)}${esc(t('Link for the computer'))}</button>`}`;
   } else {
     el.innerHTML = head + `<div class="hint" style="line-height:1.6;margin:-4px 0 12px">${esc(pc
         ? t('This computer reads and saves the same GitHub repository as your phone, and still syncs with the phone over Wi-Fi.')
@@ -2403,6 +2490,10 @@ async function drawGhCard() {
         <div><i>2</i><span>${esc(t('Settings → Developer settings → Fine-grained tokens → Generate: only that repository, Contents: Read and write'))}</span></div>
         <div><i>3</i><span>${esc(t('Type the details below (use the same repository on the phone and on the computer)'))}</span></div>
       </div>
+      ${pc ? `<div class="hint" style="margin:0 2px 6px">${esc(t('Paste the link from your iPhone (Settings → Storage → GitHub → Link for the computer)'))}</div>
+      <input class="input" id="ghPaste" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…#gh=…" style="margin-bottom:8px" data-notr>
+      <button class="btn primary" id="ghPasteGo" style="margin-bottom:14px">${esc(t('Open'))}</button>
+      <div class="hint" style="margin:0 2px 6px">${esc(t('Or type the details:'))}</div>` : ''}
       <input class="input" id="ghOwner" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="${esc(t('GitHub user name'))}" style="margin-bottom:8px" data-notr>
       <input class="input" id="ghRepo" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="trade-data" value="trade-data" style="margin-bottom:8px" data-notr>
       <input class="input" id="ghToken" type="password" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="github_pat_…" style="margin-bottom:10px" data-notr>
@@ -2419,6 +2510,23 @@ async function drawGhCard() {
       } else await Cloud.setup(v('ghOwner'), v('ghRepo'), v('ghToken'));
       toast(t('Saved on GitHub ✓')); drawGhCard();
     } catch (e) { sv.disabled = false; sv.style.opacity = 1; sv.textContent = t('Save to GitHub'); dialog({ title: 'GitHub', text: e.message, ok: t('OK'), cancel: false }); }
+  };
+  const pg = document.getElementById('ghPasteGo');
+  if (pg) pg.onclick = () => {
+    const L = Cloud.parseLink(v('ghPaste'));
+    if (!L) return dialog({ title: 'GitHub', text: t('This is not the link from Trade on the iPhone'), ok: t('OK'), cancel: false });
+    Cloud.openLink(L).then(drawGhCard, e => dialog({ title: 'GitHub', text: e.message, ok: t('OK'), cancel: false }));
+  };
+  const lk = document.getElementById('ghLink');
+  if (lk) lk.onclick = () => {
+    const url = Cloud.linkFor();
+    doneSheet(t('Link for the computer'), `<div class="hint" style="text-align:center;line-height:1.55;margin:4px 6px 12px">${esc(t('Open this link on the computer (or scan it there). The computer then shows every product from this iPhone’s GitHub repository. New products are added here on the iPhone.'))}</div>
+      <div class="lk-qr" id="ghQr" style="margin:0 auto 12px;width:max-content"></div>
+      <div class="hint pl-warn" style="text-align:center;margin-bottom:10px">${esc(t('Anyone with this link can open your products — send it only to your own computer.'))}</div>
+      <div class="row-btns"><button class="btn sm soft" id="ghCopy">${esc(t('Copy link'))}</button>${navigator.share ? `<button class="btn sm soft" id="ghShare">${esc(t('Send'))}</button>` : ''}</div>`);
+    loadQr().then(() => { const q = document.getElementById('ghQr'); if (q) new QRCode(q, { text: url, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.L }); }).catch(() => {});
+    document.getElementById('ghCopy').onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast(t('Link copied')), () => prompt('Link', url));
+    const sh = document.getElementById('ghShare'); if (sh) sh.onclick = () => navigator.share({ url }).catch(() => {});
   };
   const now = document.getElementById('ghNow');
   if (now) now.onclick = async () => {
@@ -2457,7 +2565,7 @@ function themeCard(th, cur) {
 }
 function themePicker() {
   const draw = () => {
-    const cur = DB.kv.theme || 'jade';
+    const cur = DB.kv.theme || 'cherry';
     const light = TradeThemes.LIST.filter(x => !x.dark), dark = TradeThemes.LIST.filter(x => x.dark);
     $overlay.innerHTML = `<div class="mask bottom" id="thMask"><div class="sheet th-sheet" onclick="event.stopPropagation()">
       <div class="grip"></div>
@@ -2496,6 +2604,7 @@ async function renderSettings() {
           <div class="th-dots">${['brand2', 'brand', 'brandDark'].map(k => `<i style="background:${T()[k]}"></i>`).join('')}</div>${ic('right', '#94A3B8', 15)}</div>
         <div class="setrow"><div class="icon-tile">${ic('sparkle', B(), 16)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">Animations</div><div class="hint">Smooth page and list motion</div></div><div class="switch ${DB.kv.noanim ? '' : 'on'}" id="anim"></div></div>
         <div class="setrow"><div class="icon-tile">${ic('image', B(), 16)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">Auto-crop photos</div><div class="hint">Removes the big background so only the product shows</div></div><div class="switch ${DB.kv.noCrop ? '' : 'on'}" id="crop"></div></div>
+        <div class="setrow"><div class="icon-tile">${ic('image', B(), 16)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${esc(t('Brighten dark photos'))}</div><div class="hint">${esc(t('Photos taken in low light are made brighter and clearer'))}</div></div><div class="switch ${DB.kv.noLight ? '' : 'on'}" id="lightSw"></div></div>
         <div class="setrow"><div class="icon-tile">${ic('wand', B(), 16)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">Auto-fill name &amp; size</div><div class="hint">Recognises the product in the photo and fills in its name and size</div></div><div class="switch ${DB.kv.noAutoFill ? '' : 'on'}" id="autoFillSw"></div></div>
         <button class="btn sm soft" id="cropOld" style="margin-top:4px">${ic('scan', B(), 15, 2.2)}Crop photos already saved</button>
       </div>
@@ -2511,6 +2620,10 @@ async function renderSettings() {
     await DB.setKV('noCrop', !DB.kv.noCrop);
     document.getElementById('crop').classList.toggle('on', !DB.kv.noCrop);
   };
+  document.getElementById('lightSw').onclick = async () => {
+    await DB.setKV('noLight', !DB.kv.noLight);
+    document.getElementById('lightSw').classList.toggle('on', !DB.kv.noLight);
+  };
   document.getElementById('autoFillSw').onclick = async () => {
     await DB.setKV('noAutoFill', !DB.kv.noAutoFill);
     document.getElementById('autoFillSw').classList.toggle('on', !DB.kv.noAutoFill);
@@ -2519,7 +2632,7 @@ async function renderSettings() {
   drawGoCard();
   drawAiCard(); drawEmailCard(); paintConnect();
 }
-// "Your data": says plainly where the database is kept, and offers the step that makes it permanent
+// "Storage": says plainly where the database is kept, and offers the step that makes it permanent
 async function drawPersist() {
   // Ask the browser to keep the data permanently (not cleared when space is low)
   const persisted = await Persist.check() || await Persist.ask();
@@ -2827,7 +2940,7 @@ async function drawAiCard() {
   const rm = document.getElementById('aiRemove'); if (rm) rm.onclick = async () => { await post({ clear: true }); drawAiCard(); };
 }
 
-const backupData = () => ({ app: 'trade', version: 3, exportedAt: Date.now(), products: DB.products, markets: DB.markets, wishes: DB.wishes, trash: DB.trash, settings: { theme: DB.kv.theme || 'jade' } });
+const backupData = () => ({ app: 'trade', version: 3, exportedAt: Date.now(), products: DB.products, markets: DB.markets, wishes: DB.wishes, trash: DB.trash, settings: { theme: DB.kv.theme || 'cherry' } });
 
 // ---------- Permanent storage ----------
 // 1. The browser is asked to never clear this app's database (granted for installed apps; on the first tap if a tap is needed).
@@ -3144,7 +3257,7 @@ function renderAdd(id) {
     <div class="card">
       <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('market', B(), 16)}</div>Market &amp; shop</div></div>
       <div class="field"><div class="label">Market</div><div id="mkPick"></div></div>
-      <div class="field"><div class="label">Shop name <span class="req">*</span></div><input class="input" data-f="shopName" value="${esc(form.shopName)}" placeholder="e.g. Shop No. 1234"></div>
+      <div class="field"><div class="label">Shop name <span class="hint" style="font-weight:500">(optional)</span></div><input class="input" data-f="shopName" value="${esc(form.shopName)}" placeholder="e.g. Shop No. 1234"></div>
       <div class="field"><div class="label">Shop on WeChat?</div><div id="wxPick"></div></div>
       <div class="field"><div class="label">Shop notes</div><textarea class="input textarea" data-f="shopNote" rows="2" maxlength="600" placeholder="Owner name, opening hours, how they deliver…">${esc(form.shopNote)}</textarea></div>
       <div class="label">Shop location</div>
@@ -3516,6 +3629,7 @@ const Recognizer = {
     [/t-shirt|sweatshirt|cardigan|jean|coat|suit|dress|skirt|abaya|kimono|pyjama|jacket|shirt|apron|bra\b|bikini|swim/i, 'S, M, L, XL, XXL'],
     [/\bhat\b|\bcap\b|bonnet/i, '56-60 cm'], [/glove|mitten/i, 'M, L, XL'], [/sunglass/i, '145 mm'], [/watch/i, '42 mm'], [/necklace/i, '45 cm'],
     [/mobile phone|cellular/i, '6.1 inch'], [/laptop|notebook/i, '15.6 inch'], [/tablet/i, '10 inch'], [/monitor|screen|\btv\b/i, '32 inch'],
+    [/ice cream cup|sauce cup/i, '4 oz / 120 ml'], [/coffee cup|paper cup|bubble tea|cold drink|juice cup/i, '12 oz / 360 ml'], [/cup holder/i, '2 cups'], [/kraft paper bag|paper bag/i, '26 × 15 × 32 cm'], [/lunch box|food container/i, '1000 ml'], [/pizza box/i, '12 inch'],
     [/water jug/i, '5 L'], [/bottle/i, '500 ml'], [/mug|cup/i, '350 ml'], [/glass/i, '300 ml'], [/teapot|coffee pot/i, '1 L'],
     [/bucket/i, '10 L'], [/frying pan|wok/i, '28 cm'], [/cooking pot/i, '24 cm'], [/plate/i, '25 cm'], [/bowl/i, '15 cm'],
     [/backpack/i, '45 × 30 × 15 cm'], [/suitcase/i, '20 / 24 / 28 inch'], [/handbag|purse|shoulder bag/i, '30 × 25 × 12 cm'], [/plastic bag/i, '30 × 40 cm'],
@@ -3548,6 +3662,30 @@ const Recognizer = {
     return { name, size: this.sizeFor(name + ' ' + label), score };
   }
 };
+// Specific trade names for generic objects ("cup" → which cup?). The user's own names for the same kind come first.
+const NAME_FAMILIES = [
+  [/\b(cup|mug|glass|tumbler)\b/i, ['Plastic ice cream cup', 'Paper coffee cup', 'Double wall paper cup', 'PET cold drink cup', 'Take-away juice cup', 'Bubble tea cup', 'Sauce cup', 'Double cup holder', 'Cup lid']],
+  [/\b(bag|sack|purse|pouch)\b/i, ['Kraft paper bag', 'Paper bag with handle', 'Plastic carrier bag', 'Take-away food bag', 'Non-woven bag', 'Zip lock bag', 'Bread bag']],
+  [/\b(box|carton|crate|container|case)\b/i, ['Kraft lunch box', 'Plastic food container', 'Pizza box', 'Cake box', 'Corrugated carton', 'Gift box']],
+  [/\b(bottle|jug|flask)\b/i, ['PET juice bottle', 'Plastic water bottle', 'Glass bottle', 'Sauce bottle', 'Spray bottle']],
+  [/\b(bowl|plate|tray|dish)\b/i, ['Kraft paper bowl', 'Paper soup bowl', 'Plastic salad bowl', 'Paper plate', 'Aluminium foil tray']],
+  [/\b(spoon|fork|knife|straw|cutlery)\b/i, ['Plastic spoon', 'Disposable fork', 'Wooden cutlery set', 'Paper straw', 'Plastic straw']]
+];
+function nameChoices(name) {
+  const fam = NAME_FAMILIES.find(f => f[0].test(name || ''));
+  if (!fam) return [];
+  const own = Array.from(new Set(store.all().map(p => String(p.name || '').trim()).filter(n => n && fam[0].test(n)))).slice(0, 5);
+  return own.map(n => ({ n, own: true })).concat(fam[1].filter(n => !own.some(o => o.toLowerCase() === n.toLowerCase())).map(n => ({ n })));
+}
+// Same photo as a product already registered → its exact name and size (the user's own naming)
+async function ownMatch(src) {
+  try {
+    const h = TradeSimilar.hashImage(hashCtx, await loadImg(src));
+    let best = null;
+    store.all().forEach(p => (p.hashes || []).forEach(x => { const d = TradeSimilar.distance(h, x); if (d <= 8 && (!best || d < best.d)) best = { p, d }; }));
+    return best;
+  } catch (e) { return null; }
+}
 // Fills in the name and size from the first new photo. Only empty fields (or ones it filled itself) are changed.
 const AutoFill = {
   st: null, seq: 0,
@@ -3558,9 +3696,16 @@ const AutoFill = {
     const my = ++this.seq, prev = this.st && this.st.prev || { name: form.name, size: form.size };
     this.st = { busy: true, prev, set: this.st && this.st.set }; this.draw();
     let r = null, ai = false;
+    const own = await ownMatch(src);
+    if (my !== this.seq) return;
+    if (own) {
+      this.apply({ name: own.p.name, size: own.p.size || '', score: 1 - own.d / 64 }, false);
+      this.st = Object.assign({}, this.st, { busy: false, own: own.p, estimate: false, choices: [] }); this.draw();
+      return;
+    }
     try { r = await Promise.race([Recognizer.guess(src), new Promise(ok => setTimeout(() => ok(null), 45000))]); } catch (e) { console.warn('Recognizer:', e.message); }
     if (my !== this.seq) return;
-    if (r) this.apply(r, false);
+    if (r) { this.apply(r, false); this.st.choices = nameChoices(r.name); }
     // Claude reads the photo too, when the scanner is ready on the computer (better name, real size from the label)
     try {
       const s = Scanner.st || await Scanner.status();
@@ -3572,6 +3717,7 @@ const AutoFill = {
         if (my !== this.seq) return;
         if (j && j.name) {
           this.apply({ name: j.name, size: j.size || (r && r.size) || '', score: Number(j.confidence) || 0.8, estimate: !j.size || j.size_source === 'estimate' }, true);
+          this.st.choices = (j.name_options || []).filter(n => n && n !== j.name).map(n => ({ n }));
           ai = true;
         }
       }
@@ -3613,18 +3759,51 @@ const AutoFill = {
     const what = filled.length === 2 ? t('Name and size filled in') : filled[0] === 'name' ? t('Name filled in') : filled[0] === 'size' ? t('Size filled in') : '';
     el.innerHTML = `<div class="af"><div class="af-ic">${s.busy ? '<div class="spinner"></div>' : ic('wand', '#fff', 16, 2.2)}</div>
       <div style="flex:1;min-width:0">
-        ${s.name ? `<div class="af-t ellipsis">${esc(t('Recognised'))}: <span data-notr>${esc(s.name)}</span> · ${Math.round(s.score * 100)}%</div>` : `<div class="af-t">${esc(t('Recognising the product…'))}</div>`}
+        ${s.own ? `<div class="af-t ellipsis">${esc(t('Same as your product'))}: <span data-notr>${esc(s.own.name)}</span></div>` : s.name ? `<div class="af-t ellipsis">${esc(t('Recognised'))}: <span data-notr>${esc(s.name)}</span> · ${Math.round(s.score * 100)}%</div>` : `<div class="af-t">${esc(t('Recognising the product…'))}</div>`}
         <div class="af-s">${s.busy && s.ai ? esc(t('AI is reading the label and size…')) : esc(what)}${!s.busy && filled.includes('size') && s.estimate ? ' · ' + esc(t('size is an estimate — check it')) : ''}</div>
       </div>
-      ${filled.length && !s.busy ? `<span class="af-u" id="afUndo">${esc(t('Undo'))}</span>` : ''}</div>`;
+      ${filled.length && !s.busy ? `<span class="af-u" id="afUndo">${esc(t('Undo'))}</span>` : ''}</div>
+      ${!s.busy && s.choices && s.choices.length ? `<div class="hint" style="margin-top:8px">${esc(t('Which one is it exactly? Tap the right name:'))}</div><div class="name-chips">${s.choices.map((c, i) => `<span class="${c.own ? 'own' : ''}" data-ch="${i}" data-notr>${esc(c.own ? c.n : t(c.n))}</span>`).join('')}</div>` : ''}`;
+    el.querySelectorAll('[data-ch]').forEach(c => c.onclick = () => {
+      const ch = s.choices[+c.dataset.ch], v = ch.own ? ch.n : t(ch.n), inp = $body.querySelector('[data-f="name"]');
+      form.name = v; s.set = Object.assign({}, s.set, { name: v }); s.name = v; s.score = 1;
+      if (inp) { inp.value = v; inp.dispatchEvent(new Event('input')); inp.classList.remove('flash'); void inp.offsetWidth; inp.classList.add('flash'); }
+      const sz = Recognizer.sizeFor(v); if (sz && (!form.size || (s.set && s.set.size === form.size))) { form.size = sz; s.set.size = sz; const si = $body.querySelector('[data-f="size"]'); if (si) { si.value = sz; si.dispatchEvent(new Event('input')); } }
+      s.choices = []; this.draw();
+    });
     const u = document.getElementById('afUndo'); if (u) u.onclick = () => this.undo();
   }
 };
+// Dark or flat photo → auto levels + brighter mid-tones, so the product shows clearly. Normal photos are left alone.
+function autoLight(ctx, w, h) {
+  const d = ctx.getImageData(0, 0, w, h), px = d.data, n = w * h, step = Math.max(1, Math.floor(n / 60000));
+  const hist = new Uint32Array(256); let cnt = 0, sum = 0;
+  for (let i = 0; i < n; i += step) { const k = i * 4, y = (px[k] * 299 + px[k + 1] * 587 + px[k + 2] * 114) / 1000 | 0; hist[y]++; sum += y; cnt++; }
+  const mean = sum / cnt, pct = q => { let a = 0; for (let v = 0; v < 256; v++) { a += hist[v]; if (a >= cnt * q) return v; } return 255; };
+  const lo = pct(0.01), hi = pct(0.99);
+  const dark = mean < 105, flat = hi - lo < 160;
+  if (!dark && !flat) return false;
+  const black = Math.min(lo, 45), white = Math.max(Math.min(255, hi), black + 80);
+  const m = Math.min(0.95, Math.max(0.02, (mean - black) / (white - black)));
+  const gamma = dark ? Math.max(0.42, Math.min(1, Math.log(0.52) / Math.log(m))) : 1;
+  const lut = new Uint8ClampedArray(256);
+  for (let v = 0; v < 256; v++) lut[v] = 255 * Math.pow(Math.min(1, Math.max(0, (v - black) / (white - black))), gamma);
+  const sat = 1.1;
+  for (let k = 0; k < px.length; k += 4) {
+    const r = lut[px[k]], g = lut[px[k + 1]], b = lut[px[k + 2]], y = 0.299 * r + 0.587 * g + 0.114 * b;
+    px[k] = y + (r - y) * sat; px[k + 1] = y + (g - y) * sat; px[k + 2] = y + (b - y) * sat;
+  }
+  ctx.putImageData(d, 0, 0);
+  return true;
+}
+let photosLit = 0;
 function drawBox(img, box, max, q) {
   box = box || { x: 0, y: 0, w: img.width, h: img.height };
   const s = Math.min(1, (max || 1000) / Math.max(box.w, box.h));
   const c = document.createElement('canvas'); c.width = Math.round(box.w * s); c.height = Math.round(box.h * s);
-  c.getContext('2d').drawImage(img, box.x, box.y, box.w, box.h, 0, 0, c.width, c.height);
+  const cx = c.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, c.width, c.height);
+  if (!DB.kv.noLight) { try { if (autoLight(cx, c.width, c.height)) photosLit++; } catch (e) {} }
   return c.toDataURL('image/jpeg', q || 0.78);
 }
 // Crop any photo (file or data URL) → { src, cropped, original }
@@ -3678,7 +3857,7 @@ async function cropExisting() {
 async function onFiles(e) {
   const files = Array.from(e.target.files).slice(0, MAX_IMAGES - form.images.length);
   const sharp = [], first = form.images.length;
-  let cropped = 0;
+  let cropped = 0; const lit0 = photosLit;
   photoBusy = files.length;
   busyPreviews = DB.kv.noCrop ? [] : files.map(f => URL.createObjectURL(f)); // the photo shows while it is being scanned
   drawImages();
@@ -3699,30 +3878,99 @@ async function onFiles(e) {
   photoBusy = 0; busyPreviews = []; e.target.value = ''; drawImages();
   setTimeout(() => { justCropped = ''; }, 1500);
   if (cropped) toast(t('Photo cropped to the product'));
+  else if (photosLit > lit0) toast(t('Dark photo brightened ✓'));
   if (!Scanner.pending && form.images[first]) AutoFill.run(form.images[first]);
   if (Scanner.pending) { Scanner.pending = false; if (sharp.length) Scanner.analyse(sharp.concat(form.images.slice(0, form.images.length - files.length))); }
 }
+// GPS gives WGS-84; Amap (and its map tiles) use GCJ-02 inside China
+function wgs2gcj(lat, lng) {
+  if (lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271) return [lat, lng];
+  const a = 6378245.0, ee = 0.00669342162296594323, PI = Math.PI;
+  const tl = (x, y) => -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x)) + (20 * Math.sin(6 * x * PI) + 20 * Math.sin(2 * x * PI)) * 2 / 3 + (20 * Math.sin(y * PI) + 40 * Math.sin(y / 3 * PI)) * 2 / 3 + (160 * Math.sin(y / 12 * PI) + 320 * Math.sin(y * PI / 30)) * 2 / 3;
+  const tg = (x, y) => 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x)) + (20 * Math.sin(6 * x * PI) + 20 * Math.sin(2 * x * PI)) * 2 / 3 + (20 * Math.sin(x * PI) + 40 * Math.sin(x / 3 * PI)) * 2 / 3 + (150 * Math.sin(x / 12 * PI) + 300 * Math.sin(x / 30 * PI)) * 2 / 3;
+  const rad = lat / 180 * PI; let m = Math.sin(rad); m = 1 - ee * m * m; const sm = Math.sqrt(m);
+  const dLat = tl(lng - 105, lat - 35) * 180 / ((a * (1 - ee)) / (m * sm) * PI), dLng = tg(lng - 105, lat - 35) * 180 / (a / sm * Math.cos(rad) * PI);
+  return [lat + dLat, lng + dLng];
+}
+function gcj2wgs(lat, lng) { const g = wgs2gcj(lat, lng); return [lat * 2 - g[0], lng * 2 - g[1]]; }
+// Street address for a point (OpenStreetMap), filled in when the place has no name yet
+async function addressAt(lat, lng) {
+  const w = gcj2wgs(lat, lng), lang = TradeI18n.getLang() === 'zh' ? 'zh' : 'en';
+  const c = new AbortController(), tm = setTimeout(() => c.abort(), 6000);
+  try {
+    const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&lat=' + w[0].toFixed(6) + '&lon=' + w[1].toFixed(6) + '&accept-language=' + lang, { signal: c.signal });
+    if (!r.ok) return null;
+    const j = await r.json(), a = j.address || {};
+    const name = j.name || [a.road, a.house_number].filter(Boolean).join(' ') || a.neighbourhood || a.suburb || '';
+    return { name, address: j.display_name || '' };
+  } catch (e) { return null; } finally { clearTimeout(tm); }
+}
+// Like sending your location in WeChat: the map opens where you stand (GPS), the pin stays in the middle,
+// move the map to fine-tune, and the exact point is saved in Amap coordinates.
 function chooseLocation() {
   const cur = form.location || YIWU;
   $overlay.innerHTML = `<div class="picker-wrap">
-    <div class="nav"><span class="back" id="pback">${ic('left', INK(), 22, 2.4)}</span>Choose location</div>
-    <div class="picker-map" id="pmap"></div>
+    <div class="nav"><span class="back" id="pback">${ic('left', INK(), 22, 2.4)}</span>${esc(t('Shop location'))}</div>
+    <div class="picker-map" id="pmapw"><div id="pmap" style="position:absolute;inset:0"></div>
+      <div class="pin-c" id="pinc">${ic('pin', '#E11D48', 40, 2.2)}</div><div class="pin-dot"></div>
+      <div class="loc-me" id="locMe" title="My location">${ic('pin', B(), 22, 2.4)}</div></div>
     <div class="picker-form">
-      <div class="hint">Tap the map to place the shop location</div>
-      <input class="input" id="pname" placeholder="Place name (e.g. Yiwu International Trade City)" value="${esc(form.location ? form.location.name : '')}">
-      <input class="input" id="paddr" placeholder="Address" value="${esc(form.location ? form.location.address : '')}">
-      <button class="btn primary" id="pok">Confirm</button>
+      <div class="loc-acc" id="pacc">${esc(t('Finding where you are…'))}</div>
+      <input class="input" id="pname" placeholder="${esc(t('Place name (optional), e.g. shop or building'))}" value="${esc(form.location ? form.location.name : '')}">
+      <input class="input" id="paddr" placeholder="${esc(t('Address'))}" value="${esc(form.location ? form.location.address : '')}">
+      <button class="btn primary" id="pok">${esc(t('Save this location'))}</button>
     </div></div>`;
-  const map = L.map('pmap', { attributionControl: false }).setView([cur.latitude, cur.longitude], 15);
+  const map = L.map('pmap', { attributionControl: false, zoomControl: false }).setView([cur.latitude, cur.longitude], form.location ? 18 : 15);
   tileLayer().addTo(map);
-  let pos = { latitude: cur.latitude, longitude: cur.longitude };
-  const marker = L.marker([pos.latitude, pos.longitude]).addTo(map);
-  map.on('click', e => { pos = { latitude: +e.latlng.lat.toFixed(6), longitude: +e.latlng.lng.toFixed(6) }; marker.setLatLng(e.latlng); });
-  document.getElementById('pback').onclick = closeOverlay;
+  let pos = { latitude: cur.latitude, longitude: cur.longitude }, acc = form.location && form.location.accuracy || 0, source = form.location ? form.location.source || 'map' : 'map';
+  let autoName = !form.location, autoAddr = !form.location, circle = null, watch = null, best = null, geoT = null, fromGps = false;
+  const accEl = document.getElementById('pacc'), pin = document.getElementById('pinc');
+  const nameEl = document.getElementById('pname'), addrEl = document.getElementById('paddr');
+  nameEl.oninput = () => { autoName = false; }; addrEl.oninput = () => { autoAddr = false; };
+  const paintAcc = () => { accEl.innerHTML = source === 'gps' ? `${esc(t('Your exact location'))} · <b>±${Math.round(acc)} m</b>` : esc(t('Move the map so the pin is on the shop')); };
+  const lookUp = async () => {
+    if (!autoName && !autoAddr) return;
+    const at = pos.latitude + ',' + pos.longitude;
+    const a = await addressAt(pos.latitude, pos.longitude);
+    if (!a || at !== pos.latitude + ',' + pos.longitude) return;
+    if (autoName && a.name) nameEl.value = a.name;
+    if (autoAddr && a.address) addrEl.value = a.address;
+  };
+  map.on('movestart', () => pin.classList.add('up'));
+  map.on('moveend', () => {
+    pin.classList.remove('up');
+    const c = map.getCenter();
+    pos = { latitude: +c.lat.toFixed(6), longitude: +c.lng.toFixed(6) };
+    if (!fromGps) { source = 'map'; paintAcc(); }
+    fromGps = false;
+    clearTimeout(geoT); geoT = setTimeout(lookUp, 500);
+  });
+  const stop = () => { if (watch != null) navigator.geolocation.clearWatch(watch); watch = null; };
+  const locate = () => {
+    if (!navigator.geolocation) { accEl.textContent = t('This phone cannot share its location'); return; }
+    accEl.textContent = t('Finding where you are…'); best = null; stop();
+    // Several readings for a few seconds; the most precise one wins (GPS settles after the first fix)
+    watch = navigator.geolocation.watchPosition(p => {
+      if (best && p.coords.accuracy >= best.coords.accuracy) return;
+      best = p; acc = p.coords.accuracy; source = 'gps';
+      const g = wgs2gcj(p.coords.latitude, p.coords.longitude);
+      fromGps = true; autoName = autoName || !nameEl.value; autoAddr = autoAddr || !addrEl.value;
+      map.setView(g, acc < 30 ? 19 : acc < 100 ? 18 : 16);
+      if (circle) circle.remove();
+      circle = L.circle(g, { radius: acc, color: B(), weight: 1, fillOpacity: 0.12 }).addTo(map);
+      paintAcc();
+      if (acc <= 10) stop();
+    }, e => { accEl.textContent = e.code === 1 ? t('Location is off for Trade — allow it in Settings → Privacy → Location Services') : t('Could not find your location — move the map instead'); stop(); },
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+    setTimeout(stop, 12000);
+  };
+  document.getElementById('locMe').onclick = locate;
+  if (!form.location) locate(); else paintAcc();
+  document.getElementById('pback').onclick = () => { stop(); closeOverlay(); };
   document.getElementById('pok').onclick = () => {
-    const name = document.getElementById('pname').value.trim();
-    if (!name) return toast('Enter the place name');
-    form.location = { name, address: document.getElementById('paddr').value.trim(), latitude: pos.latitude, longitude: pos.longitude };
+    stop();
+    const name = nameEl.value.trim(), address = addrEl.value.trim();
+    form.location = { name: name || address.split(',')[0] || t('Shop location'), address, latitude: pos.latitude, longitude: pos.longitude, accuracy: source === 'gps' ? Math.round(acc) : 0, source, coord: 'gcj02', at: Date.now() };
     closeOverlay(); drawLoc();
   };
 }
@@ -3734,16 +3982,37 @@ async function save() {
   const err = !f.name.trim() ? 'Enter the product name'
     : !(Number(f.price) > 0) ? 'Enter a valid price'
     : !(parseInt(f.minOrder, 10) >= 1) ? 'Minimum order must be at least 1'
-    : !f.shopName.trim() ? 'Enter the shop name'
     : f.shopWechat === 'yes' && !String(f.wechatId || '').trim() ? 'Enter the shop’s WeChat ID or number' : '';
   if (err) return toast(err);
   saving = true;
   const btn = document.getElementById('save'); btn.style.opacity = .6;
   const old = editId ? store.get(editId) : null, now = Date.now();
+  // Already registered? Show it side by side before saving a second copy
+  if (!old && !f.dupOk) {
+    try {
+      await ensureHashes();
+      const draft = Object.assign({}, f, { name: f.name.trim(), marketName: norm(f.marketName), shopName: f.shopName.trim(), price: Number(f.price), minOrder: parseInt(f.minOrder, 10), hashes: await hashImages(f.images) });
+      const hit = TradeSimilar.closest(draft, store.all());
+      if (hit) {
+        saving = false; btn.style.opacity = 1;
+        const list = [hit.product, draft], rows = TradeSimilar.compare(list), same = rows.filter(r => r.same).length;
+        $overlay.innerHTML = `<div class="mask bottom" id="dupm"><div class="sheet" onclick="event.stopPropagation()"><div class="grip"></div>
+          <div class="sheet-title">${esc(t('Already registered'))}</div>
+          <div class="hint" style="text-align:center;margin-bottom:4px">${esc(t('This product looks like one you saved before · {a} of {b} the same', { a: same, b: rows.length }))}</div>
+          ${compareHtml(list, rows)}
+          <div class="row-btns" style="margin-top:14px"><button class="btn" id="dupOpen">${esc(t('Open the saved one'))}</button><button class="btn primary" id="dupSave">${esc(t('Save anyway'))}</button></div></div></div>`;
+        document.getElementById('dupm').onclick = closeOverlay;
+        document.getElementById('dupOpen').onclick = () => { closeOverlay(); location.hash = 'detail/' + hit.product.id; };
+        document.getElementById('dupSave').onclick = () => { closeOverlay(); f.dupOk = true; save(); };
+        return;
+      }
+    } catch (e) { console.warn('duplicate check:', e.message); }
+  }
   try {
     let marketName = norm(f.marketName);
     if (marketName) { const m = await markets.ensure(marketName, { addedFrom: 'product' }); marketName = m.name; }
     const sameImages = old && JSON.stringify(old.images) === JSON.stringify(f.images) && old.hashes;
+    delete f.dupOk;
     await store.upsert(Object.assign({}, f, {
       id: old ? old.id : String(now), name: f.name.trim(), description: (f.description || '').trim(), size: f.size.trim(), marketName, shopName: f.shopName.trim(),
       shopWechat: f.shopWechat || '', wechatId: f.shopWechat === 'yes' ? String(f.wechatId || '').trim() : '', shopNote: String(f.shopNote || '').trim(),
@@ -4064,7 +4333,7 @@ function renderDetail(id) {
       <div class="card" style="margin-top:12px">
         <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('store', B(), 16)}</div>Where to buy</div></div>
         ${row('market', 'Market', `<div class="v ${p.marketName ? '' : 'none'}" data-notr>${esc(p.marketName || '')}</div>${p.marketName ? '' : `<div class="v none">${esc(t('Not set'))}</div>`}`, '', true)}
-        ${row('store', 'Shop', `<div class="v" data-notr>${esc(p.shopName)}</div>`, p.shopNote ? `<div class="hint shopnote" data-notr>${esc(p.shopNote)}</div>` : '')}
+        ${row('store', 'Shop', `<div class="v" data-notr>${esc(p.shopName || '—')}</div>`, p.shopNote ? `<div class="hint shopnote" data-notr>${esc(p.shopNote)}</div>` : '')}
         ${p.shopWechat ? row('wechat', 'WeChat', p.shopWechat === 'yes'
           ? `<div class="wx-row"><span class="v" data-notr>${esc(p.wechatId)}</span><button class="btn sm soft wx-copy" id="copyWx">${ic('copy', B(), 14)}${esc(t('Copy'))}</button></div><div class="hint">${esc(t('Shop is on WeChat'))}</div>`
           : `<div class="v none">${esc(t('No WeChat'))}</div>`) : ''}
@@ -4080,7 +4349,7 @@ function renderDetail(id) {
         <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('similar', B(), 16)}</div>Same product elsewhere</div><span class="hint">${plural(same.products.length - 1, 'other')}</span></div>
         ${same.products.filter(x => x !== p).map(x => `<div class="mini" onclick="location.hash='detail/${x.id}'">
           ${thumbOf(x) ? `<img src="${thumbOf(x)}">` : `<div class="ph">${ic('image', '#B6C0CD', 18)}</div>`}
-          <div style="flex:1;min-width:0"><div class="mini-name ellipsis" data-notr>${esc(x.name)}</div><div class="mini-sub ellipsis" data-notr>${esc(x.marketName ? x.marketName + ' · ' : '')}${esc(x.shopName)}</div></div>
+          <div style="flex:1;min-width:0"><div class="mini-name ellipsis" data-notr>${esc(x.name)}</div><div class="mini-sub ellipsis" data-notr>${esc(whereOf(x))}</div></div>
           <div class="mini-price">${money(x.currency, x.price)}${x.currency === p.currency ? `<div class="mini-sub" style="color:${x.price < p.price ? '#16A34A' : x.price > p.price ? 'var(--price)' : 'var(--ink-3)'}">${x.price < p.price ? 'cheaper' : x.price > p.price ? 'dearer' : 'same price'}</div>` : ''}</div></div>`).join('')}
       </div>` : ''}
     </div>`;
@@ -4093,11 +4362,11 @@ function renderDetail(id) {
     const ll = [p.location.latitude, p.location.longitude];
     const m = L.map('dmap', { attributionControl: false, zoomControl: false, dragging: false, scrollWheelZoom: false }).setView(ll, 16);
     tileLayer().addTo(m); L.marker(ll).addTo(m);
-    const open = () => window.open(amapUrl(p.location, p.shopName), '_blank');
+    const open = () => window.open(amapUrl(p.location, p.shopName || p.name), '_blank');
     m.on('click', open);
     document.getElementById('openAmap').onclick = open;
     document.getElementById('copyAmap').onclick = () => {
-      const url = amapUrl(p.location, p.shopName);
+      const url = amapUrl(p.location, p.shopName || p.name);
       (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('Link copied'), () => prompt('Copy the link:', url));
     };
   }
@@ -4120,7 +4389,7 @@ function renderDetail(id) {
 // opens with the phone's products. Unlinking the last phone brings this screen back (nothing is deleted).
 const PcLogin = {
   el: null, t: null,
-  need() { const s = Sync.server; return !!(s && s.key && Array.isArray(s.phones) && !s.phones.length); },
+  need() { const s = Sync.server; return !!(s && s.key && Array.isArray(s.phones) && !s.phones.length && !s.github); },
   check() { if (this.need()) this.show(); else this.hide(); },
   show() {
     const info = Sync.server;
@@ -4140,10 +4409,19 @@ const PcLogin = {
             <details class="lk-alt"><summary>${esc(t('Can’t scan? Type the code instead'))}</summary>
               <div class="pinbox"><div class="k">${esc(t('In Trade on the phone: Settings → Use on another device → type'))}</div>
               <div class="pin" id="plPin" data-notr></div><div class="hint">${esc(t('Changes every 10 minutes'))}</div></div></details>
+            <details class="lk-alt"><summary>${esc(t('Or open with the link from your iPhone'))}</summary>
+              <div class="hint" style="margin:8px 2px">${esc(t('On the iPhone: Settings → Storage → GitHub → Link for the computer. Paste it here.'))}</div>
+              <input class="input" id="plGh" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…#gh=…" style="margin-bottom:8px" data-notr>
+              <button class="btn primary sm" id="plGhGo">${esc(t('Open'))}</button></details>
           </div>
           <div class="pl-right"><div class="lk-qr pl-qr" id="plQr"></div><div class="hint" style="text-align:center;margin-top:10px">${esc(t('The code changes every minute'))}</div></div>
         </div>
         <div class="pl-foot" data-notr>${esc(t('iPhone app'))}: <b>https://mitm00.github.io/TradeApp/</b></div>`;
+      document.getElementById('plGhGo').onclick = () => {
+        const L = Cloud.parseLink(document.getElementById('plGh').value);
+        if (!L) return dialog({ title: 'GitHub', text: t('This is not the link from Trade on the iPhone'), ok: t('OK'), cancel: false });
+        Cloud.openLink(L).catch(e => dialog({ title: 'GitHub', text: e.message, ok: t('OK'), cancel: false }));
+      };
     }
     this.paint(info);
     clearInterval(this.t);
@@ -4172,12 +4450,16 @@ const PcLogin = {
   await DB.init();
   if (!DB.kv.lang) { const nl = (navigator.language || 'en').toLowerCase(); await DB.setKV('lang', nl.startsWith('zh') ? 'zh' : nl.startsWith('so') ? 'so' : 'en'); }
   applyLang(DB.kv.lang);
-  applyTheme(DB.kv.theme || 'jade');
+  applyTheme(DB.kv.theme || 'cherry');
   document.body.classList.toggle('noanim', !!DB.kv.noanim);
   await Folder.init();
+  // Opened with the link from the iPhone (#gh=…): take it out of the address first, so it is not kept in history
+  const ghL = Cloud.parseLink(location.hash);
+  if (ghL) history.replaceState(null, '', location.pathname);
   route();
-  Sync.init();
+  const ready = Sync.init();
   Cloud.init();
+  if (ghL) ready.then(() => Cloud.openLink(ghL)).catch(e => dialog({ title: 'GitHub', text: e.message, ok: t('OK'), cancel: false }));
   if (!await Persist.check()) Persist.ask();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   setTimeout(() => Install.show(), 1200);

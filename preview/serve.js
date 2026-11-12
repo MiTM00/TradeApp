@@ -70,6 +70,9 @@ function linkPhone(code, b) {
   lastLinked = { name: String(b.deviceName || 'Phone').slice(0, 60), at: Date.now() }
   if (publicUrl && pages.config()) pages.publishAddress([code], publicUrl).catch(e => console.log('iPhone: address not published:', e.message))
   console.log('Phone linked: ' + lastLinked.name)
+  // The iPhone keeps its products in its own private GitHub repository: it hands the details over while linking,
+  // so this computer reads the same repository (and has everything even when the iPhone is far away)
+  if (b.gh && !github.config()) github.setup(b.gh).then(() => console.log('GitHub: reading ' + b.gh.owner + '/' + b.gh.repo + ' (from the iPhone)')).catch(e => console.log('GitHub: not set up from the phone:', e.message))
 }
 
 async function api(req, res, url) {
@@ -87,11 +90,11 @@ async function api(req, res, url) {
     const p = currentPin(), l = currentLink()
     const hub = pages.config()
     return json(res, 200, Object.assign({ key: store.key(), urls: lanUrls(), publicUrl, port, dataDir: store.DIR, pin: p.code, pinExp: p.exp, hubUrl: hub ? hub.url : '',
-      link: l.token, linkExp: l.exp, phones: store.phones(pages.fingerprint), lastLinked, computer: os.hostname() }, store.stats()))
+      link: l.token, linkExp: l.exp, phones: store.phones(pages.fingerprint), lastLinked, computer: os.hostname(), github: !!github.config() }, store.stats()))
   }
   // The phone scanned the QR code: token from the code + the phone's own code → linked
   if (url === '/api/sync/link' && req.method === 'POST') {
-    const b = await body(req, 2e3)
+    const b = await body(req, 4e3)
     if (Date.now() < linkBlockedUntil) return json(res, 429, { error: 'Too many tries — wait a minute and scan again' })
     const tok = String(b.token || ''), code = String(b.phoneKey || '')
     const ok = [linkTok, linkPrev].some(x => x && x.exp > Date.now() && x.token === tok)
@@ -123,7 +126,7 @@ async function api(req, res, url) {
     return json(res, 200, { ok: true, added, reachable: !!publicUrl })
   }
   if (url === '/api/sync/pin' && req.method === 'POST') {
-    const b = await body(req, 1e3)
+    const b = await body(req, 4e3)
     if (Date.now() < pinBlockedUntil) return json(res, 429, { error: 'Too many wrong codes — wait 2 minutes and use the new code on the computer' })
     const p = currentPin()
     if (String(b.pin || '').replace(/\D/g, '') === p.code) {

@@ -102,6 +102,9 @@
     x += '</sheetData>'
     if (sh.autoFilter) x += '<autoFilter ref="' + sh.autoFilter + '"/>'
     if (sh.merges && sh.merges.length) x += '<mergeCells count="' + sh.merges.length + '">' + sh.merges.map(m => '<mergeCell ref="' + m + '"/>').join('') + '</mergeCells>'
+    ;(sh.conditional || []).forEach((cf, i) => {
+      x += '<conditionalFormatting sqref="' + cf.ref + '"><cfRule type="dataBar" priority="' + (i + 1) + '"><dataBar><cfvo type="min"/><cfvo type="max"/><color rgb="' + argb(cf.bar) + '"/></dataBar></cfRule></conditionalFormatting>'
+    })
     x += '<pageMargins left="0.4" right="0.4" top="0.55" bottom="0.55" header="0.25" footer="0.25"/>'
     x += '<pageSetup paperSize="9" orientation="' + (sh.portrait ? 'portrait' : 'landscape') + '" fitToWidth="1" fitToHeight="0"/>'
     if (sh.footer) x += '<headerFooter><oddFooter>' + esc(sh.footer) + '</oddFooter></headerFooter>'

@@ -8,7 +8,8 @@ const MODEL = 'claude-opus-5-5'
 const LANG_NAME = { en: 'English', so: 'Somali', zh: 'Simplified Chinese' }
 
 const Result = z.object({
-  name: z.string().describe('Short product name a buyer would use, e.g. "Running shoes" — in the requested language'),
+  name: z.string().describe('Exact trade name: material + kind + use, e.g. "Plastic ice cream cup", "Kraft paper bag", "Double cup holder" — never a bare word like "cup" or "bag". In the requested language'),
+  name_options: z.array(z.string()).describe('2-4 other specific trade names it could be, most likely first, same language'),
   name_en: z.string().describe('The same product name in English'),
   size: z.string().describe('Size(s) read from labels, tags, rulers or packaging, e.g. "38-45", "M, L, XL", "30x40 cm", "350 ml". Empty string if no size can be seen'),
   size_source: z.enum(['label', 'estimate', 'none']).describe('label = read from text on the item; estimate = judged from the photo; none = unknown'),
@@ -36,7 +37,10 @@ async function scan(apiKey, images, lang) {
     text: 'These photos show ONE product a trader found in a wholesale market (e.g. Yiwu). Identify it precisely.\n' +
       '- Read every visible label, tag, sticker, box print and size marking (Chinese and English) and use them.\n' +
       '- For size: prefer what is printed (shoe sizes, S/M/L, cm/mm dimensions, ml/L, weight). If nothing is printed, give a careful estimate only when a reference object makes it possible, and mark size_source accordingly.\n' +
-      '- Be specific in the name (e.g. "Women\'s canvas tote bag", not just "bag").\n' +
+      '- The name must be the exact trade name a wholesaler uses: material + type + use. Never a bare word like "cup", "bag" or "box".\n' +
+      '  Examples: "Plastic ice cream cup", "Paper coffee cup", "Double wall paper cup", "PET cold drink cup", "Take-away juice cup", "Bubble tea cup", "Sauce cup" (small portion cup with lid),\n' +
+      '  "Double cup holder" (carrier for 2 cups), "Cup lid", "Kraft paper bag", "Paper bag with handle", "Take-away food bag", "Kraft lunch box", "Pizza box", "Aluminium foil tray", "Wooden cutlery set", "Paper straw".\n' +
+      '- Look closely at material (paper, kraft, PET, PP, PS, foam, aluminium), wall type, lid, handle and printing before naming.\n' +
       '- Write the name in ' + language + '.'
   })
   let res

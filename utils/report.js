@@ -14,7 +14,7 @@
 
   const C = {
     ink: '#0F172A', sub: '#64748B', faint: '#94A3B8', line: '#E2E8F0', bg: '#F8FAFC',
-    brand: '#0F766E', brand2: '#14B8A6', brandDark: '#134E4A', mint: '#F0FDFA', mint2: '#CCFBF1',
+    brand: '#DC2626', brand2: '#F87171', brandDark: '#991B1B', mint: '#FEF2F2', mint2: '#FEE2E2',
     price: '#E11D48', white: '#FFFFFF', amber: '#F59E0B'
   }
   const FONT = '-apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", Arial, sans-serif'
@@ -81,7 +81,7 @@
     })
     return Array.from(map, ([key, list]) => {
       const markets = new Set(list.map(p => (p.marketName || '').trim()).filter(Boolean))
-      const shops = new Set(list.map(p => (p.marketName || '') + '|' + p.shopName))
+      const shops = new Set(list.filter(p => String(p.shopName || '').trim()).map(p => (p.marketName || '') + '|' + p.shopName))
       return { key, kind, label: periodLabel(key, kind), products: list, count: list.length, marketCount: markets.size, shopCount: shops.size, totals: totalsOf(list) }
     }).sort((a, b) => (b.key || '').localeCompare(a.key || ''))
   }
@@ -95,13 +95,16 @@
       const mName = (p.marketName || '').trim() || NO_MARKET
       if (!markets.has(mName)) markets.set(mName, { name: mName, shops: new Map(), products: [], photos: 0, totals: new Map() })
       const m = markets.get(mName)
-      if (!m.shops.has(p.shopName)) m.shops.set(p.shopName, { name: p.shopName, location: p.location, products: [] })
-      m.shops.get(p.shopName).products.push(p)
+      const sk = String(p.shopName || '').trim()
+      if (sk) {
+        if (!m.shops.has(sk)) m.shops.set(sk, { name: sk, location: p.location, products: [] })
+        m.shops.get(sk).products.push(p)
+      }
       m.products.push(p)
       const n = (p.images || []).length
       m.photos += n; photos += n
       if (p.location) located++
-      shops.add(mName + '|' + p.shopName)
+      if (String(p.shopName || '').trim()) shops.add(mName + '|' + String(p.shopName).trim())
       const v = (Number(p.price) || 0) * (Number(p.minOrder) || 0)
       totals.set(p.currency, (totals.get(p.currency) || 0) + v)
       m.totals.set(p.currency, (m.totals.get(p.currency) || 0) + v)
@@ -259,7 +262,7 @@
           const lw = text(ctx, label, tx, ly, { size: 22, weight: 'bold', color: C.brand })
           text(ctx, value, tx + lw + 14, ly, { size: 22, color: color || C.ink, max: tw - lw - 14 })
         }
-        line(L('Shop'), p.shopName + (p.shopWechat === 'yes' && p.wechatId ? '  ·  WeChat: ' + p.wechatId : ''), y + 150)
+        line(L('Shop'), (p.shopName || '—') + (p.shopWechat === 'yes' && p.wechatId ? '  ·  WeChat: ' + p.wechatId : ''), y + 150)
         const loc = p.location ? [p.location.name, p.location.address].filter(Boolean).join(' · ') : L('No location')
         line(L('Location'), loc, y + 176, p.location ? C.sub : C.faint)
         const reg = registeredAt(p)
@@ -371,6 +374,7 @@
     }).join('').toUpperCase()
   }
   const hex6 = c => String(c || '').replace('#', '').toUpperCase()
+  const amapLink = (loc, name) => 'https://uri.amap.com/marker?position=' + loc.longitude + ',' + loc.latitude + '&name=' + encodeURIComponent(String(name || loc.name || '').slice(0, 40)) + '&coordinate=gaode&callnative=1'
   const curFmt = c => '"' + String(c).replace(/"/g, '') + '"#,##0.00'
 
   // opts.colors = { brand, brandDark } (the app theme); defaults to Jade
@@ -404,7 +408,7 @@
 
     // ===== Products sheet =====
     const grouped = !!(opts.sections && opts.sections.length)
-    const head = ['Product', 'Picture', 'Size', 'Minimum order', 'Price', 'Value at MOQ', 'Market', 'Shop', 'WeChat', 'Date registered'].map(L)
+    const head = ['Product', 'Picture', 'Size', 'Minimum order', 'Price', 'Value at MOQ', 'Market', 'Shop', 'WeChat', 'Location', 'Date registered'].map(L)
     const NC = head.length, last = Xlsx.colName(NC - 1)
     const rows = [], merges = [], images = []
     const fullRow = (style, v, height) => {
@@ -419,7 +423,7 @@
     rows.push({ height: 8, cells: [] })
     // KPI cards: [label, value, from col, to col]
     const totalsStr = sum.totals.length ? sum.totals.map(t => t.currency + ' ' + money(t.value)).join('   ') : '—'
-    const cards = [[L('PRODUCTS'), sum.count, 0, 0], [L('MARKETS'), sum.marketCount, 1, 2], [L('SHOPS'), sum.shopCount, 3, 4], [L('TOTAL VALUE AT MOQ'), totalsStr, 5, NC - 1]]
+    const cards = [[L('PRODUCTS'), sum.count, 0, 0], [L('MARKETS'), sum.marketCount, 1, 2], [L('SHOPS'), sum.shopCount, 3, 4], [L('TOTAL VALUE AT MOQ'), totalsStr, 5, NC - 3], [L('DUPLICATES'), (opts.duplicates || []).length, NC - 2, NC - 1]]
     const lab = [], val = []
     cards.forEach(c => {
       for (let i = c[2]; i <= c[3]; i++) { lab[i] = { v: i === c[2] ? c[0] : '', s: kpiLabel }; val[i] = { v: i === c[2] ? c[1] : '', s: typeof c[1] === 'number' ? kpiValue : kpiText } }
@@ -436,6 +440,10 @@
     const sMuted = i => z(i, { font: { color: K.faint, i: true }, align: { h: 'center' } })
     const sText = i => z(i, { font: { color: K.ink }, align: { indent: 1, wrap: true } })
     const sWx = i => z(i, { font: { b: true, color: K.green }, align: { indent: 1, wrap: true } })
+    const sLink = i => z(i, { font: { b: true, color: '2563EB' }, align: { indent: 1, wrap: true } })
+    const sDup = i => z(i, { font: { b: true, sz: 12, color: 'B45309' }, align: { indent: 1, wrap: true } })
+    const dupOf = new Map()
+    ;(opts.duplicates || []).forEach((g, gi) => g.products.forEach(p => dupOf.set(p, gi + 1)))
     const dateFmt = I18n.getLang() === 'zh' ? 'yyyy"年"m"月"d"日" hh:mm' : I18n.getLang() === 'so' ? 'dd/mm/yyyy hh:mm' : 'dd mmm yyyy, hh:mm'
     const sDate = i => z(i, { font: { color: K.sub }, align: { h: 'center' }, num: dateFmt })
     const sMoq = (i, unit) => z(i, { font: { b: true, color: K.brand }, align: { h: 'center' }, num: unitFmt[unit] || (unitFmt[unit] = '#,##0" ' + String(L(unit)).replace(/"/g, '') + '"') })
@@ -454,15 +462,16 @@
       if (jpg) images.push({ row: r, col: 1, data: jpg, w: 78, h: 78, dx: 12, dy: 6, border: K.line })
       const reg = registeredAt(p), price = Number(p.price) || 0, moq = Number(p.minOrder) || 0
       rows.push({ height: 68, cells: [
-        { v: p.name, s: sName(i) },
+        dupOf.has(p) ? { v: p.name + '\n' + L('Duplicate #{n}', { n: dupOf.get(p) }), s: sDup(i) } : { v: p.name, s: sName(i) },
         { v: jpg ? '' : L('No photo'), s: sMuted(i) },
         { v: p.size || '—', s: sCenter(i) },
         { v: moq, s: sMoq(i, p.unit) },
         { v: price, s: sPrice(i, p.currency, bestSet.has(p)) },
         { f: 'D' + (r + 1) + '*E' + (r + 1), v: Math.round(price * moq * 100) / 100, s: sValue(i, p.currency) },
         { v: p.marketName || '—', s: sText(i) },
-        { v: p.shopName + (p.shopNote ? '\n' + p.shopNote : ''), s: sText(i) },
+        { v: (p.shopName || '—') + (p.shopNote ? '\n' + p.shopNote : ''), s: sText(i) },
         { v: p.shopWechat === 'yes' ? (p.wechatId || L('Yes')) : p.shopWechat === 'no' ? L('No WeChat') : '—', s: p.shopWechat === 'yes' ? sWx(i) : sCenter(i) },
+        p.location ? { f: 'HYPERLINK("' + amapLink(p.location, p.shopName || p.name) + '","' + String(p.location.name || L('Open in Amap')).replace(/"/g, "'").slice(0, 80) + '")', v: String(p.location.name || L('Open in Amap')), s: sLink(i) } : { v: '—', s: sCenter(i) },
         reg ? { v: excelDate(reg), s: sDate(i) } : { v: '—', s: sCenter(i) }
       ] })
       if (onProgress) onProgress(++done / list.length)
@@ -492,7 +501,11 @@
 
     const productsSheet = {
       name: L('Products'), selected: true, tabColor: K.brand, gridLines: false,
-      cols: [30, 14, 14, 15, 14, 16, 26, 24, 18, 19], rows, merges, images,
+      cols: [30, 14, 14, 15, 14, 16, 24, 22, 16, 24, 19], rows, merges, images,
+      conditional: lastData > firstData ? [
+        { ref: 'D' + (firstData + 1) + ':D' + lastData, bar: K.soft },
+        { ref: 'F' + (firstData + 1) + ':F' + lastData, bar: K.brand }
+      ] : [],
       freezeRow: HEAD + 1, printTitleRows: [HEAD + 1, HEAD + 1],
       autoFilter: grouped ? null : 'A' + (HEAD + 1) + ':' + last + Math.max(HEAD + 2, lastData),
       footer: '&L&8Trade · ' + heading.replace(/&/g, '&&') + '&R&8' + L('Page {a} of {b}', { a: '&P', b: '&N' })
@@ -556,10 +569,72 @@
     }))
     void blank; void fill
 
+    // ===== Duplicates sheet: each group side by side, every detail marked Same / Different =====
+    async function duplicatesSheet() {
+      const groups = opts.duplicates || []
+      if (!groups.length) return []
+      const maxN = Math.min(6, Math.max.apply(null, groups.map(g => g.products.length)))
+      const DC = maxN + 2, dlast = Xlsx.colName(DC - 1)
+      const drows = [], dmerges = [], dimages = []
+      const dFull = (style, v, height) => {
+        const cells = []
+        for (let i = 0; i < DC; i++) cells.push({ v: i === 0 ? v : '', s: style })
+        drows.push({ height, cells }); dmerges.push('A' + drows.length + ':' + dlast + drows.length)
+      }
+      dFull(banner, L('Duplicates'), 40)
+      dFull(bannerSub, L('The same item registered more than once — compared side by side') + '   ·   ' + L('Generated {date}', { date }), 22)
+      dFull(strip, '', 5)
+      const same = st({ fill: K.greenBg, font: { b: true, color: K.green }, align: { h: 'center' } })
+      const diff = st({ fill: 'FEF3C7', font: { b: true, color: 'B45309' }, align: { h: 'center' } })
+      const lbl = st({ fill: K.tint, font: { b: true, color: K.dark }, align: { indent: 1 }, border: { bottom: 'thin:' + K.line } })
+      const val = st({ font: { color: K.ink }, align: { indent: 1, wrap: true }, border: { bottom: 'thin:' + K.line } })
+      const valD = st({ fill: 'FFFBEB', font: { b: true, color: K.ink }, align: { indent: 1, wrap: true }, border: { bottom: 'thin:' + K.line } })
+      for (let gi = 0; gi < groups.length; gi++) {
+        const g = groups[gi], list = g.products.slice(0, maxN)
+        drows.push({ height: 14, cells: [] })
+        const cells = [{ v: '#' + (gi + 1) + '  ' + g.name, s: band }]
+        for (let i = 1; i < DC; i++) cells.push({ v: i === DC - 1 ? L('{a} of {b} the same', { a: g.same, b: g.total }) : '', s: i === DC - 1 ? bandR : band })
+        drows.push({ height: 28, cells }); dmerges.push('A' + drows.length + ':' + Xlsx.colName(DC - 2) + drows.length)
+        drows.push({ height: 24, cells: [{ v: '', s: headerL }].concat(list.map((p, i) => ({ v: L('Registered') + ' ' + (i + 1) + (registeredAt(p) ? ' · ' + dateLabel(registeredAt(p)) : ''), s: header })), [{ v: L('Result'), s: header }]) })
+        // photos
+        const pr = drows.length
+        drows.push({ height: 84, cells: [{ v: L('Photo'), s: lbl }].concat(list.map(() => ({ v: '', s: val })), [{ v: '', s: val }]) })
+        for (let i = 0; i < list.length; i++) {
+          const jpg = await thumbnail(env, load, (list[i].images || [])[0])
+          if (jpg) dimages.push({ row: pr, col: i + 1, data: jpg, w: 100, h: 100, dx: 30, dy: 6, border: K.line })
+        }
+        g.rows.forEach(r => {
+          if (r.key === 'photo') { drows[pr].cells[DC - 1] = { v: r.same ? '✓ ' + L('Same') : '≠ ' + L('Different'), s: r.same ? same : diff }; return }
+          drows.push({ height: 26, cells: [{ v: L(r.label), s: lbl }].concat(r.values.slice(0, maxN).map(v => ({ v: v || '—', s: r.same ? val : valD })), [{ v: r.same ? '✓ ' + L('Same') : '≠ ' + L('Different'), s: r.same ? same : diff }]) })
+        })
+      }
+      const cols = [20]; for (let i = 0; i < maxN; i++) cols.push(30); cols.push(16)
+      return [{ name: L('Duplicates'), tabColor: 'F59E0B', gridLines: false, cols, rows: drows, merges: dmerges, images: dimages,
+        footer: '&L&8Trade · ' + L('Duplicates') + '&R&8' + L('Page {a} of {b}', { a: '&P', b: '&N' }) }]
+    }
+
+    // Price range per currency
+    srows.push({ height: 14, cells: [] })
+    sec('Price range')
+    srows.push({ height: 26, cells: [null].concat(['Currency', 'Lowest price', 'Average price', 'Highest price', 'Products'].map(L).map((v, i) => ({ v, s: i === 0 ? headerL : header }))) })
+    const byCur = {}
+    products.forEach(p => { const c = p.currency || '¥'; (byCur[c] = byCur[c] || []).push(Number(p.price) || 0) })
+    Object.keys(byCur).forEach((c, i) => {
+      const a = byCur[c], avg = a.reduce((x, y) => x + y, 0) / a.length
+      srows.push({ height: 24, cells: [null,
+        { v: c === '¥' ? L('Chinese yuan (¥)') : c === '$' ? L('US dollar ($)') : c, s: z(i, { font: { b: true, color: K.ink }, align: { indent: 1 } }) },
+        { v: Math.min.apply(null, a), s: z(i, { font: { b: true, color: K.green }, align: { h: 'center' }, num: curFmt(c) }) },
+        { v: Math.round(avg * 100) / 100, s: z(i, { font: { b: true, color: K.ink }, align: { h: 'center' }, num: curFmt(c) }) },
+        { v: Math.max.apply(null, a), s: z(i, { font: { b: true, color: K.price }, align: { h: 'center' }, num: curFmt(c) }) },
+        { v: a.length, s: z(i, { align: { h: 'center' }, num: '#,##0' }) }] })
+    })
+
     const summary = { name: L('Summary'), tabColor: K.dark, gridLines: false, portrait: true, cols: [2.5, 32, 22, 12, 30, 34], rows: srows, merges: smerges, footer: '&L&8Trade · ' + heading.replace(/&/g, '&&') + '&R&8' + L('Page {a} of {b}', { a: '&P', b: '&N' }) }
 
+    const allSheets = [productsSheet, summary].concat(await duplicatesSheet())
     return {
-      bytes: Xlsx.build([productsSheet, summary], { title: heading }, ST),
+      bytes: Xlsx.build(allSheets, { title: heading }, ST),
+      sheets: allSheets.length,
       fileName: fileBase(opts, sum) + '.xlsx'
     }
   }

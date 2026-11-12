@@ -6,9 +6,9 @@ page {
   --line: #E9EDF2;
   --bg: #F5F7FA;
   --card: #FFFFFF;
-  --brand: #0F766E;
-  --brand-2: #14B8A6;
-  --brand-dark: #134E4A;
+  --brand: #DC2626;
+  --brand-2: #F87171;
+  --brand-dark: #991B1B;
   --mint: #F0FDFA;
   --mint-2: #CCFBF1;
   --price: #E11D48;
@@ -18,7 +18,7 @@ page {
   --ph: #B6C0CD;
   --tabbar: rgba(255, 255, 255, .96);
   --brand-rgb: 15, 118, 110;
-  --hero: linear-gradient(150deg, #0F766E 0%, #134E4A 100%);
+  --hero: linear-gradient(150deg, #DC2626 0%, #991B1B 100%);
   --dur: .5s;
   --radius: 32rpx;
   --shadow: 0 2rpx 4rpx rgba(16, 24, 40, .03), 0 12rpx 32rpx rgba(16, 24, 40, .06);

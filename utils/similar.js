@@ -141,5 +141,64 @@
     }).sort((a, b) => b.products.length - a.products.length || a.name.localeCompare(b.name))
   }
 
-  return { HASH_W, HASH_H, nameScore, hashFromRGBA, hashImage, distance, groups }
+  // ---------- Duplicates: the SAME item registered more than once ----------
+  // Stricter than groups(): same name and a close photo, or a near-identical photo, or same name + same shop.
+  const DUP_PHOTO = 8, DUP_PHOTO_ONLY = 4, DUP_NAME = 0.88
+  const shopKey = p => (String(p.marketName || '').trim() + '|' + String(p.shopName || '').trim()).toLowerCase()
+  function isDuplicate(a, b) {
+    const name = nameScore(a.name, b.name), photo = photoMatch(a, b)
+    const hasPhotos = (a.hashes || []).length && (b.hashes || []).length
+    if (hasPhotos && photo >= 0 && photo <= DUP_PHOTO_ONLY) return true
+    if (name >= DUP_NAME && hasPhotos && photo >= 0 && photo <= DUP_PHOTO) return true
+    if (name >= 0.97 && (!hasPhotos || shopKey(a) === shopKey(b))) return true
+    return false
+  }
+  // The closest registered product to a new one (or null): { product, photo, name }
+  function closest(item, products) {
+    let best = null
+    products.forEach(p => {
+      if (p === item || (item.id && p.id === item.id)) return
+      if (!isDuplicate(item, p)) return
+      const ph = photoMatch(item, p), sc = (ph >= 0 ? 64 - ph : 0) + nameScore(item.name, p.name) * 40
+      if (!best || sc > best.sc) best = { product: p, photo: ph, name: nameScore(item.name, p.name), sc }
+    })
+    return best
+  }
+  // Field-by-field comparison of products that are the same item
+  const FIELDS = [
+    ['name', 'Product name', p => String(p.name || '').trim()],
+    ['size', 'Size', p => String(p.size || '').trim()],
+    ['price', 'Price', p => (p.currency || '') + (Number(p.price) || 0).toFixed(2)],
+    ['moq', 'Minimum order', p => (Number(p.minOrder) || 0) + ' ' + (p.unit || '')],
+    ['market', 'Market', p => String(p.marketName || '').trim()],
+    ['shop', 'Shop', p => String(p.shopName || '').trim()],
+    ['wechat', 'WeChat', p => p.shopWechat === 'yes' ? String(p.wechatId || 'yes') : p.shopWechat || ''],
+    ['location', 'Location', p => p.location ? (+p.location.latitude).toFixed(4) + ',' + (+p.location.longitude).toFixed(4) : ''],
+    ['photo', 'Photo', null]
+  ]
+  function compare(list) {
+    return FIELDS.map(([key, label, get]) => {
+      if (!get) {
+        let same = true
+        for (let i = 1; i < list.length; i++) if (!(photoMatch(list[0], list[i]) >= 0 && photoMatch(list[0], list[i]) <= DUP_PHOTO)) same = false
+        return { key, label, values: list.map(() => ''), same }
+      }
+      const vals = list.map(get), n = vals.map(v => norm(v))
+      return { key, label, values: vals, same: n.every(v => v === n[0]) }
+    })
+  }
+  function duplicates(products) {
+    const n = products.length, parent = products.map((_, i) => i)
+    const find = i => parent[i] === i ? i : (parent[i] = find(parent[i]))
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (isDuplicate(products[i], products[j])) parent[find(i)] = find(j)
+    const map = new Map()
+    products.forEach((p, i) => { const r = find(i); if (!map.has(r)) map.set(r, []); map.get(r).push(p) })
+    return Array.from(map.values()).filter(l => l.length > 1).map(list => {
+      list = list.slice().sort((a, b) => (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0))
+      const rows = compare(list)
+      return { name: list[0].name, products: list, rows, same: rows.filter(r => r.same).length, total: rows.length }
+    }).sort((a, b) => b.products.length - a.products.length || b.same - a.same)
+  }
+
+  return { HASH_W, HASH_H, nameScore, hashFromRGBA, hashImage, distance, groups, duplicates, closest, compare, isDuplicate }
 })

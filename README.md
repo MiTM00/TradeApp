@@ -70,7 +70,7 @@ After exporting: **Send by email**, **Save on phone**, send to a chat or open.
 
 ## Permanent database in the installed app
 
-Settings → *Your data* says where the data is kept and shows the step that makes it permanent: **Connect to the computer**, **Make storage permanent** (the browser keeps the database forever), or, on a computer, **Auto-save to a folder**. That last option writes `Trade-data.json` plus one copy per day after every change, and the file stays even if the browser data is cleared. You can load it back with **Restore**.
+Settings → *Storage* says where the data is kept and shows the step that makes it permanent: **Connect to the computer**, **Make storage permanent** (the browser keeps the database forever), or, on a computer, **Auto-save to a folder**. That last option writes `Trade-data.json` plus one copy per day after every change, and the file stays even if the browser data is cleared. You can load it back with **Restore**.
 
 ## Data that is never lost, on every device
 
@@ -134,7 +134,7 @@ How the iPhone finds the computer: the secure address changes every time Trade s
 - **Live sync:** a change on a phone reaches the computer in a fraction of a second. Every other paired device gets it at once, because each device keeps a waiting request open (`GET /api/sync/wait`). If the computer cannot be reached, the phone keeps the change and tries again (2 s, 4 s … 30 s), until it arrives.
 - **Never lost:** the computer keeps every record in `data/`, the last 10 versions of each record in `data/history/`, and every deleted record in `data/deleted/`. The last 60 daily copies, plus the first copy of every month (kept forever), are in `data/backups/`. App updates (APK, iPhone, web) never touch `data/`. Each phone keeps its own full copy as well.
 - **Trash:** deleting a product moves it into the Trash with a macOS-style "genie" animation. The Trash is on every device, and you can **put back** a product any time. Open it with the trash button on the Products page or in **Settings → Trash**. *Delete forever* / *Empty Trash* remove a product from the Trash on every device, but the computer still keeps it in `data/deleted/`.
-- **Settings** has one menu: **Your data**, **Use on another device**, **Backup & restore** and **Trash**. Each opens its own page.
+- **Settings** has one menu: **Storage**, **Use on another device**, **Backup & restore** and **Trash**. Each opens its own page.
 
 ## GitHub: the phone is the main copy
 
@@ -142,7 +142,15 @@ The phone (iPhone) keeps the main copy of the data and saves every product, phot
 
 1. On github.com create a **private** repository, e.g. `trade-data` (Trade refuses a public one).
 2. Create a **fine-grained token**: Settings → Developer settings → Fine-grained tokens → Generate. *Repository access*: only that repository. *Permissions*: **Contents: Read and write**.
-3. Phone: **Settings → Your data → GitHub** → user name, repository, token → **Save to GitHub**. Everything on the phone is uploaded once, then every change.
+3. Phone: **Settings → Storage → GitHub** → user name, repository, token → **Save to GitHub**. Everything on the phone is uploaded once, then every change.
 4. Computer: the same card on the computer (same repository; the same or a second token). The Trade server (`preview/github.js`) then reads what the phone saved every 20 s and saves what the computer or an Android phone added. Settings are in `github.config.json` (keep it private, it is in `.gitignore`); the last seen file versions are in `data/github.json`.
 
 The phone ↔ computer sync over Wi-Fi (pairing code, live sync) keeps working next to it. Newest change wins everywhere, and a delete is kept as a small tombstone file so every device learns about it.
+
+## GitHub: the iPhone's own database
+
+The iPhone keeps every product, photo and market in your own **private** GitHub repository (Settings → Storage → GitHub), one file per record, so the data is online and safe without the computer. New products are added on the iPhone. The computer gets them in one of these ways:
+
+- **Link from the iPhone:** Settings → Storage → GitHub → **Link for the computer** (copy, send or scan it). Open it on the computer, or paste it on the computer's login screen (*Or open with the link from your iPhone*). The repository details sit after `#` in the link, so they are never sent to a web server — but anyone with the link can open your products, so send it only to yourself.
+- **Scan the QR code:** when the iPhone links to the computer, it hands over its repository too, so the computer reads it from then on.
+- **From the repository:** type the user name, repository and token on the computer (Settings → Storage → GitHub).

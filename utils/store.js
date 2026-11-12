@@ -147,7 +147,7 @@ function settings() {
     try { const sys = (wx.getAppBaseInfo ? wx.getAppBaseInfo() : wx.getSystemInfoSync()).language || ''; l = /^zh/i.test(sys) ? 'zh' : /^so/i.test(sys) ? 'so' : 'en' } catch (e) {}
     s.lang = l
   }
-  return Object.assign({ theme: 'jade', noanim: false }, s)
+  return Object.assign({ theme: 'cherry', noanim: false }, s)
 }
 function setSetting(k, v) { const s = settings(); s[k] = v; wx.setStorageSync(SKEY, s); return s }
 

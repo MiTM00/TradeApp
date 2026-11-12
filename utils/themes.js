@@ -45,7 +45,7 @@
   ]
 
   function get(id) {
-    const t = LIST.find(x => x.id === id) || LIST[0]
+    const t = LIST.find(x => x.id === id) || LIST.find(x => x.id === 'cherry')
     return Object.assign({}, t.dark ? DARK : LIGHT, t)
   }
 
