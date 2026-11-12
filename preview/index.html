@@ -1027,7 +1027,9 @@ const Sync = {
     } catch (e) { throw new Error(t('The computer cannot be reached — is Trade running on it, on the same Wi-Fi?')); }
     finally { clearTimeout(tm); }
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) { const e = new Error(t(j.error || 'This QR code is not from the Trade computer')); e.final = r.status !== 404; throw e; }
+    // 404: the Trade server on the computer is an older version without linking — it must be restarted
+    if (r.status === 404) { const e = new Error(t('Trade on the computer is an old version — restart it there (npm run iphone), then scan again')); e.final = true; throw e; }
+    if (!r.ok) { const e = new Error(t(j.error || 'This QR code is not from the Trade computer')); e.final = true; throw e; }
     await this.linked(j);
   },
   // Linked: this phone's own code opens the computer. Everything on the phone is sent (the phone is the main copy).
@@ -2625,6 +2627,8 @@ function linkText(info) {
   return base ? base + '#link=' + info.link + '&s=' + encodeURIComponent(servers.join('|')) : '';
 }
 function drawLinkQr(el, head, info) {
+  // The server was started before linking existed: its QR code would not work
+  if (!info.link) { el.innerHTML = head + `<div class="status warn" style="line-height:1.5">${esc(t('Trade on this computer is an old version. Close the Trade server window (Ctrl+C) and start it again: npm run iphone'))}</div>`; return; }
   const text = linkText(info), lan = info.urls[0] || '';
   const phones = info.phones || [];
   el.innerHTML = head + (text ? `
