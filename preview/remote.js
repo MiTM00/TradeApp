@@ -3,7 +3,10 @@
 // The computer writes that address (it changes every time Trade starts) next to the app, in hub/<fingerprint>.json,
 // encrypted with this phone's pairing code — so the phone finds the computer again by itself after every restart.
 (function () {
-  const H = window.TRADE_HUB;
+  // Published by npm run pages (hub-config.js), or by the GitHub Actions workflow: then the address itself says where
+  // (https://<owner>.github.io/<repo>/)
+  const gp = /^([\w-]+)\.github\.io$/i.exec(location.hostname);
+  const H = window.TRADE_HUB || (gp && { owner: gp[1], repo: location.pathname.split('/')[1] || gp[1] + '.github.io' });
   if (!H || !H.owner || window.TradeAndroid) return;
   const KEY = 'trade-server';
   const fetch0 = window.fetch.bind(window);

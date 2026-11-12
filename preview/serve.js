@@ -7,6 +7,7 @@ const mailer = require('./mailer')
 const store = require('./datastore')
 const scanner = require('./scanner')
 const pages = require('./publish')
+const github = require('./github')
 const root = __dirname, utils = path.join(__dirname, '..', 'utils')
 const args = process.argv.slice(2)
 const port = Number(args.find(a => /^\d+$/.test(a)) || process.env.PORT || 5173)
@@ -52,6 +53,25 @@ function currentPin() {
   return pin
 }
 
+// Linking like WhatsApp: the computer shows ONE QR code = its address + a one-time token that changes every minute.
+// The phone scans it inside Trade and sends its own code; from then on that phone is linked (one scan, nothing to type).
+// The previous token stays valid 30 s more, so a scan made just as the code changes still works.
+let linkTok = null, linkPrev = null, linkFails = 0, linkBlockedUntil = 0, lastLinked = null
+function currentLink() {
+  if (!linkTok || linkTok.exp < Date.now()) {
+    linkPrev = linkTok && { token: linkTok.token, exp: Date.now() + 30e3 }
+    linkTok = { token: require('crypto').randomBytes(12).toString('base64url'), exp: Date.now() + 60e3 }
+  }
+  return linkTok
+}
+const PHONE_CODE = /^[A-Z0-9]{16}$/
+function linkPhone(code, b) {
+  store.linkPhone(code, { name: b.deviceName, device: b.device })
+  lastLinked = { name: String(b.deviceName || 'Phone').slice(0, 60), at: Date.now() }
+  if (publicUrl && pages.config()) pages.publishAddress([code], publicUrl).catch(e => console.log('iPhone: address not published:', e.message))
+  console.log('Phone linked: ' + lastLinked.name)
+}
+
 async function api(req, res, url) {
   const cfg = readConfig()
   // Devices other than this computer must show the sync key (from pairing)
@@ -64,9 +84,31 @@ async function api(req, res, url) {
   }
   if (url === '/api/sync/info' && req.method === 'GET') {
     if (!isLocal(req)) return json(res, 200, { computer: false }) // only the computer shows its key
-    const p = currentPin()
+    const p = currentPin(), l = currentLink()
     const hub = pages.config()
-    return json(res, 200, Object.assign({ key: store.key(), urls: lanUrls(), publicUrl, port, dataDir: store.DIR, pin: p.code, pinExp: p.exp, hubUrl: hub ? hub.url : '', phones: store.keys().length - 1 }, store.stats()))
+    return json(res, 200, Object.assign({ key: store.key(), urls: lanUrls(), publicUrl, port, dataDir: store.DIR, pin: p.code, pinExp: p.exp, hubUrl: hub ? hub.url : '',
+      link: l.token, linkExp: l.exp, phones: store.phones(pages.fingerprint), lastLinked, computer: os.hostname() }, store.stats()))
+  }
+  // The phone scanned the QR code: token from the code + the phone's own code → linked
+  if (url === '/api/sync/link' && req.method === 'POST') {
+    const b = await body(req, 2e3)
+    if (Date.now() < linkBlockedUntil) return json(res, 429, { error: 'Too many tries — wait a minute and scan again' })
+    const tok = String(b.token || ''), code = String(b.phoneKey || '')
+    const ok = [linkTok, linkPrev].some(x => x && x.exp > Date.now() && x.token === tok)
+    if (!ok) {
+      if (++linkFails >= 10) { linkFails = 0; linkBlockedUntil = Date.now() + 60e3 }
+      return json(res, 410, { error: 'This QR code has expired — scan the new one on the computer' })
+    }
+    if (!PHONE_CODE.test(code)) return json(res, 400, { error: 'Update Trade on the phone and scan again' })
+    linkTok = linkPrev = null; linkFails = 0 // used: the computer shows a new code
+    linkPhone(code, b)
+    return json(res, 200, { ok: true, computer: os.hostname() })
+  }
+  // Unlink a phone (only on the computer): it can no longer read or change the data here; its own copy stays on it
+  if (url === '/api/sync/unlink' && req.method === 'POST') {
+    if (!isLocal(req)) return json(res, 403, { error: 'Unlink phones on the computer that runs Trade' })
+    const b = await body(req, 1e3)
+    return json(res, 200, { ok: store.unlinkPhone(String(b.id || ''), pages.fingerprint) })
   }
   // The code shown on an iPhone (Settings → Use on another device), typed or scanned here on the computer.
   // From then on that phone's own code opens this computer's data too.
@@ -84,7 +126,12 @@ async function api(req, res, url) {
     const b = await body(req, 1e3)
     if (Date.now() < pinBlockedUntil) return json(res, 429, { error: 'Too many wrong codes — wait 2 minutes and use the new code on the computer' })
     const p = currentPin()
-    if (String(b.pin || '').replace(/\D/g, '') === p.code) { pin = null; return json(res, 200, { key: store.key() }) }
+    if (String(b.pin || '').replace(/\D/g, '') === p.code) {
+      pin = null
+      // A phone that sends its own code is linked with it (same as scanning the QR code)
+      if (PHONE_CODE.test(String(b.phoneKey || ''))) { linkPhone(b.phoneKey, b); return json(res, 200, { key: b.phoneKey, computer: os.hostname() }) }
+      return json(res, 200, { key: store.key() })
+    }
     if (++p.tries >= 5) { pin = null; pinBlockedUntil = Date.now() + 120e3 }
     return json(res, 403, { error: 'Wrong code' })
   }
@@ -116,6 +163,21 @@ async function api(req, res, url) {
   if (url === '/api/sync' && req.method === 'POST') {
     const b = await body(req, 200 * 1024 * 1024)
     try { return json(res, 200, store.sync(b)) } catch (e) { return json(res, e.status || 400, { error: e.message }) }
+  }
+  // ---- GitHub: the phone's main copy, read and written here too ----
+  if (url === '/api/github/status' && req.method === 'GET') {
+    if (!isLocal(req)) return json(res, 403, { error: 'Only on the computer' })
+    return json(res, 200, github.status())
+  }
+  if (url === '/api/github/config' && req.method === 'POST') {
+    if (!isLocal(req)) return json(res, 403, { error: 'Set up GitHub on the computer that runs Trade' })
+    const b = await body(req, 1e4)
+    if (b.clear) { github.clear(); return json(res, 200, { ok: true }) }
+    try { await github.setup(b); return json(res, 200, { ok: true }) } catch (e) { return json(res, e.status || 400, { error: e.message }) }
+  }
+  if (url === '/api/github/sync' && req.method === 'POST') {
+    if (!isLocal(req)) return json(res, 403, { error: 'Only on the computer' })
+    await github.run(); return json(res, 200, github.status())
   }
   // ---- AI scanner ----
   if (url === '/api/ai/status' && req.method === 'GET') {
@@ -208,7 +270,8 @@ const server = http.createServer((req, res) => {
     // The Android app (Trade.apk) has the app files built in and calls the API from its own origin
     // …and so does the app published on GitHub Pages (the iPhone app)
     const hub = pages.config(), origin = req.headers.origin
-    if (origin && (origin === APK_ORIGIN || (hub && origin === hub.origin))) {
+    // (the iPhone app published by the GitHub Actions workflow lives on <owner>.github.io; every call still needs the key or the QR token)
+    if (origin && (origin === APK_ORIGIN || (hub && origin === hub.origin) || /^https:\/\/[\w-]+\.github\.io$/i.test(origin))) {
       res.setHeader('Access-Control-Allow-Origin', origin)
       res.setHeader('Vary', 'Origin')
       if (req.method === 'OPTIONS') {
@@ -223,7 +286,7 @@ const server = http.createServer((req, res) => {
   let base = root, rel = url === '/' ? 'index.html' : url
   if (url.startsWith('/utils/')) { base = utils; rel = url.slice('/utils/'.length) }
   const p = path.join(base, rel)
-  if (!p.startsWith(base) || /mailer\.js|serve\.js|build\.js|make-icons\.js|datastore\.js|scanner\.js|publish\.js|autostart\.js/.test(rel)) { res.writeHead(403); return res.end() }
+  if (!p.startsWith(base) || /mailer\.js|serve\.js|build\.js|make-icons\.js|datastore\.js|scanner\.js|publish\.js|autostart\.js|github\.js/.test(rel)) { res.writeHead(403); return res.end() }
   fs.readFile(p, (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found') }
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(p)] || 'application/octet-stream', 'Cache-Control': 'no-cache' })
@@ -244,6 +307,8 @@ server.listen(port, '0.0.0.0', () => {
   console.log('Data is kept in ' + store.DIR + ' (' + st.products + ' products, ' + st.wishes + ' wishes), daily copies in data/backups')
   console.log(aiReady() ? 'AI scanner: ready' : 'AI scanner: not set up (Settings → AI scanner)')
   store.snapshot(true)
+  console.log(github.config() ? 'GitHub: saving to ' + github.config().owner + '/' + github.config().repo : 'GitHub: not set up (Settings → Your data → GitHub)')
+  github.start()
   if (IPHONE) startTunnel()
   // Every update of the app reaches the iPhones by itself: the newest version is put on GitHub Pages at start
   if (pages.config()) pages.publishApp().then(r => console.log('iPhone app: ' + r)).catch(e => console.log('iPhone app not updated:', e.message))

@@ -540,6 +540,21 @@
   .dev i { margin-left:auto; font-style:normal; font-size:11px; color:var(--ink-3); }
   .pinbox { margin-top:12px; padding:12px; border-radius:14px; text-align:center; background:linear-gradient(160deg,var(--mint),transparent 80%); border:1px dashed var(--brand-2); }
   .pin { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:34px; font-weight:800; letter-spacing:4px; color:var(--brand); margin:4px 0 2px; font-variant-numeric:tabular-nums; }
+  .lk { display:flex; gap:18px; align-items:center; flex-wrap:wrap; justify-content:center; }
+  .lk-qr { width:236px; height:236px; padding:8px; background:#fff; border-radius:18px; box-shadow:0 8px 24px rgba(15,23,42,.12), inset 0 0 0 1px var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; box-sizing:border-box; transition:box-shadow .3s, transform .3s; }
+  .lk-qr img, .lk-qr canvas { width:220px !important; height:220px !important; display:block; }
+  .lk-qr.done { box-shadow:0 0 0 4px var(--brand-2), 0 8px 24px rgba(15,23,42,.12); transform:scale(.97); }
+  .lk-steps { flex:1; min-width:200px; }
+  .lk-steps > b { font-size:16px; }
+  .lk-alt { margin-top:12px; }
+  .lk-alt summary { cursor:pointer; font-size:13px; font-weight:700; color:var(--brand); padding:6px 0; }
+  .lk-phone { text-align:center; padding:6px 4px 2px; }
+  .lk-phone > b { font-size:17px; display:block; margin-top:10px; }
+  .lk-big { width:72px; height:72px; margin:4px auto 0; border-radius:22px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--brand-2),var(--brand)); box-shadow:0 8px 20px rgba(var(--brand-rgb),.35); }
+  .lk-scan { width:100%; justify-content:center; padding:14px; font-size:15px; }
+  .lk-ok { display:flex; gap:12px; align-items:center; padding:12px; border-radius:16px; background:linear-gradient(160deg,var(--mint),transparent 85%); border:1px solid var(--mint-2); }
+  .lk-ok-ic { width:42px; height:42px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--brand-2),var(--brand)); }
+  .dev .lk-un { margin-left:8px; padding:4px 10px; font-size:12px; }
   .pin-in { font-size:20px; letter-spacing:3px; font-weight:800; text-align:center; font-variant-numeric:tabular-nums; }
   /* ---------- backup & restore ---------- */
   .bkcard { padding:0; overflow:hidden; }
@@ -900,6 +915,7 @@ const Sync = {
     const d = this.dirty();
     d[kind][id] = deleted ? { id, deleted: true, updatedAt: Date.now() } : Date.now() * 1000 + (this.n = (this.n + 1) % 1000);
     DB.write('kv', 'put', d, 'dirty').catch(() => {});
+    if (!this.applying) Cloud.mark(kind, id, deleted);
     this.soon();
   },
   pending() { const d = this.dirty(); return SYNC_KINDS.reduce((n, k) => n + Object.keys(d[k]).length, 0); },
@@ -926,7 +942,9 @@ const Sync = {
   // On the computer itself the key is read directly; other devices get it by pairing (6-digit code, QR code or link)
   async init() {
     await this.probe();
-    const m = /[#&]pair=([\w-]+)/.exec(location.hash);
+    const L = this.parseLink(location.href);
+    if (L) { history.replaceState(null, '', location.pathname); this.linkQr(L).catch(e => toast(e.message)); }
+    const m = !L && /[#&]pair=([\w-]+)/.exec(location.hash);
     if (m) { await this.pair(m[1]); history.replaceState(null, '', location.pathname); }
     this.run();
     this.listen();
@@ -956,15 +974,69 @@ const Sync = {
     if (!quiet) toast(t('Device paired ✓'));
     paintConnect();
   },
+  // ---- Linking like WhatsApp: the phone keeps the data, scans the computer's QR code once, then syncs to it ----
+  // QR text: "<app address>#link=<one-time token>&s=<computer address>|<secure address>"
+  parseLink(txt) {
+    txt = String(txt || '').trim();
+    const i = txt.indexOf('#'); if (i < 0) return null;
+    const p = new URLSearchParams(txt.slice(i + 1)), token = p.get('link');
+    if (!token || !/^[\w-]{8,64}$/.test(token)) return null;
+    return { raw: txt, base: txt.slice(0, i), token, servers: (p.get('s') || '').split('|').filter(s => /^https?:\/\//.test(s)) };
+  },
+  linkedHere() { const k = this.key(); return !!k && (k !== DB.kv.ownKey || !!DB.kv.linkedAt || !!DB.kv.lastSync); },
+  async linkQr(L) {
+    const F = this.finder();
+    // Android app: any address of the computer; iPhone app on GitHub Pages: only the secure (https) one; a browser: this page's own server
+    const cands = F ? L.servers.filter(s => F.android || /^https:/.test(s)) : [''];
+    if (F && !cands.length) throw new Error(t('The computer is still opening its secure address — wait a moment and scan again'));
+    const prev = F ? F.server() : '';
+    let last = null;
+    for (const s of cands) {
+      if (F) F.setServer(s);
+      try { await this.linkWith(L.token); return true; }
+      catch (e) { last = e; if (e.final) break; }
+    }
+    if (F) F.setServer(prev);
+    // A browser tab that is not on the Trade computer: open the computer's own link (it links by itself there).
+    // Not inside an installed app — leaving its address would start an empty app.
+    if (!F && !Install.standalone()) { try { if (new URL(L.base).origin !== location.origin) { location.href = L.raw; return false; } } catch (e) {} }
+    throw last || new Error(t('The computer cannot be reached — is Trade running on it, on the same Wi-Fi?'));
+  },
+  async linkWith(token) {
+    const c = new AbortController(), tm = setTimeout(() => c.abort(), 8000);
+    let r;
+    try {
+      r = await fetch('api/sync/link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: c.signal,
+        body: JSON.stringify({ token, phoneKey: this.ownKey(), device: this.device(), deviceName: this.deviceName() }) });
+    } catch (e) { throw new Error(t('The computer cannot be reached — is Trade running on it, on the same Wi-Fi?')); }
+    finally { clearTimeout(tm); }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(t(j.error || 'This QR code is not from the Trade computer')); e.final = r.status !== 404; throw e; }
+    await this.linked(j);
+  },
+  // Linked: this phone's own code opens the computer. Everything on the phone is sent (the phone is the main copy).
+  async linked(j) {
+    await DB.setKV('linkedAt', Date.now());
+    await DB.setKV('linkedTo', String(j.computer || ''));
+    await this.pair(this.ownKey(), true);
+    toast(t('Linked to the computer ✓ — syncing'));
+    this.run();
+    if (/^#(settings|devices|data)$/.test(location.hash)) route(true);
+  },
+  async unlink() {
+    await DB.setKV('syncKey', ''); await DB.setKV('linkedAt', 0); await DB.setKV('lastSync', 0);
+    this.status = 'off'; this.error = ''; this.last = 0;
+  },
   // Code typed on a phone: the 6-digit code from the computer's screen, or the long pairing code
   async connect(code) {
     code = String(code || '').trim();
     let key = '';
     if (/^\d[\d\s]{4,8}\d$/.test(code)) {
-      const r = await fetch('api/sync/pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: code }) }).catch(() => null);
+      const r = await fetch('api/sync/pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: code, phoneKey: this.ownKey(), device: this.device(), deviceName: this.deviceName() }) }).catch(() => null);
       if (!r) throw new Error(t('The computer cannot be reached — is Trade running on it, on the same Wi-Fi?'));
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(r.status === 429 ? t('Too many wrong codes — wait 2 minutes and use the new code on the computer') : t('Wrong code — check the 6 digits on the computer'));
+      if (j.key === this.ownKey()) { await this.linked(j); return true; }
       key = j.key;
     } else if (/^[\w-]{8,}$/.test(code)) {
       // iPhone app on GitHub Pages: look up where the computer is for this code first
@@ -1024,8 +1096,11 @@ const Sync = {
       const r = await fetch('api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-trade-key': this.key() }, body: JSON.stringify(body) });
       const j = await r.json().catch(() => ({}));
       if (r.status === 403 && this.key() === DB.kv.ownKey) {
-        // This phone's own code is not typed on the computer yet: keep it and keep trying
-        this.status = 'error'; this.error = t('type this phone’s code on the computer'); this.retry = 0; this.soon(15000);
+        // The computer does not know this phone (never linked, or unlinked there). Everything stays on the phone.
+        const was = !!(DB.kv.linkedAt || DB.kv.lastSync);
+        await this.unlink(); this.lost = was;
+        if (was) toast(t('This phone was unlinked on the computer — your products stay here. Scan the QR code to link again.'));
+        if (/^#(settings|devices|data)$/.test(location.hash)) route(true);
         return;
       }
       if (r.status === 403) {
@@ -1108,6 +1183,166 @@ const Sync = {
     return this.last ? t('Saved on the computer · {time}', { time: TradeReport.dateTimeLabel(this.last) }) : t('Connected to the computer');
   }
 };
+
+// ---------- Cloud: the phone is the main copy and saves every record straight to a PRIVATE GitHub repository ----------
+// Each record is one file, <kind>/<id>.json (the same text the computer writes), so the computer reads the same repository
+// and the phone works without the computer. Newest change wins, deletes stay as small tombstone files.
+// On the computer itself the Trade server does this instead (preview/github.js), so the browser there leaves it alone.
+const Cloud = {
+  busy: null, timer: null, status: 'off', error: '', last: 0, etag: '',
+  cfg() { const c = DB.kv.gh; return c && c.owner && c.repo && c.token ? c : null; },
+  // The computer's own browser syncs through the server (which talks to GitHub itself)
+  here() { return !!this.cfg() && !(Sync.server && Sync.server.key); },
+  dirty() { const d = DB.kv.ghDirty || (DB.kv.ghDirty = {}); SYNC_KINDS.forEach(k => { d[k] = d[k] || {}; }); return d; },
+  shas() { return DB.kv.ghShas || (DB.kv.ghShas = {}); },
+  mark(kind, id, deleted) {
+    if (!this.cfg()) return;
+    const d = this.dirty();
+    d[kind][id] = deleted ? { id, deleted: true, updatedAt: Date.now() } : Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    DB.write('kv', 'put', d, 'ghDirty').catch(() => {});
+    this.soon();
+  },
+  pending() { const d = this.dirty(); return SYNC_KINDS.reduce((n, k) => n + Object.keys(d[k]).length, 0); },
+  soon(ms) { clearTimeout(this.timer); this.timer = setTimeout(() => this.run(), ms || 800); },
+  init() {
+    setInterval(() => { if (!document.hidden) this.run(); }, 30000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.run(); });
+    window.addEventListener('online', () => this.run());
+    this.run();
+  },
+  async api(path, opts) {
+    const c = this.cfg();
+    const r = await fetch('https://api.github.com/repos/' + c.owner + '/' + c.repo + path, Object.assign({ cache: 'no-store' }, opts, {
+      headers: Object.assign({ Authorization: 'Bearer ' + c.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, (opts || {}).headers)
+    }));
+    return r;
+  },
+  enc(s) { const b = new TextEncoder().encode(s); let out = ''; for (let i = 0; i < b.length; i += 0x8000) out += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(out); },
+  dec(b64) { const s = atob(String(b64).replace(/\s/g, '')); const b = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return new TextDecoder().decode(b); },
+  text(rec) { const x = Object.assign({}, rec); delete x._rev; return JSON.stringify(x); },
+  // Set up from Settings → Your data: checks the token and that the repository is private, then uploads everything once
+  async setup(owner, repo, token) {
+    owner = String(owner || '').trim(); repo = String(repo || '').trim().replace(/\.git$/, ''); token = String(token || '').trim();
+    const m = /github\.com\/([\w.-]+)\/([\w.-]+)/.exec(owner); if (m) { owner = m[1]; repo = repo || m[2].replace(/\.git$/, ''); }
+    if (!/^[\w.-]+$/.test(owner) || !/^[\w.-]+$/.test(repo)) throw new Error(t('Type the GitHub user name and the repository name'));
+    if (!/^(github_pat_|ghp_|gho_)\w{20,}$/.test(token)) throw new Error(t('This does not look like a GitHub token (it starts with github_pat_)'));
+    const r = await fetch('https://api.github.com/repos/' + owner + '/' + repo, { headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' }, cache: 'no-store' }).catch(() => null);
+    if (!r) throw new Error(t('GitHub cannot be reached — check the internet'));
+    if (r.status === 401) throw new Error(t('GitHub did not accept this token'));
+    if (r.status === 404) throw new Error(t('Repository not found — check the name, and that the token may use it'));
+    const j = await r.json();
+    if (!j.private) throw new Error(t('This repository is public. Your products must go in a PRIVATE repository.'));
+    if (j.permissions && !j.permissions.push) throw new Error(t('The token can read but not write. Give it Contents: Read and write.'));
+    await DB.setKV('gh', { owner, repo, token, branch: j.default_branch || 'main' });
+    await DB.setKV('ghShas', {}); this.etag = '';
+    const d = this.dirty(); SYNC_KINDS.forEach(k => DB[k].forEach(x => { d[k][x.id] = d[k][x.id] || 1; }));
+    await DB.setKV('ghDirty', d);
+    return this.run();
+  },
+  async off() { await DB.setKV('gh', null); await DB.setKV('ghDirty', {}); await DB.setKV('ghShas', {}); this.status = 'off'; this.etag = ''; },
+  run() {
+    if (!this.here()) return Promise.resolve();
+    if (this.busy) { this.again = true; return this.busy; }
+    this.busy = this.run1().finally(() => { this.busy = null; if (this.again) { this.again = false; this.soon(50); } });
+    return this.busy;
+  },
+  async run1() {
+    this.status = 'syncing'; this.paint();
+    try {
+      const changed = await this.pull();
+      await this.push();
+      this.status = 'ok'; this.error = ''; this.last = Date.now(); this.retry = 0;
+      await DB.setKV('ghLast', this.last);
+      if (changed) refreshView();
+    } catch (e) {
+      this.status = 'error';
+      this.error = /fetch|network|load failed/i.test(e.message) ? t('GitHub cannot be reached — check the internet') : e.message;
+      this.retry = Math.min(60000, (this.retry || 2000) * 2); this.soon(this.retry);
+    } finally { this.paint(); }
+  },
+  // Files changed on GitHub since this phone last saw them → newest change wins
+  async pull() {
+    const c = this.cfg();
+    const r = await this.api('/git/trees/' + encodeURIComponent(c.branch) + '?recursive=1', { headers: this.etag ? { 'If-None-Match': this.etag } : {} });
+    if (r.status === 304) return 0;
+    if (r.status === 409 || r.status === 404) return 0; // empty repository: nothing yet
+    if (r.status === 401) throw new Error(t('GitHub did not accept this token'));
+    if (!r.ok) throw new Error('GitHub ' + r.status);
+    const tree = await r.json(), shas = this.shas();
+    let changed = 0;
+    for (const f of tree.tree || []) {
+      const m = /^(products|markets|wishes|trash)\/([\w-]{1,80})\.json$/.exec(f.path);
+      if (!m || f.type !== 'blob' || shas[f.path] === f.sha) continue;
+      const b = await this.api('/git/blobs/' + f.sha);
+      if (!b.ok) throw new Error('GitHub ' + b.status);
+      let rec; try { rec = JSON.parse(this.dec((await b.json()).content)); } catch (e) { shas[f.path] = f.sha; continue; }
+      shas[f.path] = f.sha;
+      if (await this.applyOne(m[1], rec)) changed++;
+    }
+    await DB.setKV('ghShas', shas);
+    this.etag = r.headers.get('ETag') || '';
+    return changed;
+  },
+  async applyOne(k, rec) {
+    if (!rec || rec.id == null) return false;
+    const d = this.dirty(), i = DB[k].findIndex(x => x.id === rec.id), local = i >= 0 ? DB[k][i] : null;
+    const pend = d[k][rec.id];
+    const localT = pend && typeof pend === 'object' ? pend.updatedAt : local ? Number(local.updatedAt) || 0 : 0;
+    if ((Number(rec.updatedAt) || 0) < localT) return false; // ours is newer: it is sent next
+    if (pend) delete d[k][rec.id]; // GitHub has the newest, nothing to send
+    if (rec.deleted) {
+      if (!local) return false;
+      Sync.applying = true; try { DB[k].splice(i, 1); await DB.write(k, 'delete', rec.id); } finally { Sync.applying = false; }
+      if (Sync.key()) { const sd = Sync.dirty(); sd[k][rec.id] = { id: rec.id, deleted: true, updatedAt: Number(rec.updatedAt) || Date.now() }; DB.write('kv', 'put', sd, 'dirty').catch(() => {}); Sync.soon(); }
+      return true; // the computer (if paired) hears about it too
+    }
+    const clean = Object.assign({}, rec); delete clean._rev;
+    if (local && JSON.stringify(local) === JSON.stringify(clean)) return false;
+    Sync.applying = true; try { i >= 0 ? DB[k][i] = clean : DB[k].push(clean); await DB.write(k, 'put', clean); } finally { Sync.applying = false; }
+    if (Sync.key()) { const sd = Sync.dirty(); sd[k][clean.id] = sd[k][clean.id] || 1; DB.write('kv', 'put', sd, 'dirty').catch(() => {}); Sync.soon(); }
+    return true;
+  },
+  // Every change on this phone → its file on GitHub (one at a time: GitHub takes one commit after another)
+  async push() {
+    const d = this.dirty(), shas = this.shas(), c = this.cfg();
+    for (const k of SYNC_KINDS) for (const id of Object.keys(d[k])) {
+      const token = d[k][id], rec = token && typeof token === 'object' ? token : DB[k].find(x => x.id === id);
+      const path = k + '/' + id + '.json';
+      if (!rec) { delete d[k][id]; continue; }
+      const body = { message: (rec.deleted ? 'Delete ' : 'Save ') + k.replace(/s$/, '') + ' ' + (rec.name || id), content: this.enc(this.text(rec)), branch: c.branch };
+      if (shas[path]) body.sha = shas[path];
+      let r = await this.api('/contents/' + path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.status === 409 || r.status === 422) {
+        // Someone else wrote this file meanwhile: read theirs, keep the newer one
+        const cur = await this.api('/contents/' + path + '?ref=' + encodeURIComponent(c.branch));
+        if (cur.ok) {
+          const cj = await cur.json(); let theirs = null; try { theirs = JSON.parse(this.dec(cj.content)); } catch (e) {}
+          shas[path] = cj.sha;
+          if (theirs && (Number(theirs.updatedAt) || 0) > (Number(rec.updatedAt) || 0)) { await this.applyOne(k, theirs); continue; }
+          body.sha = cj.sha;
+        } else delete body.sha;
+        r = await this.api('/contents/' + path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      }
+      if (r.status === 401) throw new Error(t('GitHub did not accept this token'));
+      if (r.status === 403 || r.status === 404) throw new Error(t('The token can read but not write. Give it Contents: Read and write.'));
+      if (!r.ok) throw new Error('GitHub ' + r.status);
+      shas[path] = (await r.json()).content.sha;
+      if (d[k][id] === token) delete d[k][id]; // unless it changed again while sending
+      await DB.setKV('ghShas', shas); await DB.setKV('ghDirty', d);
+    }
+  },
+  paint() {
+    const s = document.getElementById('ghStatus'); if (s) { s.textContent = this.label(); s.className = 'status' + (this.status === 'error' ? ' warn' : ''); }
+  },
+  label() {
+    if (!this.cfg()) return t('Not saved on GitHub yet');
+    if (!this.here()) return t('The Trade server on this computer saves to GitHub');
+    if (this.status === 'syncing') return t('Saving to GitHub…');
+    if (this.status === 'error') return t('Not saved on GitHub: {x}', { x: this.error }) + (this.pending() ? ' · ' + t('{n} changes waiting', { n: this.pending() }) : '');
+    const last = this.last || DB.kv.ghLast;
+    return last ? t('Saved on GitHub · {time}', { time: TradeReport.dateTimeLabel(last) }) : t('Connected to GitHub');
+  }
+};
 // Banner on the main pages when this phone's products are NOT reaching the computer
 function paintConnect() {
   const el = document.getElementById('connBar'); if (!el) return;
@@ -1123,7 +1358,7 @@ function paintConnect() {
     <div class="cb-t"><b>${esc(err ? t('Not reaching the computer') : Sync.lost ? t('Connect this phone again') : t('This phone is not connected'))}</b>
       <span>${esc(err ? Sync.error + (n ? ' · ' + t('{n} changes waiting', { n }) : '') : t('What you add here stays only on this phone. Connect it so the computer and your other devices get it.'))}</span></div>
     <button class="btn sm" id="cbGo">${esc(err ? t('Retry') : t('Connect'))}</button></div>`;
-  document.getElementById('cbGo').onclick = () => err ? Sync.run() : connectDialog();
+  document.getElementById('cbGo').onclick = () => err ? Sync.run() : (location.hash = 'devices');
 }
 async function connectDialog() {
   const v = await dialog({
@@ -2123,8 +2358,61 @@ function renderData() {
           <div class="s3"><div class="s3-ic">${ic('calendar', B(), 18)}</div><b>${esc(t('Daily copy'))}</b><span>${esc(t('60 days + one per month, forever'))}</span></div>
         </div>
       </div>
+      <div class="card" id="ghCard"></div>
     </div>`;
-  drawPersist(); enter();
+  drawPersist(); drawGhCard(); enter();
+}
+// ---------- GitHub: the main copy of the data, in a PRIVATE repository ----------
+// Phone: saved straight from the phone (Cloud). Computer: the Trade server reads and writes the same repository.
+async function drawGhCard() {
+  const el = document.getElementById('ghCard'); if (!el) return;
+  let pc = null;
+  if (Sync.server && Sync.server.key) { try { const r = await fetch('api/github/status', { cache: 'no-store' }); if (r.ok) pc = await r.json(); } catch (e) {} }
+  const on = pc ? pc.configured : !!Cloud.cfg();
+  const c = pc ? pc : Cloud.cfg() || {};
+  const head = `<div class="card-head"><div class="card-title"><div class="icon-tile">${ic('shield', B(), 16)}</div>GitHub</div>${on ? `<span class="chip green">${esc(t('On'))}</span>` : ''}</div>`;
+  const label = pc ? (pc.configured ? (pc.error ? t('Not saved on GitHub: {x}', { x: pc.error }) : pc.last ? t('Saved on GitHub · {time}', { time: TradeReport.dateTimeLabel(pc.last) }) : t('Connected to GitHub')) : t('Not saved on GitHub yet')) : Cloud.label();
+  if (on) {
+    el.innerHTML = head + `<div class="status${(pc ? pc.error : Cloud.status === 'error') ? ' warn' : ''}" id="ghStatus">${esc(label)}</div>
+      <div class="hint" style="margin:10px 2px;line-height:1.55" data-notr>github.com/${esc(c.owner)}/${esc(c.repo)} · ${esc(t('private'))}</div>
+      <div class="row-btns"><button class="btn sm soft" id="ghNow">${ic('refresh', B(), 15)}${esc(t('Sync now'))}</button><button class="btn sm" id="ghOff">${esc(t('Stop saving to GitHub'))}</button></div>`;
+  } else {
+    el.innerHTML = head + `<div class="hint" style="line-height:1.6;margin:-4px 0 12px">${esc(pc
+        ? t('This computer reads and saves the same GitHub repository as your phone, and still syncs with the phone over Wi-Fi.')
+        : t('This phone is the main copy. Every product, photo and market is saved straight to your own PRIVATE GitHub repository, so it is kept even without the computer.'))}</div>
+      <div class="iph-steps" style="margin-bottom:12px">
+        <div><i>1</i><span>${esc(t('On github.com create a new PRIVATE repository, e.g. trade-data'))}</span></div>
+        <div><i>2</i><span>${esc(t('Settings → Developer settings → Fine-grained tokens → Generate: only that repository, Contents: Read and write'))}</span></div>
+        <div><i>3</i><span>${esc(t('Type the details below (use the same repository on the phone and on the computer)'))}</span></div>
+      </div>
+      <input class="input" id="ghOwner" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="${esc(t('GitHub user name'))}" style="margin-bottom:8px" data-notr>
+      <input class="input" id="ghRepo" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="trade-data" value="trade-data" style="margin-bottom:8px" data-notr>
+      <input class="input" id="ghToken" type="password" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="github_pat_…" style="margin-bottom:10px" data-notr>
+      <button class="btn primary" id="ghSave">${esc(t('Save to GitHub'))}</button>`;
+  }
+  const v = id => (document.getElementById(id) || {}).value || '';
+  const sv = document.getElementById('ghSave');
+  if (sv) sv.onclick = async () => {
+    sv.disabled = true; sv.style.opacity = .7; sv.textContent = t('Checking…');
+    try {
+      if (pc) {
+        const r = await fetch('api/github/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ owner: v('ghOwner'), repo: v('ghRepo'), token: v('ghToken') }) });
+        const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(t(j.error || 'Could not save'));
+      } else await Cloud.setup(v('ghOwner'), v('ghRepo'), v('ghToken'));
+      toast(t('Saved on GitHub ✓')); drawGhCard();
+    } catch (e) { sv.disabled = false; sv.style.opacity = 1; sv.textContent = t('Save to GitHub'); dialog({ title: 'GitHub', text: e.message, ok: t('OK'), cancel: false }); }
+  };
+  const now = document.getElementById('ghNow');
+  if (now) now.onclick = async () => {
+    if (pc) await fetch('api/github/sync', { method: 'POST' }).catch(() => {}); else await Cloud.run();
+    drawGhCard();
+  };
+  const off = document.getElementById('ghOff');
+  if (off) off.onclick = async () => {
+    if (!await dialog({ title: t('Stop saving to GitHub'), text: t('Nothing is deleted on GitHub or here — new changes just stop going there.'), ok: t('Stop'), danger: true })) return;
+    if (pc) await fetch('api/github/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clear: true }) }); else await Cloud.off();
+    drawGhCard();
+  };
 }
 function renderDevices() {
   simpleNav(t('Use on another device')); tabbar(null);
@@ -2222,8 +2510,9 @@ async function drawPersist() {
   const el = document.getElementById('persist');
   if (!el) return;
   const onPc = !!Sync.key(), folder = Folder.handle && Folder.perm === 'granted', installed = Install.standalone();
-  const good = onPc || persisted || folder;
+  const good = onPc || persisted || folder || !!Cloud.cfg();
   const lines = [];
+  if (Cloud.here()) lines.push(t('Main copy: this phone, saved to your private GitHub repository'));
   if (onPc) lines.push(t('Saved on this phone and on the computer — never lost{x}', { x: used }));
   else if (persisted) lines.push(t(installed ? 'Installed app · permanent database is on{x}' : 'Permanent storage is on{x}', { x: used }));
   else if (!window.isSecureContext) lines.push(t('This address (http) cannot keep data permanently on the phone{x}. Connect to the Trade computer so every product is kept forever.', { x: used }));
@@ -2264,101 +2553,33 @@ async function drawDevices() {
   const head = `<div class="card-head"><div class="card-title"><div class="icon-tile">${ic('devices', B(), 16)}</div>${esc(t('Use on another device'))}</div><span class="sync-dot ${Sync.status}" title="${esc(Sync.label())}"></span></div>`;
   let info = null;
   try { const r = await fetch('api/sync/info', { cache: 'no-store' }); if (r.ok) { const j = await r.json(); if (j.key) info = j; } } catch (e) {}
-  if (info) {
-    // This is the computer: show the QR code other phones scan
-    const lan = info.urls[0] || '';
-    const link = lan ? lan + '#pair=' + info.key : '';
-    // iPhone: the secure (https) address from "npm run iphone" — scanning it opens Safari, then Add to Home Screen
-    // With GitHub Pages (npm run pages) the iPhone installs from there instead: a permanent address that updates by itself
-    const iLink = info.hubUrl || (info.publicUrl ? info.publicUrl + '#pair=' + info.key : '');
-    el.innerHTML = head + `
-      <div class="hint" style="line-height:1.55;margin:-4px 0 12px">${esc(t('This computer keeps every product forever. Phones and tablets on the same Wi-Fi scan this code — then they all see the same products, and anything added on one appears on the others.'))}</div>
-      ${iLink ? `<div class="iph">
-        <div class="iph-head"><span class="iph-ic">${ic('phone', '#fff', 16, 2.4)}</span><b>${esc(t('Install on iPhone'))}</b></div>
-        <div class="iph-qr" id="qrI"></div>
-        <div class="iph-steps">
-          <div><i>1</i><span>${esc(t('1. Scan with the iPhone camera — it opens Safari').replace(/^1\.\s*/, ''))}</span></div>
-          <div><i>2</i><span>${esc(t('2. Tap Share, then “Add to Home Screen”').replace(/^2\.\s*/, ''))}</span></div>
-          <div><i>3</i><span>${esc(t('3. Open Trade from the home screen once while this computer is on').replace(/^3\.\s*/, ''))}</span></div>
-          ${info.hubUrl ? `<div><i>4</i><span>${esc(t('In Trade on the iPhone open Settings → Use on another device and type the code shown there below'))}</span></div>` : ''}
-        </div>
-        <div class="hint" style="margin-top:10px;line-height:1.5;text-align:center">${esc(t('After that it works on the iPhone without internet and without this computer.'))}</div></div>` : ''}
-      ${link ? `<div class="pair">
-        <div class="qr" id="qr"></div>
-        <div style="flex:1;min-width:0">
-          <div class="k">${esc(t('1. Scan with the phone camera'))}</div>
-          <div class="k" style="margin-top:6px">${esc(t('2. Or open this address on the phone:'))}</div>
-          <div class="pair-url" data-notr>${esc(lan)}</div>
-        </div></div>
-        <div class="pinbox"><div class="k">${esc(t('3. Or type this code in the app on the phone'))}</div>
-          <div class="pin" id="pinCode" data-notr>${esc(fmtPin(info.pin))}</div>
-          <div class="hint">${esc(t('Changes every 10 minutes'))}</div></div>
-        <button class="btn sm soft" style="margin-top:10px" id="cpLink">${ic('copy', B(), 15)}${esc(t('Copy link'))}</button>`
-      : `<div class="status warn">${esc(t('This computer is not on a network. Connect it to Wi-Fi to use other devices.'))}</div>`}
-      <div class="pinbox"><div class="k">${esc(t('Connect a phone with its own code (shown on the iPhone)'))}</div>
-        <div class="addmk" style="margin-top:8px"><input class="input" id="phoneCode" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH-JKMN-PQRS" data-notr><button class="btn primary" id="phoneGo">${esc(t('Connect'))}</button></div>
-        <button class="btn sm soft" style="margin-top:8px" id="phoneScan">${ic('scan', B(), 15, 2.2)}${esc(t('Scan the phone code with the camera'))}</button>
-        ${info.phones ? `<div class="hint" style="margin-top:6px">${esc(t('Phones connected with their own code: {n}', { n: info.phones }))}</div>` : ''}
-        ${!info.hubUrl ? `<div class="hint" style="margin-top:6px;line-height:1.5">${esc(t('For an iPhone that updates by itself and always finds this computer, run once: npm run pages'))}</div>` : !info.publicUrl ? `<div class="hint" style="margin-top:6px">${esc(t('Opening the secure address for iPhones…'))}</div>` : ''}
-      </div>
-      <div class="devs"><div class="k" style="margin:12px 0 6px">${esc(t('Devices'))} · ${esc(plural(info.products, 'product'))}</div>
-        ${info.devices.length ? info.devices.map(d => `<div class="dev">${ic(/iphone|android|ipad/i.test(d.name) ? 'phone' : 'monitor', '#64748B', 16)}<span data-notr>${esc(d.name)}</span><i>${esc(ago(d.lastSeen))}</i></div>`).join('') : `<div class="hint">${esc(t('No other device yet'))}</div>`}</div>
-      <div class="hint" style="margin-top:10px" data-notr>${esc(t('Data folder'))}: ${esc(info.dataDir)}</div>`;
-    // keep the 6-digit code current while the card is on screen
-    clearInterval(drawDevices.t);
-    drawDevices.t = setInterval(async () => {
-      const pc = document.getElementById('pinCode'); if (!pc) return clearInterval(drawDevices.t);
-      try { const j = await (await fetch('api/sync/info', { cache: 'no-store' })).json(); if (j.pin) pc.textContent = fmtPin(j.pin); if ((j.publicUrl || '') !== (info.publicUrl || '')) drawDevices(); } catch (e) {}
-    }, 10000);
-    if (!document.getElementById('phoneGo')) return; // the page changed while the info was loading
-    // A phone's own code → this computer accepts it (typed, or read from the phone screen with the camera)
-    const adopt = async code => {
-      const r = await fetch('api/sync/adopt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(t(j.error || 'Wrong code'));
-      toast(j.reachable || !info.hubUrl ? t('Phone connected ✓') : t('Phone connected ✓ — it syncs as soon as the secure address is open'));
-      drawDevices();
-    };
-    const pgo = document.getElementById('phoneGo');
-    pgo.onclick = async () => { pgo.disabled = true; try { await adopt(document.getElementById('phoneCode').value); } catch (e) { toast(e.message); } pgo.disabled = false; };
-    document.getElementById('phoneCode').onkeydown = e => { if (e.key === 'Enter') pgo.click(); };
-    document.getElementById('phoneScan').onclick = async () => { try { const x = await QrScan.scan(); if (x) await adopt(x); } catch (e) { toast(e.message); } };
-    if (iLink) loadQr().then(() => { const qi = document.getElementById('qrI'); if (qi) { qi.innerHTML = ''; new QRCode(qi, { text: iLink, width: 132, height: 132, correctLevel: QRCode.CorrectLevel.M }); } }).catch(() => {});
-    if (link) {
-      document.getElementById('cpLink').onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => toast(t('Link copied')), () => prompt('Link', link));
-      loadQr().then(() => { const q = document.getElementById('qr'); if (q) { q.innerHTML = ''; new QRCode(q, { text: link, width: 132, height: 132, correctLevel: QRCode.CorrectLevel.M }); } }).catch(() => { const q = document.getElementById('qr'); if (q) q.innerHTML = `<div class="hint">${esc(t('QR needs internet once'))}</div>`; });
-    }
-    return;
-  }
-  // Another device. The phone is the main device: it has its own code, typed (or scanned) on the computer.
-  // Until it is connected some other way, the phone waits for the computer with that code.
-  const own = Sync.ownKey();
-  if (!Sync.key()) { await Sync.pair(own, true); Sync.run(); }
-  const mine = Sync.key() === own;
-  el.innerHTML = head + (mine
-    ? `<div class="status" id="syncStatus">${esc(Sync.label())}</div>
-       <div class="iph" style="margin-top:12px">
-         <div class="iph-head"><span class="iph-ic">${ic('phone', '#fff', 16, 2.4)}</span><b>${esc(t('This phone’s code'))}</b></div>
-         <div class="iph-qr" id="qrOwn"></div>
-         <div class="pin" data-notr style="font-size:21px;letter-spacing:2px;text-align:center">${esc(own.replace(/(.{4})(?!$)/g, '$1-'))}</div>
-         <div class="iph-steps" style="margin-top:8px">
+  clearInterval(drawDevices.t);
+  if (info) return drawLinkQr(el, head, info);
+  // ---- A phone: it keeps the data. Link it once by scanning the computer's QR code (like WhatsApp → Linked devices) ----
+  const linked = Sync.linkedHere();
+  const alt = `<details class="lk-alt"><summary>${esc(t('Can’t scan? Type the code instead'))}</summary>
+       ${window.TradeApp ? `<input class="input" id="pairAddr" inputmode="url" autocapitalize="off" autocomplete="off" placeholder="192.168.1.5:5173" value="${esc(TradeApp.server().replace(/^http:\/\/|\/$/g, ''))}" style="margin:10px 0">` : '<div style="height:10px"></div>'}
+       <div class="addmk"><input class="input pin-in" id="pairCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456" autocapitalize="off"><button class="btn primary" id="pairGo">${esc(t('Connect'))}</button></div></details>`;
+  el.innerHTML = head + (linked
+    ? `<div class="lk-ok"><div class="lk-ok-ic">${ic('check', '#fff', 22, 3)}</div>
+         <div><b>${esc(DB.kv.linkedTo ? t('Linked to {x}', { x: DB.kv.linkedTo }) : t('Linked to the computer'))}</b>
+         <div class="status" id="syncStatus" style="margin-top:4px">${esc(Sync.label())}</div></div></div>
+       <div class="hint" style="line-height:1.55;margin:12px 2px">${esc(t('This phone keeps all your products. Every change is sent to the computer the moment they are connected; while they are apart, changes wait here and go up later.'))}</div>
+       <div class="row-btns"><button class="btn sm soft" id="syncNow">${ic('refresh', B(), 15)}${esc(t('Sync now'))}</button><button class="btn sm" id="unpair">${esc(t('Unlink'))}</button></div>`
+    : `<div class="lk-phone">
+         <div class="lk-big">${ic('scan', '#fff', 34, 2.2)}</div>
+         <b>${esc(t('Link to the computer'))}</b>
+         <div class="hint" style="line-height:1.55;margin:6px 0 14px">${esc(t('Your products stay on this phone. Link it once and everything syncs to the computer, live, every time they are connected.'))}</div>
+         <div class="iph-steps" style="text-align:left;margin-bottom:14px">
            <div><i>1</i><span>${esc(t('On the computer open Trade → Settings → Use on another device'))}</span></div>
-           <div><i>2</i><span>${esc(t('Type this code under “Connect a phone with its own code”, or scan it with the computer camera'))}</span></div>
-         </div></div>
-       <div class="row-btns" style="margin-bottom:14px"><button class="btn sm soft" id="syncNow">${ic('refresh', B(), 15)}${esc(t('Sync now'))}</button><button class="btn sm soft" id="cpOwn">${ic('copy', B(), 15)}${esc(t('Copy code'))}</button></div>
-       <div class="hint" style="line-height:1.55;margin:0 0 10px">${esc(t('Or connect with the computer’s code instead:'))}</div>
-       <button class="btn soft qr-scan-btn" id="pairQr">${ic('scan', B(), 16, 2.2)}${esc(t('Scan the QR code on the computer'))}</button>
-       ${window.TradeApp ? `<input class="input" id="pairAddr" inputmode="url" autocapitalize="off" autocomplete="off" placeholder="192.168.1.5:5173" value="${esc(TradeApp.server().replace(/^http:\/\/|\/$/g, ''))}" style="margin-bottom:10px">` : ''}
-       <div class="addmk"><input class="input pin-in" id="pairCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456" autocapitalize="off"><button class="btn primary" id="pairGo">${esc(t('Connect'))}</button></div>`
-    : `<div class="status" id="syncStatus">${esc(Sync.label())}</div>
-       <div class="hint" style="line-height:1.55;margin:10px 2px">${esc(t('This device is paired with the Trade computer. Products are saved here and on the computer, and changes from other devices appear here automatically.'))}</div>
-       <div class="row-btns"><button class="btn sm soft" id="syncNow">${ic('refresh', B(), 15)}${esc(t('Sync now'))}</button><button class="btn sm" id="unpair">${esc(t('Disconnect'))}</button></div>`);
+           <div><i>2</i><span>${esc(t('Tap Scan and point this phone at the QR code on the computer screen'))}</span></div>
+         </div>
+         <button class="btn primary lk-scan" id="pairQr">${ic('scan', '#fff', 18, 2.2)}${esc(t('Scan QR code'))}</button>
+       </div>${alt}`);
   const sn = document.getElementById('syncNow'); if (sn) sn.onclick = () => { Sync.foundAt = 0; Sync.run(); };
-  const co = document.getElementById('cpOwn'); if (co) co.onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(own) : Promise.reject()).then(() => toast(t('Code copied')), () => prompt('Code', own));
-  if (document.getElementById('qrOwn')) loadQr().then(() => { const q = document.getElementById('qrOwn'); if (q) { q.innerHTML = ''; new QRCode(q, { text: 'TRADE-PHONE:' + own, width: 132, height: 132, correctLevel: QRCode.CorrectLevel.M }); } }).catch(() => { const q = document.getElementById('qrOwn'); if (q) q.style.display = 'none'; });
   const up = document.getElementById('unpair'); if (up) up.onclick = async () => {
-    if (!await dialog({ title: t('Disconnect'), text: t('Products stay on this phone, but changes will no longer reach the computer.'), ok: t('Disconnect'), danger: true })) return;
-    await DB.setKV('syncKey', ''); Sync.status = 'off'; route(true);
+    if (!await dialog({ title: t('Unlink'), text: t('Products stay on this phone, but changes will no longer reach the computer.'), ok: t('Unlink'), danger: true })) return;
+    await Sync.unlink(); route(true);
   };
   const pq = document.getElementById('pairQr'); if (pq) pq.onclick = async () => { try { if (await QrScan.pair()) route(true); } catch (e) { toast(e.message); } };
   const pg = document.getElementById('pairGo'); if (pg) pg.onclick = async () => {
@@ -2366,15 +2587,94 @@ async function drawDevices() {
     try {
       let code = document.getElementById('pairCode').value;
       if (window.TradeApp) {
-        // Android app: the computer's address, typed or taken from its pairing link
+        // Android app: the computer's address, typed or taken from its link
+        const L = Sync.parseLink(code);
+        if (L) { if (await Sync.linkQr(L)) route(true); return; }
         const link = TradeApp.parseLink(code) || TradeApp.parseLink(document.getElementById('pairAddr').value);
         if (link) { TradeApp.setServer(link.server); code = link.key; }
         else if (!TradeApp.setServer(document.getElementById('pairAddr').value)) throw new Error(t('Type the computer address shown on the computer (e.g. 192.168.1.5:5173)'));
       }
       await Sync.connect(code); route(true);
     }
-    catch (e) { pg.disabled = false; pg.style.opacity = 1; toast(e.message); }
+    catch (e) { toast(e.message); }
+    finally { pg.disabled = false; pg.style.opacity = 1; }
   };
+}
+// ---- The computer: ONE QR code (like WhatsApp Web). It changes every minute and works for one scan. ----
+function linkText(info) {
+  const lan = info.urls[0] || '';
+  // Scanned inside Trade on the phone → linked. Scanned with the phone camera → opens Trade (to install it) and links there.
+  const base = info.hubUrl || info.publicUrl || lan;
+  const servers = info.urls.slice(0, 3).concat(info.publicUrl || []);
+  return base ? base + '#link=' + info.link + '&s=' + encodeURIComponent(servers.join('|')) : '';
+}
+function drawLinkQr(el, head, info) {
+  const text = linkText(info), lan = info.urls[0] || '';
+  const phones = info.phones || [];
+  el.innerHTML = head + (text ? `
+    <div class="lk">
+      <div class="lk-qr" id="qr"></div>
+      <div class="lk-steps">
+        <b>${esc(t('Link a phone'))}</b>
+        <div class="iph-steps" style="margin-top:10px">
+          <div><i>1</i><span>${esc(t('Open Trade on your phone'))}</span></div>
+          <div><i>2</i><span>${esc(t('Go to Settings → Use on another device'))}</span></div>
+          <div><i>3</i><span>${esc(t('Tap Scan QR code and point the phone at this screen'))}</span></div>
+        </div>
+        <div class="hint" style="line-height:1.5;margin-top:10px">${esc(t('The phone keeps your products. This computer shows them and keeps a copy, synced live while they are connected.'))}</div>
+      </div>
+    </div>
+    ${!info.publicUrl ? `<div class="hint" style="margin-top:8px;line-height:1.5">${esc(info.hubUrl ? t('Opening the secure address for iPhones…') : t('iPhone: start Trade on this computer with npm run iphone, so the iPhone app can reach it.'))}</div>` : ''}
+    <div class="hint" style="margin-top:8px;line-height:1.5">${esc(t('No Trade app on the phone yet? Scan this code with the phone camera to install it, then scan again from inside the app.'))}</div>
+    <details class="lk-alt"><summary>${esc(t('Can’t scan? Type the code instead'))}</summary>
+      <div class="pinbox"><div class="k">${esc(t('In Trade on the phone: Settings → Use on another device → type'))}</div>
+        <div class="pair-url" data-notr style="margin-top:6px">${esc(lan.replace(/^http:\/\/|\/$/g, ''))}</div>
+        <div class="pin" id="pinCode" data-notr>${esc(fmtPin(info.pin))}</div>
+        <div class="hint">${esc(t('Changes every 10 minutes'))}</div></div>
+      <button class="btn sm soft" style="margin-top:10px" id="cpLink">${ic('copy', B(), 15)}${esc(t('Copy link'))}</button>
+    </details>`
+    : `<div class="status warn">${esc(t('This computer is not on a network. Connect it to Wi-Fi to use other devices.'))}</div>`) + `
+    <div class="devs" id="lkPhones"></div>
+    <div class="hint" style="margin-top:10px" data-notr>${esc(t('Data folder'))}: ${esc(info.dataDir)}</div>`;
+  const drawPhones = list => {
+    const box = document.getElementById('lkPhones'); if (!box) return;
+    const html = `<div class="k" style="margin:14px 0 6px">${esc(t('Linked phones'))} · ${esc(plural(info.products, 'product'))}</div>` +
+      (list.length ? list.map(p => `<div class="dev">${ic('phone', '#64748B', 16)}<span data-notr>${esc(p.name)}</span>
+          <i>${esc(p.lastSeen ? ago(p.lastSeen) : t('Linked {time}', { time: ago(p.linkedAt) }))}</i>
+          <button class="btn sm lk-un" data-id="${esc(p.id)}">${esc(t('Unlink'))}</button></div>`).join('')
+        : `<div class="hint">${esc(t('No phone linked yet'))}</div>`);
+    if (box.dataset.h === html) return; // unchanged: keep the buttons as they are
+    box.dataset.h = html; box.innerHTML = html;
+    box.querySelectorAll('.lk-un').forEach(b => b.onclick = async () => {
+      if (!await dialog({ title: t('Unlink'), text: t('That phone keeps its products, but it can no longer sync with this computer until it scans the QR code again.'), ok: t('Unlink'), danger: true })) return;
+      await fetch('api/sync/unlink', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.dataset.id }) }).catch(() => {});
+      drawDevices();
+    });
+  };
+  drawPhones(phones);
+  const paintQr = txt => loadQr().then(() => { const q = document.getElementById('qr'); if (q) { q.innerHTML = ''; new QRCode(q, { text: txt, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); } })
+    .catch(() => { const q = document.getElementById('qr'); if (q) q.innerHTML = `<div class="hint">${esc(t('QR needs internet once'))}</div>`; });
+  if (text) {
+    paintQr(text);
+    document.getElementById('cpLink').onclick = () => { const l = linkText(info); (navigator.clipboard ? navigator.clipboard.writeText(l) : Promise.reject()).then(() => toast(t('Link copied')), () => prompt('Link', l)); };
+  }
+  // Keep the QR code fresh and notice the moment a phone links (like WhatsApp Web)
+  let seen = (info.lastLinked || {}).at || 0;
+  drawDevices.t = setInterval(async () => {
+    if (!document.getElementById('lkPhones')) return clearInterval(drawDevices.t);
+    try {
+      const j = await (await fetch('api/sync/info', { cache: 'no-store' })).json(); if (!j.key) return;
+      const pc = document.getElementById('pinCode'); if (pc && j.pin) pc.textContent = fmtPin(j.pin);
+      if (j.link !== info.link || (j.publicUrl || '') !== (info.publicUrl || '')) { const pu = j.publicUrl !== info.publicUrl; Object.assign(info, j); if (pu) return drawDevices(); paintQr(linkText(info)); }
+      Object.assign(info, j);
+      if (j.lastLinked && j.lastLinked.at > seen) {
+        seen = j.lastLinked.at;
+        toast(t('{x} linked ✓ — syncing', { x: j.lastLinked.name }));
+        const q = document.getElementById('qr'); if (q) { q.classList.add('done'); setTimeout(() => q.classList.remove('done'), 2400); }
+      }
+      drawPhones(j.phones || []); // also keeps "last seen" current
+    } catch (e) {}
+  }, 2500);
 }
 const fmtPin = p => String(p || '').replace(/^(\d{3})(\d{3})$/, '$1 $2');
 
@@ -2456,6 +2756,10 @@ const QrScan = {
   async pair() {
     const txt = String(await this.scan() || '').trim();
     if (!txt) return false;
+    // The computer's QR code (one scan links this phone)
+    const L = Sync.parseLink(txt);
+    if (L) return Sync.linkQr(L);
+    // Older Trade computers: the pairing link with the computer's key, or the key / 6 digits alone
     const m = /^\s*(\S+?)\/?#(?:.*&)?pair=([\w-]+)/.exec(txt);
     if (window.TradeApp) {
       // Android app: remember the computer's address from the link
@@ -3801,6 +4105,7 @@ function renderDetail(id) {
   await Folder.init();
   route();
   Sync.init();
+  Cloud.init();
   if (!await Persist.check()) Persist.ask();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   setTimeout(() => Install.show(), 1200);

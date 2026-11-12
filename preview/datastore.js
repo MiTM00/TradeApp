@@ -117,6 +117,17 @@ function sync(body) {
   return Object.assign({ rev: meta.rev, epoch: meta.epoch, applied, full: since === 0 }, changesSince(since))
 }
 
+// Records read from GitHub (the phone's main copy): [[kind, record], …] → how many were newer than ours
+function applyMany(list) {
+  fresh()
+  let applied = 0
+  list.forEach(([k, r]) => { if (put(k, r)) applied++ })
+  if (applied) { saveMeta(); snapshot(false); wake() }
+  return applied
+}
+// Every record (deleted ones as tombstones), for saving to GitHub
+function allRecords() { const c = fresh(), out = []; KINDS.forEach(k => c[k].forEach(r => out.push([k, r]))); return out }
+
 function stats() {
   const c = fresh()
   const live = k => Array.from(c[k].values()).filter(r => !r.deleted).length
@@ -142,7 +153,9 @@ function snapshot(force) {
 
 // Live sync: a device waits here (long poll) and is answered as soon as another device sends a change
 const waiting = new Set()
-function wake() { const all = [...waiting]; waiting.clear(); all.forEach(fn => fn()) }
+const listeners = []
+function onChange(fn) { listeners.push(fn) }
+function wake() { const all = [...waiting]; waiting.clear(); all.forEach(fn => fn()); listeners.forEach(fn => { try { fn() } catch (e) {} }) }
 function waitForChange(rev, ms) {
   fresh()
   if (meta.rev > rev) return Promise.resolve(true)
@@ -185,4 +198,32 @@ function addPhoneKey(k) {
   m.phoneKeys = (m.phoneKeys || []).concat(k); saveMeta(); return true
 }
 
-module.exports = { sync, stats, snapshot, backups, readBackup, waitForChange, key: () => loadMeta().key, keys, validKey, addPhoneKey, DIR, KINDS }
+// Linked phones (like WhatsApp linked devices): the phone scanned this computer's QR code and sent its own code.
+// The phone keeps the main copy of the data; this computer mirrors it. Unlinking removes the code, so that phone
+// can no longer read or change anything here (its own data stays on the phone).
+function linkPhone(code, info) {
+  addPhoneKey(code)
+  const m = loadMeta()
+  m.phones = m.phones || {}
+  m.phones[code] = Object.assign({}, m.phones[code], { name: String(info.name || 'Phone').slice(0, 60), device: safeId(info.device) ? info.device : '', linkedAt: Date.now() })
+  saveMeta()
+}
+function phones(fp) {
+  const m = loadMeta()
+  return (m.phoneKeys || []).map(code => {
+    const p = (m.phones || {})[code] || {}, d = p.device && m.devices[p.device]
+    return { id: fp(code), name: (d && d.name) || p.name || 'Phone', linkedAt: p.linkedAt || 0, lastSeen: (d && d.lastSeen) || 0 }
+  }).sort((a, b) => b.linkedAt - a.linkedAt)
+}
+function unlinkPhone(id, fp) {
+  const m = loadMeta(), code = (m.phoneKeys || []).find(c => fp(c) === id)
+  if (!code) return false
+  const p = (m.phones || {})[code]
+  m.phoneKeys = m.phoneKeys.filter(c => c !== code)
+  if (m.phones) delete m.phones[code]
+  if (p && p.device) delete m.devices[p.device]
+  saveMeta(); wake()
+  return true
+}
+
+module.exports = { applyMany, allRecords, onChange, sync, stats, snapshot, backups, readBackup, waitForChange, key: () => loadMeta().key, keys, validKey, addPhoneKey, linkPhone, phones, unlinkPhone, DIR, KINDS }

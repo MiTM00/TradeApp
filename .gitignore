@@ -10,3 +10,5 @@ android/trade.keystore
 android/keystore.properties
 .publish/
 hub.config.json
+Trade-backup-*.json
+github.config.json
