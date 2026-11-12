@@ -758,6 +758,12 @@
     ['This QR code has expired — scan the new one on the computer', 'QR code-kan wuu dhacay — scan garee kan cusub ee kombiyuutarka', '此二维码已过期 — 请扫描电脑上的新码'],
     ['Too many tries — wait a minute and scan again', 'Isku day badan — daqiiqad sug oo mar kale scan garee', '尝试次数过多 — 请等待一分钟后再扫描'],
     ['iPhone: start Trade on this computer with npm run iphone, so the iPhone app can reach it.', 'iPhone: Trade-ka kombiyuutarkan ku kici npm run iphone, si app-ka iPhone-ku u gaadhi karo.', 'iPhone：在这台电脑上用 npm run iphone 启动 Trade，iPhone 应用才能连接。'],
+    ['on this computer', 'kombiyuutarkan', '在这台电脑上'],
+    ['Use Trade on this computer', 'Trade ku isticmaal kombiyuutarkan', '在这台电脑上使用 Trade'],
+    ['Open Trade on your iPhone', 'Ka fur Trade iPhone-kaaga', '在 iPhone 上打开 Trade'],
+    ['Your iPhone is the parent: it keeps your products, even offline. This computer shows them and syncs live while they are connected.', 'iPhone-kaagu waa waalidka: isaga ayaa haya alaabtaada, xataa offline. Kombiyuutarkani wuu muujiyaa oo si toos ah ayuu u sync gareeyaa marka ay isku xidhan yihiin.', '您的 iPhone 是主设备：它保存您的产品，即使离线也可以。这台电脑显示它们，并在连接时实时同步。'],
+    ['The code changes every minute', 'Koodhku daqiiqad kasta wuu isbeddelaa', '二维码每分钟更换一次'],
+    ['iPhone app', 'App-ka iPhone', 'iPhone 应用'],
     ['Update Trade on the phone and scan again', 'Cusboonaysii Trade-ka telefoonka oo mar kale scan garee', '请更新手机上的 Trade 后再扫描']
   ]
 

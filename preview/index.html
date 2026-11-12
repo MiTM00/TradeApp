@@ -540,6 +540,21 @@
   .dev i { margin-left:auto; font-style:normal; font-size:11px; color:var(--ink-3); }
   .pinbox { margin-top:12px; padding:12px; border-radius:14px; text-align:center; background:linear-gradient(160deg,var(--mint),transparent 80%); border:1px dashed var(--brand-2); }
   .pin { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:34px; font-weight:800; letter-spacing:4px; color:var(--brand); margin:4px 0 2px; font-variant-numeric:tabular-nums; }
+  #pcLogin { position:fixed; inset:0; z-index:900; overflow:auto; background:var(--bg); }
+  .pl-band { height:200px; background:linear-gradient(135deg,var(--brand-2),var(--brand)); }
+  .pl-brand { max-width:960px; margin:0 auto; padding:26px 24px; display:flex; align-items:center; gap:10px; color:#fff; font-size:15px; }
+  .pl-brand b { font-size:17px; } .pl-brand span { opacity:.85; font-weight:600; }
+  .pl-card { max-width:920px; margin:-110px auto 0; background:var(--card); border-radius:22px; box-shadow:0 18px 50px rgba(15,23,42,.16); padding:44px 48px; display:flex; gap:48px; align-items:flex-start; flex-wrap:wrap; box-sizing:border-box; }
+  .pl-left { flex:1; min-width:260px; }
+  .pl-left h1 { font-size:26px; font-weight:800; margin:0 0 22px; color:var(--ink); letter-spacing:-.3px; }
+  .pl-steps div { font-size:15px; } .pl-steps { gap:14px; }
+  .pl-note { display:flex; gap:10px; align-items:flex-start; margin-top:22px; padding:12px 14px; border-radius:14px; background:var(--mint); font-size:13px; line-height:1.5; color:var(--ink-2); font-weight:600; }
+  .pl-warn { margin-top:12px; color:#B45309; font-weight:700; line-height:1.5; }
+  .pl-warn:empty { display:none; }
+  .pl-right { margin:0 auto; }
+  .pl-qr { width:284px; height:284px; padding:10px; } .pl-qr img, .pl-qr canvas { width:264px !important; height:264px !important; }
+  .pl-foot { text-align:center; margin:22px 16px 30px; font-size:13px; color:var(--ink-3); }
+  @media (max-width:640px) { .pl-card { margin:-140px 16px 0; padding:26px 20px; gap:26px; } .pl-band { height:220px; } }
   .lk { display:flex; gap:18px; align-items:center; flex-wrap:wrap; justify-content:center; }
   .lk-qr { width:236px; height:236px; padding:8px; background:#fff; border-radius:18px; box-shadow:0 8px 24px rgba(15,23,42,.12), inset 0 0 0 1px var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; box-sizing:border-box; transition:box-shadow .3s, transform .3s; }
   .lk-qr img, .lk-qr canvas { width:220px !important; height:220px !important; display:block; }
@@ -958,6 +973,7 @@ const Sync = {
       const r = await fetch('api/sync/info', { cache: 'no-store' });
       if (r.ok) {
         this.server = await r.json();
+        PcLogin.check();
         if (document.getElementById('goCard')) drawGoCard();
         if (this.server.key && this.server.key !== DB.kv.syncKey) await this.pair(this.server.key, true);
         paintConnect();
@@ -2648,7 +2664,7 @@ function drawLinkQr(el, head, info) {
     box.querySelectorAll('.lk-un').forEach(b => b.onclick = async () => {
       if (!await dialog({ title: t('Unlink'), text: t('That phone keeps its products, but it can no longer sync with this computer until it scans the QR code again.'), ok: t('Unlink'), danger: true })) return;
       await fetch('api/sync/unlink', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.dataset.id }) }).catch(() => {});
-      drawDevices();
+      await Sync.probe(); drawDevices();
     });
   };
   drawPhones(phones);
@@ -4094,6 +4110,58 @@ function renderDetail(id) {
     history.back();
   };
 }
+
+// ---------- Computer login (like WhatsApp Web): the iPhone is the parent ----------
+// On the computer, while no phone is linked, the whole screen is one QR code. The phone scans it, and the computer
+// opens with the phone's products. Unlinking the last phone brings this screen back (nothing is deleted).
+const PcLogin = {
+  el: null, t: null,
+  need() { const s = Sync.server; return !!(s && s.key && Array.isArray(s.phones) && !s.phones.length); },
+  check() { if (this.need()) this.show(); else this.hide(); },
+  show() {
+    const info = Sync.server;
+    if (!this.el) {
+      this.el = document.createElement('div'); this.el.id = 'pcLogin'; document.body.appendChild(this.el);
+      this.el.innerHTML = `<div class="pl-band"><div class="pl-brand">${ic('devices', '#fff', 20, 2.2)}<b>Trade</b><span>${esc(t('on this computer'))}</span></div></div>
+        <div class="pl-card">
+          <div class="pl-left">
+            <h1>${esc(t('Use Trade on this computer'))}</h1>
+            <div class="iph-steps pl-steps">
+              <div><i>1</i><span>${esc(t('Open Trade on your iPhone'))}</span></div>
+              <div><i>2</i><span>${esc(t('Go to Settings → Use on another device'))}</span></div>
+              <div><i>3</i><span>${esc(t('Tap Scan QR code and point the phone at this screen'))}</span></div>
+            </div>
+            <div class="pl-note">${ic('phone', B(), 16)}<span>${esc(t('Your iPhone is the parent: it keeps your products, even offline. This computer shows them and syncs live while they are connected.'))}</span></div>
+            <div class="hint pl-warn" id="plWarn"></div>
+            <details class="lk-alt"><summary>${esc(t('Can’t scan? Type the code instead'))}</summary>
+              <div class="pinbox"><div class="k">${esc(t('In Trade on the phone: Settings → Use on another device → type'))}</div>
+              <div class="pin" id="plPin" data-notr></div><div class="hint">${esc(t('Changes every 10 minutes'))}</div></div></details>
+          </div>
+          <div class="pl-right"><div class="lk-qr pl-qr" id="plQr"></div><div class="hint" style="text-align:center;margin-top:10px">${esc(t('The code changes every minute'))}</div></div>
+        </div>
+        <div class="pl-foot" data-notr>${esc(t('iPhone app'))}: <b>https://mitm00.github.io/TradeApp/</b></div>`;
+    }
+    this.paint(info);
+    clearInterval(this.t);
+    this.t = setInterval(async () => {
+      try {
+        const j = await (await fetch('api/sync/info', { cache: 'no-store' })).json(); if (!j.key) return;
+        const fresh = j.link !== (Sync.server || {}).link || j.publicUrl !== (Sync.server || {}).publicUrl;
+        Sync.server = j;
+        if (!this.need()) { toast(t('{x} linked ✓ — syncing', { x: (j.lastLinked || {}).name || 'iPhone' })); this.hide(); Sync.run(); route(true); return; }
+        if (fresh) this.paint(j); else { const p = document.getElementById('plPin'); if (p) p.textContent = fmtPin(j.pin); }
+      } catch (e) {}
+    }, 2500);
+  },
+  paint(info) {
+    const txt = linkText(info), w = document.getElementById('plWarn'), p = document.getElementById('plPin');
+    if (p) p.textContent = fmtPin(info.pin);
+    if (w) w.textContent = !info.publicUrl ? t('iPhone: start Trade on this computer with npm run iphone, so the iPhone app can reach it.') : '';
+    if (txt) loadQr().then(() => { const q = document.getElementById('plQr'); if (q) { q.innerHTML = ''; new QRCode(q, { text: txt, width: 264, height: 264, correctLevel: QRCode.CorrectLevel.M }); } })
+      .catch(() => { const q = document.getElementById('plQr'); if (q) q.innerHTML = `<div class="hint">${esc(t('QR needs internet once'))}</div>`; });
+  },
+  hide() { clearInterval(this.t); if (this.el) { this.el.remove(); this.el = null; } }
+};
 
 // ---------- start ----------
 (async () => {
