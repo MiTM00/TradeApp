@@ -64,6 +64,12 @@
       }
     },
     {
+      "name": "dist-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8195", "--directory", "C:/Users/aa/Projects/trade/dist"],
+      "port": 8195
+    },
+    {
       "name": "iphone",
       "runtimeExecutable": "node",
       "runtimeArgs": [
