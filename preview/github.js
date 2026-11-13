@@ -70,7 +70,7 @@ async function pull(c) {
   return applied
 }
 
-// Computer → GitHub: records whose text differs from the file on GitHub (e.g. added on the computer, or from an Android phone)
+// Computer → GitHub: records whose text differs from the file on GitHub (e.g. added on the computer)
 async function push(c) {
   const st = loadState()
   let sent = 0
@@ -106,12 +106,12 @@ function run() {
   return running
 }
 
-// Every 20 s, and right after a phone sent something over Wi-Fi
+// Every 10 s, and right after a phone sent something over Wi-Fi
 function start() {
   status.configured = !!config()
   run()
-  setInterval(run, 20000)
-  store.onChange(() => { clearTimeout(start.t); start.t = setTimeout(run, 1500) })
+  setInterval(run, 10000)
+  store.onChange(() => { clearTimeout(start.t); start.t = setTimeout(run, 300) })
 }
 
 module.exports = { config, setup, clear, run, start, status: () => Object.assign({}, status, (({ owner, repo }) => ({ owner, repo }))(config() || {})) }

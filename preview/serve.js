@@ -8,6 +8,8 @@ const store = require('./datastore')
 const scanner = require('./scanner')
 const pages = require('./publish')
 const github = require('./github')
+const certs = require('./certs')
+const https = require('https')
 const root = __dirname, utils = path.join(__dirname, '..', 'utils')
 const args = process.argv.slice(2)
 const port = Number(args.find(a => /^\d+$/.test(a)) || process.env.PORT || 5173)
@@ -26,6 +28,10 @@ const TYPES = {
 const AI_CONFIG = process.env.TRADE_AI_CONFIG || path.join(__dirname, '..', 'ai.config.json')
 function readAi() { try { return JSON.parse(fs.readFileSync(AI_CONFIG, 'utf8')) } catch (e) { return null } }
 const aiReady = () => !!((readAi() || {}).apiKey || process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN)
+// Secure address on the same Wi-Fi (the iPhone app is on https, so it can only call https addresses)
+const HTTPS_PORT = Number(process.env.TRADE_HTTPS_PORT || port + 270) // 5173 → 5443
+let httpsOn = false
+const lanHttpsUrls = () => httpsOn ? certs.ipv4s().map(ip => 'https://' + ip + ':' + HTTPS_PORT + '/') : []
 function lanUrls() {
   return Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => 'http://' + i.address + ':' + port + '/')
 }
@@ -39,7 +45,6 @@ function body(req, limit) {
     req.on('error', reject)
   })
 }
-const APK_ORIGIN = 'https://appassets.androidplatform.net'
 // A request through a tunnel (cloudflared, ngrok…) also arrives from 127.0.0.1, but it comes from the internet:
 // the proxy adds forwarding headers, so such a request is never treated as this computer.
 const PROXY_HEADERS = ['cf-connecting-ip', 'cf-ray', 'x-forwarded-for', 'x-forwarded-host', 'x-real-ip', 'forwarded']
@@ -83,13 +88,13 @@ async function api(req, res, url) {
   // Found by the phone app when the computer's address changed: says "Trade is here" and which computer it is
   // (a fingerprint of the pairing key — the key itself is never shown), plus every address of this computer
   if (url === '/api/sync/hello' && req.method === 'GET') {
-    return json(res, 200, { trade: true, id: pages.fingerprint(store.key()), ids: store.keys().map(pages.fingerprint), urls: lanUrls() })
+    return json(res, 200, { trade: true, id: pages.fingerprint(store.key()), ids: store.keys().map(pages.fingerprint), urls: lanUrls(), secure: lanHttpsUrls() })
   }
   if (url === '/api/sync/info' && req.method === 'GET') {
     if (!isLocal(req)) return json(res, 200, { computer: false }) // only the computer shows its key
     const p = currentPin(), l = currentLink()
     const hub = pages.config()
-    return json(res, 200, Object.assign({ key: store.key(), urls: lanUrls(), publicUrl, port, dataDir: store.DIR, pin: p.code, pinExp: p.exp, hubUrl: hub ? hub.url : '',
+    return json(res, 200, Object.assign({ key: store.key(), urls: lanUrls(), secure: lanHttpsUrls(), caName: certs.caName(), publicUrl, port, dataDir: store.DIR, pin: p.code, pinExp: p.exp, hubUrl: hub ? hub.url : '',
       link: l.token, linkExp: l.exp, phones: store.phones(pages.fingerprint), lastLinked, computer: os.hostname(), github: !!github.config() }, store.stats()))
   }
   // The phone scanned the QR code: token from the code + the phone's own code → linked
@@ -267,14 +272,13 @@ if (other) {
   process.exit(1)
 }
 
-const server = http.createServer((req, res) => {
+function handle(req, res) {
   const url = decodeURIComponent(req.url.split('?')[0])
   if (url.startsWith('/api/')) {
-    // The Android app (Trade.apk) has the app files built in and calls the API from its own origin
-    // …and so does the app published on GitHub Pages (the iPhone app)
+    // The iPhone app on GitHub Pages calls the API from its own origin
     const hub = pages.config(), origin = req.headers.origin
     // (the iPhone app published by the GitHub Actions workflow lives on <owner>.github.io; every call still needs the key or the QR token)
-    if (origin && (origin === APK_ORIGIN || (hub && origin === hub.origin) || /^https:\/\/[\w-]+\.github\.io$/i.test(origin))) {
+    if (origin && ((hub && origin === hub.origin) || /^https:\/\/[\w-]+\.github\.io$/i.test(origin))) {
       res.setHeader('Access-Control-Allow-Origin', origin)
       res.setHeader('Vary', 'Origin')
       if (req.method === 'OPTIONS') {
@@ -284,18 +288,24 @@ const server = http.createServer((req, res) => {
     }
     return api(req, res, url).catch(e => json(res, 400, { error: e.message }))
   }
+  // The certificate the iPhone installs once, so it can reach this computer on the same Wi-Fi (see preview/certs.js)
+  if (url === '/trade-ca.cer') {
+    res.writeHead(200, { 'Content-Type': 'application/x-x509-ca-cert', 'Content-Disposition': 'attachment; filename="Trade-' + os.hostname() + '.cer"', 'Cache-Control': 'no-store' })
+    return res.end(certs.caDer())
+  }
   // Only the copy on GitHub Pages has a hub address (written by npm run pages)
   if (url === '/hub-config.js') { res.writeHead(200, { 'Content-Type': TYPES['.js'], 'Cache-Control': 'no-cache' }); return res.end('') }
   let base = root, rel = url === '/' ? 'index.html' : url
   if (url.startsWith('/utils/')) { base = utils; rel = url.slice('/utils/'.length) }
   const p = path.join(base, rel)
-  if (!p.startsWith(base) || /mailer\.js|serve\.js|build\.js|make-icons\.js|datastore\.js|scanner\.js|publish\.js|autostart\.js|github\.js/.test(rel)) { res.writeHead(403); return res.end() }
+  if (!p.startsWith(base) || /mailer\.js|serve\.js|build\.js|make-icons\.js|datastore\.js|scanner\.js|publish\.js|autostart\.js|github\.js|certs\.js/.test(rel)) { res.writeHead(403); return res.end() }
   fs.readFile(p, (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found') }
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(p)] || 'application/octet-stream', 'Cache-Control': 'no-cache' })
     res.end(data)
   })
-})
+}
+const server = http.createServer(handle)
 server.on('error', e => {
   console.log(e.code === 'EADDRINUSE' ? 'Port ' + port + ' is used by another program. Close it, or start Trade on another port: node preview/serve.js 5180' : 'Server error: ' + e.message)
   process.exit(1)
@@ -312,10 +322,29 @@ server.listen(port, '0.0.0.0', () => {
   store.snapshot(true)
   console.log(github.config() ? 'GitHub: saving to ' + github.config().owner + '/' + github.config().repo : 'GitHub: not set up (Settings → Your data → GitHub)')
   github.start()
+  startHttps()
   if (IPHONE) startTunnel()
   // Every update of the app reaches the iPhones by itself: the newest version is put on GitHub Pages at start
   if (pages.config()) pages.publishApp().then(r => console.log('iPhone app: ' + r)).catch(e => console.log('iPhone app not updated:', e.message))
 })
+
+// https on the Wi-Fi: same app and API as above, with a certificate from this computer's own authority.
+// When the computer gets a new Wi-Fi address, a new certificate for it is made by itself.
+function startHttps() {
+  let c
+  try { c = certs.server() } catch (e) { return console.log('Wi-Fi https: no certificate:', e.message) }
+  const s = https.createServer({ key: c.key, cert: c.cert }, handle)
+  s.on('error', e => console.log(e.code === 'EADDRINUSE' ? 'Wi-Fi https: port ' + HTTPS_PORT + ' is used by another program' : 'Wi-Fi https: ' + e.message))
+  s.listen(HTTPS_PORT, '0.0.0.0', () => {
+    httpsOn = true
+    certs.ipv4s().forEach(ip => console.log('iPhone on the same Wi-Fi: https://' + ip + ':' + HTTPS_PORT))
+  })
+  let ips = c.ips
+  setInterval(() => {
+    if (certs.ipv4s().join(',') === ips) return
+    try { const n = certs.server(); s.setSecureContext({ key: n.key, cert: n.cert }); ips = n.ips; console.log('Wi-Fi https: new address ' + (ips || '(none)')) } catch (e) {}
+  }, 20000).unref()
+}
 
 // Secure address for iPhones: https://<random>.trycloudflare.com → this computer. It changes every time Trade starts.
 let stopping = false
@@ -328,7 +357,7 @@ function startTunnel() {
   try { p = spawn(cf, ['tunnel', '--no-autoupdate', '--url', 'http://localhost:' + port], { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }) }
   catch (e) { return console.log('iPhone: cloudflared is not installed — https://developers.cloudflare.com/cloudflared/') }
   const read = d => {
-    const m = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/.exec(String(d))
+    const m = /https:\/\/(?!api\.)[a-z0-9-]+\.trycloudflare\.com/.exec(String(d)) // not api.trycloudflare.com (it is in cloudflared's error messages)
     if (m && !publicUrl) {
       publicUrl = m[0] + '/'
       console.log('\niPhone address: ' + publicUrl)
@@ -340,9 +369,28 @@ function startTunnel() {
   p.stdout.on('data', read); p.stderr.on('data', read)
   p.on('error', () => console.log('iPhone: cloudflared is not installed — https://developers.cloudflare.com/cloudflared/'))
   p.on('exit', code => {
-    publicUrl = ''
+    if (tunnel === p) { publicUrl = ''; tunnel = null }
     if (code) console.log('iPhone: the secure address closed (code ' + code + ')')
-    if (!stopping && code !== null) setTimeout(startTunnel, 15000) // a new address; iPhones find it by themselves
+    if (!stopping && (code !== null || p.renew)) setTimeout(startTunnel, p.renew ? 0 : 15000) // a new address; iPhones find it by themselves
   })
-  process.on('exit', () => { try { p.kill() } catch (e) {} })
+  tunnel = p
 }
+let tunnel = null, tunnelFails = 0
+process.on('exit', () => { try { tunnel && tunnel.kill() } catch (e) {} })
+// cloudflared can keep running after its address stopped working (sleep, a new Wi-Fi): the iPhone then cannot reach
+// this computer at all. Check the address every minute through the internet; after 3 misses open a new one.
+setInterval(async () => {
+  if (!publicUrl || !tunnel) return
+  try {
+    const r = await fetch(publicUrl + 'api/sync/hello', { cache: 'no-store', signal: AbortSignal.timeout(15000) })
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    tunnelFails = 0
+  } catch (e) {
+    if (++tunnelFails < 3) return
+    tunnelFails = 0
+    console.log('iPhone: the secure address stopped answering — opening a new one (scan the QR code on the iPhone again)')
+    publicUrl = ''
+    tunnel.renew = true
+    try { tunnel.kill() } catch (e) {}
+  }
+}, 60000).unref()

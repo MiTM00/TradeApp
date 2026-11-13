@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node preview/serve.js",
     "build": "node preview/build.js",
-    "apk": "node android/build.js",
     "iphone": "node preview/serve.js --iphone",
     "pages": "node preview/publish.js",
+    "data": "node preview/repo-data.js",
     "autostart": "node preview/autostart.js",
     "autostart:off": "node preview/autostart.js off"
   },

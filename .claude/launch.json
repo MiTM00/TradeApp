@@ -2,18 +2,6 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "apk-share",
-      "runtimeExecutable": "python",
-      "runtimeArgs": [
-        "-m",
-        "http.server",
-        "8090",
-        "--directory",
-        "C:/Users/aa/AppData/Local/Temp/claude/e019e2d4f1052e5e/7fef6b52-9508-4473-b5cd-5eebc0e1a085/scratchpad/apk"
-      ],
-      "port": 8090
-    },
-    {
       "name": "preview",
       "runtimeExecutable": "node",
       "runtimeArgs": [
@@ -66,7 +54,13 @@
     {
       "name": "dist-static",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8195", "--directory", "C:/Users/aa/Projects/trade/dist"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8195",
+        "--directory",
+        "C:/Users/aa/Projects/trade/dist"
+      ],
       "port": 8195
     },
     {
@@ -89,6 +83,24 @@
       "env": {
         "TRADE_DATA_DIR": "C:/Users/aa/AppData/Local/Temp/claude/de4b7f57094b58e9/282b612c-8c5b-4679-9139-5085a70cffb2/scratchpad/data"
       }
+    },
+    {
+      "name": "link-test",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "preview/serve.js",
+        "5184",
+        "--iphone"
+      ],
+      "port": 5184,
+      "env": {
+        "TRADE_DATA_DIR": "C:/Users/aa/AppData/Local/Temp/claude/16ff6c35c6b4af5d/22c42b50-bea1-43bc-bc0e-5e9ffcb9fefd/scratchpad/data"
+      }
+    },
+    {
+      "name": "trade-live",
+      "url": "http://localhost:5173",
+      "port": 5173
     }
   ]
 }

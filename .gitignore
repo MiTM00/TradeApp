@@ -12,3 +12,4 @@ android/keystore.properties
 hub.config.json
 Trade-backup-*.json
 github.config.json
+certs/

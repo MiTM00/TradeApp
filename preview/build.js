@@ -5,7 +5,7 @@ const root = path.join(__dirname, '..'), out = path.join(root, 'dist')
 fs.rmSync(out, { recursive: true, force: true })
 fs.mkdirSync(path.join(out, 'utils'), { recursive: true })
 fs.mkdirSync(path.join(out, 'icons'), { recursive: true })
-;['index.html', 'android.js', 'remote.js', 'manifest.webmanifest', 'sw.js'].forEach(f => fs.copyFileSync(path.join(__dirname, f), path.join(out, f)))
+;['index.html', 'remote.js', 'manifest.webmanifest', 'sw.js'].forEach(f => fs.copyFileSync(path.join(__dirname, f), path.join(out, f)))
 fs.readdirSync(path.join(__dirname, 'icons')).forEach(f => fs.copyFileSync(path.join(__dirname, 'icons', f), path.join(out, 'icons', f)))
 ;['zip', 'pdf', 'xlsx', 'report', 'icons', 'themes', 'similar', 'i18n', 'jsqr'].forEach(f => fs.copyFileSync(path.join(root, 'utils', f + '.js'), path.join(out, 'utils', f + '.js')))
 fs.writeFileSync(path.join(out, '.nojekyll'), '')
@@ -14,7 +14,4 @@ const hub = process.env.TRADE_HUB_REPO ? process.env.TRADE_HUB_REPO.split('/') :
 fs.writeFileSync(path.join(out, 'hub-config.js'), hub
   ? 'window.TRADE_HUB = ' + JSON.stringify({ owner: hub[0], repo: hub[1] }) + ';\n'
   : '// No computer configured: the app works fully on the phone\n')
-// The Android app, so phones can download it from the same address (…/Trade.apk)
-const apk = path.join(root, 'android', 'Trade.apk')
-if (fs.existsSync(apk)) fs.copyFileSync(apk, path.join(out, 'Trade.apk'))
 console.log('Built', out)

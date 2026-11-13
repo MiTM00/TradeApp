@@ -78,7 +78,7 @@ Run the server (`node preview/serve.js`). The computer keeps every product and m
 
 **Computer login (like WhatsApp Web):** open http://localhost:5173 on the computer. While no phone is linked the whole screen is one QR code; scan it with Trade on the iPhone and the computer opens with the iPhone's products. The iPhone is the parent. Unlinking the last phone brings the login screen back (nothing is deleted). The iPhone app: https://mitm00.github.io/TradeApp/ (start the computer with `npm run iphone` so the iPhone can reach it).
 
-**Linking a phone (like WhatsApp):** the phone keeps the main copy of your products; the computer mirrors it. On the computer open **Settings → Use on another device** — it shows **one QR code** that changes every minute and works for one scan. On the phone open Trade → **Settings → Use on another device → Scan QR code** and point it at the computer screen. That is all: the phone sends its own code with the scan, so nothing has to be typed or scanned the other way. Everything on the phone is then sent to the computer, and every later change syncs live whenever the two are connected (changes made while apart wait on the phone and go up later). The computer screen notices the link by itself and lists every **linked phone** with an **Unlink** button; an unlinked phone keeps its products but can no longer read or change anything on the computer until it scans again. Can't scan? Open *Can't scan? Type the code instead* on both screens and type the 6-digit code (the Android app also asks for the computer address). Scanning the QR code with the plain phone camera opens Trade in the browser, so a phone without the app can install it first. Android uses its built-in QR detector; iPhone uses `utils/jsqr.js` (jsQR, Apache-2.0), shipped with the app so it works offline.
+**Linking a phone (like WhatsApp):** the phone keeps the main copy of your products; the computer mirrors it. On the computer open **Settings → Use on another device** — it shows **one QR code** that changes every minute and works for one scan. On the phone open Trade → **Settings → Use on another device → Scan QR code** and point it at the computer screen. That is all: the phone sends its own code with the scan, so nothing has to be typed or scanned the other way. Everything on the phone is then sent to the computer, and every later change syncs live whenever the two are connected (changes made while apart wait on the phone and go up later). The computer screen notices the link by itself and lists every **linked phone** with an **Unlink** button; an unlinked phone keeps its products but can no longer read or change anything on the computer until it scans again. Can't scan? Open *Can't scan? Type the code instead* on both screens and type the 6-digit code. Scanning the QR code with the plain phone camera opens Trade in the browser, so a phone without the app can install it first. Android uses its built-in QR detector; iPhone uses `utils/jsqr.js` (jsQR, Apache-2.0), shipped with the app so it works offline.
 
 ## AI scanner
 
@@ -91,18 +91,6 @@ Run the server (`node preview/serve.js`). The computer keeps every product and m
 - With the Trade server running (`node preview/serve.js`) and an account set up in **Settings → Email** (Gmail, Outlook, QQ, 163, Yahoo or any SMTP, using an *app password*), the report is sent directly with the file attached. The account is saved in `email.config.json` — keep that file private.
 - Without it (e.g. the app hosted on HTTPS, or the mini program) the phone's email app opens with the file attached and the address copied.
 
-## Android app (Trade.apk) — installed like any other app
-
-`node android/build.js` (or `npm run apk`) → **`android/Trade.apk`**. Copy it to the phone (USB, WhatsApp, Telegram, email…), tap it, allow *Install unknown apps* for that app once, then **Install**. Trade is then on the home screen like a normal app. It has no browser bar, and the back button works.
-
-- The whole app is inside the APK, so it opens without internet and without the computer. Products are kept in the app's own database on the phone. They are only removed if the app is uninstalled or its data is cleared, so connect to the computer to keep a second copy.
-- **Connect to the computer** (sync, AI scanner, email): run `node preview/serve.js` on the computer, then on the phone **Settings → Use on another device → Scan QR code** and scan the QR code on the computer screen. Without a camera: *Can't scan?* → type the computer address and the 6-digit code.
-- Photos: *Take photo* opens the camera, *Choose from gallery* opens the gallery. The live AI scanner and the map location ask for permission the first time.
-- Reports: **Save on phone** → `Downloads/Trade`. **Share** opens WhatsApp, WeChat, Gmail and other apps. **Open** opens the PDF / Excel in a viewer app.
-- Updates: build again and install the new APK over the old one. Your data stays. Each build must be signed with the same key, `android/trade.keystore` + `android/keystore.properties` (created on the first build). **Keep a copy of both files.** Without them the phone will not accept an update, and you would have to uninstall the app, which deletes the data on the phone.
-- Build needs: Android SDK (platform 35 + build-tools 35) and JDK 17 (`JAVA_HOME`, or a `jdk-17…` folder in `%LOCALAPPDATA%\Programs`). No Gradle or Android Studio.
-- Source: `android/AndroidManifest.xml`, `android/src/…/MainActivity.java` (full-screen WebView, camera, files, permissions), `android/src/…/Files.java` (hands files to other apps), `preview/android.js` (connects the web app to the phone; it does nothing in a browser).
-
 ## iPhone — installed from the home screen
 
 Apple only allows native iPhone apps built on a Mac with an Apple Developer account. Trade therefore goes on the iPhone as a home-screen app. It has its own icon and no Safari bar, it works offline, and its data stays on the iPhone.
@@ -112,6 +100,17 @@ Apple only allows native iPhone apps built on a Mac with an Apple Developer acco
 3. iPhone: scan the code with the camera → Safari opens → **Share → Add to Home Screen** → open Trade once from the home screen.
 
 After that Trade opens on the iPhone without internet and without the computer. While `npm run iphone` is running the iPhone also syncs with the computer. The secure address is open to the internet only while it runs: requests through it are never treated as the computer, and pairing still needs the code. The address changes every time `npm run iphone` starts, so **keep the installed app** and don't add it again. Adding it again from a new address starts an empty app. Products come back only if the computer has them.
+
+## iPhone on the same Wi-Fi (no internet needed)
+
+The iPhone app lives on https (GitHub Pages), and Safari will not let an https page talk to a plain `http://192.168…` address. So the Trade server also listens with **https on the Wi-Fi** (port 5443, next to 5173), using a certificate from this computer's own small authority, *Trade on <computer>* (`preview/certs.js`, kept in `certs/`, never uploaded).
+
+Set up once:
+1. Computer: **Settings → Use on another device → Same Wi-Fi**. Scan that QR code with the iPhone camera → Safari → **Allow**.
+2. iPhone: **Settings → Profile Downloaded → Install**, then **Settings → General → About → Certificate Trust Settings** → turn on *Trade on <computer>*.
+3. Open Trade on the iPhone → **Settings → Use on another device → Scan QR code** and scan the computer's link code.
+
+From then on the iPhone reaches the computer directly on the Wi-Fi. When the computer gets a new Wi-Fi address, it makes a new certificate by itself, and the iPhone looks through that Wi-Fi to find it again. The Cloudflare address (`npm run iphone`) still works when they are apart. If it stops answering, the server opens a new one by itself, and the iPhone shows **Scan QR code** to pick it up.
 
 ## iPhone as the main device (GitHub Pages)
 
@@ -125,14 +124,14 @@ How the iPhone finds the computer: the secure address changes every time Trade s
 
 ## Always connected (phone app ↔ computer)
 
-- **The computer's address changed?** (new Wi-Fi, phone hotspot, the router gave it a new IP) The Android app finds it by itself. When the saved address stops answering, it first tries every address the computer had before, then looks through the networks the phone is on (and the usual hotspot networks) for a Trade server. It only accepts *your* computer: the server answers `GET /api/sync/hello` with a fingerprint of the pairing key (SHA-256, never the key itself), and the phone compares it with its own. Then sync carries on and anything waiting on the phone is sent. No need to type the address or pair again.
+- **The computer's address changed?** (new Wi-Fi, phone hotspot, the router gave it a new IP) The iPhone app finds it by itself. When the saved address stops answering, it first tries every address the computer had before, then looks through the networks the phone is on (and the usual hotspot networks) for a Trade server. It only accepts *your* computer: the server answers `GET /api/sync/hello` with a fingerprint of the pairing key (SHA-256, never the key itself), and the phone compares it with its own. Then sync carries on and anything waiting on the phone is sent. No need to type the address or pair again.
 - **Start Trade with Windows:** `npm run autostart` puts a small `Trade.vbs` in the Windows Startup folder, so the server starts hidden every time you sign in, and starts it now. `npm run autostart:off` removes it.
 - The computer and the phone must be on the same network (same Wi-Fi, or one is the other's hotspot).
 
 ## Live sync, data that is never lost, Trash
 
 - **Live sync:** a change on a phone reaches the computer in a fraction of a second. Every other paired device gets it at once, because each device keeps a waiting request open (`GET /api/sync/wait`). If the computer cannot be reached, the phone keeps the change and tries again (2 s, 4 s … 30 s), until it arrives.
-- **Never lost:** the computer keeps every record in `data/`, the last 10 versions of each record in `data/history/`, and every deleted record in `data/deleted/`. The last 60 daily copies, plus the first copy of every month (kept forever), are in `data/backups/`. App updates (APK, iPhone, web) never touch `data/`. Each phone keeps its own full copy as well.
+- **Never lost:** the computer keeps every record in `data/`, the last 10 versions of each record in `data/history/`, and every deleted record in `data/deleted/`. The last 60 daily copies, plus the first copy of every month (kept forever), are in `data/backups/`. App updates (iPhone, web) never touch `data/`. Each phone keeps its own full copy as well.
 - **Trash:** deleting a product moves it into the Trash with a macOS-style "genie" animation. The Trash is on every device, and you can **put back** a product any time. Open it with the trash button on the Products page or in **Settings → Trash**. *Delete forever* / *Empty Trash* remove a product from the Trash on every device, but the computer still keeps it in `data/deleted/`.
 - **Settings** has one menu: **Storage**, **Use on another device**, **Backup & restore** and **Trash**. Each opens its own page.
 
@@ -143,7 +142,7 @@ The phone (iPhone) keeps the main copy of the data and saves every product, phot
 1. On github.com create a **private** repository, e.g. `trade-data` (Trade refuses a public one).
 2. Create a **fine-grained token**: Settings → Developer settings → Fine-grained tokens → Generate. *Repository access*: only that repository. *Permissions*: **Contents: Read and write**.
 3. Phone: **Settings → Storage → GitHub** → user name, repository, token → **Save to GitHub**. Everything on the phone is uploaded once, then every change.
-4. Computer: the same card on the computer (same repository; the same or a second token). The Trade server (`preview/github.js`) then reads what the phone saved every 20 s and saves what the computer or an Android phone added. Settings are in `github.config.json` (keep it private, it is in `.gitignore`); the last seen file versions are in `data/github.json`.
+4. Computer: the same card on the computer (same repository; the same or a second token). The Trade server (`preview/github.js`) then reads what the phone saved every 20 s and saves what the computer added. Settings are in `github.config.json` (keep it private, it is in `.gitignore`); the last seen file versions are in `data/github.json`.
 
 The phone ↔ computer sync over Wi-Fi (pairing code, live sync) keeps working next to it. Newest change wins everywhere, and a delete is kept as a small tombstone file so every device learns about it.
 
@@ -154,3 +153,7 @@ The iPhone keeps every product, photo and market in your own **private** GitHub 
 - **Link from the iPhone:** Settings → Storage → GitHub → **Link for the computer** (copy, send or scan it). Open it on the computer, or paste it on the computer's login screen (*Or open with the link from your iPhone*). The repository details sit after `#` in the link, so they are never sent to a web server — but anyone with the link can open your products, so send it only to yourself.
 - **Scan the QR code:** when the iPhone links to the computer, it hands over its repository too, so the computer reads it from then on.
 - **From the repository:** type the user name, repository and token on the computer (Settings → Storage → GitHub).
+
+## Claude Code reads the iPhone's data
+
+When Claude Code works on Trade it starts from the data the iPhone saved, not from made-up samples. `.claude/settings.json` runs `preview/repo-data.js` when a session starts (and again before each message): it fetches the iPhone's private GitHub repository into `data/` — through the Trade server when it is running — and gives Claude a summary of every product. If nothing is there yet it says **NOT DONE YET (wali lama samayn)**. Run it yourself with `npm run data`. The computer must be connected to the repository first (iPhone: **Settings → Storage → GitHub → Link for the computer**, then open the link on the computer).

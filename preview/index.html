@@ -13,8 +13,6 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<!-- Android app (Trade.apk) only: does nothing in a browser -->
-<script src="android.js"></script>
 <!-- iPhone app on GitHub Pages only: finds the Trade computer (empty everywhere else) -->
 <script src="hub-config.js"></script>
 <script src="remote.js"></script>
@@ -133,7 +131,43 @@
   .empty-art { width:70px; height:70px; border-radius:22px; background:var(--mint); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; animation:float 3s ease-in-out infinite; }
   @keyframes float { 50% { transform:translateY(-6px); } }
   .empty-title { font-size:17px; font-weight:800; margin-bottom:5px; }
-  .pcard { display:flex; gap:12px; background:var(--card); border-radius:var(--radius); padding:10px; margin-bottom:11px; box-shadow:var(--shadow); cursor:pointer; }
+  .pcard { display:flex; gap:12px; background:var(--card); border-radius:var(--radius); padding:10px; box-shadow:var(--shadow); cursor:pointer; position:relative; z-index:1; touch-action:pan-y; will-change:transform; }
+  /* Swipe a card to the left: Edit and Delete slide out from under it (spring like macOS) */
+  .swipe { position:relative; margin-bottom:11px; border-radius:var(--radius); transition:height .38s cubic-bezier(.32,.72,0,1), margin .38s cubic-bezier(.32,.72,0,1), opacity .3s; }
+  .swipe .pcard.snap { transition:transform .5s cubic-bezier(.22,1.28,.36,1); }
+  .swipe.open .pcard { box-shadow:0 10px 30px rgba(15,23,42,.18); }
+  .sw-acts { position:absolute; top:0; right:0; bottom:0; display:flex; gap:8px; align-items:stretch; padding:6px 2px 6px 0; }
+  .sw-btn { width:72px; border:0; border-radius:16px; color:#fff; font:700 12px/1.1 inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer;
+    opacity:0; transform:scale(.55) translateX(16px); transition:transform .42s cubic-bezier(.22,1.4,.36,1), opacity .25s, filter .2s; -webkit-tap-highlight-color:transparent; }
+  .sw-btn.sw-e { background:linear-gradient(160deg,#3B82F6,#6366F1); box-shadow:0 6px 16px rgba(79,70,229,.35); }
+  .sw-btn.sw-d { background:linear-gradient(160deg,#FB7185,#E11D48); box-shadow:0 6px 16px rgba(225,29,72,.35); }
+  .sw-btn:active { filter:brightness(.9); transform:scale(.94); }
+  .sw-btn i { width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center; }
+  .swipe.peek .sw-btn, .swipe.open .sw-btn { opacity:1; transform:none; }
+  .swipe.open .sw-btn.sw-d { transition-delay:.05s; }
+  .swipe.gone { opacity:0; margin-bottom:0; }
+  body.noanim .swipe .pcard.snap, body.noanim .sw-btn { transition:none; }
+  .thumb-vid { position:absolute; right:6px; bottom:6px; display:flex; align-items:center; gap:3px; padding:2px 7px; border-radius:999px; background:rgba(225,29,72,.85); color:#fff; font-size:10px; font-weight:700; }
+  /* Product videos */
+  .vids { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:12px; }
+  .vid-box { position:relative; aspect-ratio:1; border-radius:14px; overflow:hidden; background:#0F172A; }
+  .vid-box img { width:100%; height:100%; object-fit:cover; display:block; opacity:.9; }
+  .vid-box .play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .vid-box .play i { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; }
+  .vid-box .dur { position:absolute; left:6px; bottom:6px; color:#fff; font-size:10px; font-weight:700; background:rgba(0,0,0,.5); padding:2px 6px; border-radius:999px; }
+  .vid-box .del { position:absolute; top:5px; right:5px; }
+  .vid-box.add { background:var(--soft); color:var(--ink-2); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:12px; font-weight:700; cursor:pointer; border:1.5px dashed var(--line); }
+  .d-vids video { width:100%; border-radius:14px; background:#000; display:block; margin-top:10px; max-height:70vh; }
+  .rec { position:absolute; inset:0; z-index:5000; background:#000; display:flex; flex-direction:column; }
+  .rec video { flex:1; width:100%; object-fit:cover; min-height:0; }
+  .rec-top { position:absolute; top:calc(14px + var(--safe-top, 0px)); left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:0 16px; color:#fff; font-weight:700; }
+  .rec-time { padding:4px 12px; border-radius:999px; background:rgba(0,0,0,.45); font-variant-numeric:tabular-nums; }
+  .rec-time.on { background:#E11D48; }
+  .rec-bar { position:absolute; bottom:calc(26px + var(--safe-bottom, 0px)); left:0; right:0; display:flex; justify-content:space-around; align-items:center; }
+  .rec-btn { width:76px; height:76px; border-radius:50%; border:4px solid #fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .rec-btn i { width:58px; height:58px; border-radius:50%; background:#E11D48; transition:all .35s cubic-bezier(.22,1.28,.36,1); }
+  .rec-btn.on i { width:28px; height:28px; border-radius:8px; }
+  .rec-side { width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .thumb { position:relative; width:112px; height:112px; border-radius:12px; overflow:hidden; flex-shrink:0; background:var(--soft); }
   .thumb img { width:100%; height:100%; object-fit:contain; display:block; transition:transform .5s var(--ease); }
   .pcard:hover .thumb img { transform:scale(1.06); }
@@ -665,6 +699,60 @@
   .rp-mode.on.danger { border-color:var(--price); background:rgba(225,29,72,.06); } .rp-mode.on.danger .rp-radio { border-color:var(--price); }
   .rp-done { display:flex; gap:8px; } .rp-done div { flex:1; padding:12px 6px; border-radius:14px; background:var(--field); border:1px solid var(--line); }
   .rp-done b { display:block; font-size:24px; font-weight:800; color:var(--brand); } .rp-done span { font-size:11.5px; color:var(--ink-2); font-weight:700; }
+  /* ---------- computer = view only: products are recorded on the iPhone ---------- */
+  body.pc .tabbar .center .plus, body.pc .sw-acts, body.pc #pcHideBar, body.pc #weProd { display:none !important; }
+  body.pc .tabbar .center::after { content:''; }
+  /* ---------- lock screen (iPhone) ---------- */
+  body.privacy .phone > *:not(.lk) { filter:blur(28px) saturate(1.4); }
+  .lk { position:fixed; inset:0; z-index:99999; color:#fff; display:flex; flex-direction:column; align-items:center; overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:none;
+    background:radial-gradient(120% 80% at 20% 0%, var(--brand-2) 0%, transparent 60%), radial-gradient(120% 90% at 100% 100%, #7C3AED 0%, transparent 55%), linear-gradient(160deg, var(--brand-dark, #0F172A), #0B1020 70%);
+    animation:lkIn .45s cubic-bezier(.32,.72,0,1) both; padding:calc(54px + var(--safe-top, 0px)) 20px calc(24px + var(--safe-bottom, 0px)); }
+  @keyframes lkIn { from { opacity:0; transform:scale(1.06); } }
+  .lk::before, .lk::after { content:''; position:absolute; width:360px; height:360px; border-radius:50%; filter:blur(70px); opacity:.45; pointer-events:none; animation:lkBlob 14s ease-in-out infinite alternate; }
+  .lk::before { background:var(--brand); top:-120px; left:-100px; }
+  .lk::after { background:#EC4899; bottom:-140px; right:-120px; animation-delay:-7s; }
+  @keyframes lkBlob { to { transform:translate(60px,80px) scale(1.2); } }
+  .lk > * { position:relative; z-index:1; }
+  .lk.out { animation:lkOut .55s cubic-bezier(.32,.72,0,1) forwards; pointer-events:none; }
+  @keyframes lkOut { to { opacity:0; transform:scale(1.12); filter:blur(14px); } }
+  .lk-lock { width:44px; height:44px; border-radius:15px; background:rgba(255,255,255,.14); border:.5px solid rgba(255,255,255,.3); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  .lk-lock svg { width:22px; height:22px; } .lk-lock .shackle { transition:transform .45s cubic-bezier(.22,1.4,.36,1); transform-origin:17px 11px; }
+  .lk.ok .lk-lock .shackle { transform:translateY(-3px) rotate(-28deg); }
+  .lk.ok .lk-lock { background:rgba(34,197,94,.35); }
+  .lk-time { font-size:68px; font-weight:300; letter-spacing:-2px; line-height:1; margin-top:14px; font-variant-numeric:tabular-nums; text-shadow:0 4px 30px rgba(0,0,0,.25); }
+  .lk-date { font-size:15px; font-weight:600; opacity:.85; margin-top:6px; }
+  .lk-msg { margin-top:22px; font-size:15px; font-weight:700; min-height:22px; text-align:center; transition:color .2s; }
+  .lk-msg.bad { color:#FDA4AF; } .lk-sub { font-size:12.5px; opacity:.7; margin-top:4px; min-height:16px; text-align:center; }
+  .lk-card { margin-top:18px; padding:16px; border-radius:30px; background:rgba(255,255,255,.08); border:.5px solid rgba(255,255,255,.18); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); box-shadow:0 20px 60px rgba(0,0,0,.25); }
+  .lk-card.shake { animation:lkShake .5s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes lkShake { 15%,55% { transform:translateX(-12px); } 35%,75% { transform:translateX(12px); } 90% { transform:translateX(-4px); } }
+  .pp { position:relative; width:264px; height:264px; touch-action:none; }
+  .pp svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+  .pp polyline, .pp line { fill:none; stroke:url(#ppg); stroke-width:7; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 8px rgba(255,255,255,.55)); }
+  .pp.bad polyline, .pp.bad line { stroke:#FB7185; filter:drop-shadow(0 0 8px rgba(251,113,133,.8)); }
+  .pp.good polyline { stroke:#4ADE80; filter:drop-shadow(0 0 10px rgba(74,222,128,.9)); }
+  .pp-d { position:absolute; width:64px; height:64px; margin:-32px 0 0 -32px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .pp-d i { width:16px; height:16px; border-radius:50%; background:rgba(255,255,255,.55); transition:all .25s cubic-bezier(.22,1.4,.36,1); box-shadow:0 0 0 0 rgba(255,255,255,0); }
+  .pp-d::before { content:''; position:absolute; inset:6px; border-radius:50%; border:1.5px solid rgba(255,255,255,.18); transform:scale(.6); opacity:0; transition:all .35s cubic-bezier(.22,1.4,.36,1); }
+  .pp-d.on i { width:22px; height:22px; background:#fff; box-shadow:0 0 18px 4px rgba(255,255,255,.7); }
+  .pp-d.on::before { transform:none; opacity:1; background:rgba(255,255,255,.12); }
+  .pp.bad .pp-d.on i { background:#FB7185; box-shadow:0 0 18px 4px rgba(251,113,133,.7); }
+  .pp.good .pp-d.on i { background:#4ADE80; box-shadow:0 0 18px 4px rgba(74,222,128,.8); }
+  .pin-dots { display:flex; gap:14px; justify-content:center; margin:4px 0 18px; }
+  .pin-dots i { width:13px; height:13px; border-radius:50%; border:1.5px solid rgba(255,255,255,.8); transition:all .2s cubic-bezier(.22,1.4,.36,1); }
+  .pin-dots i.on { background:#fff; transform:scale(1.15); }
+  .pin-keys { display:grid; grid-template-columns:repeat(3,72px); gap:14px 22px; }
+  .pin-k { width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,.14); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:28px; font-weight:400; cursor:pointer; transition:background .15s, transform .15s; -webkit-tap-highlight-color:transparent; }
+  .pin-k:active { background:rgba(255,255,255,.4); transform:scale(.94); }
+  .pin-k.ghost { background:none; font-size:15px; font-weight:600; }
+  .lk-acts { margin-top:auto; display:flex; gap:12px; justify-content:center; padding-top:18px; flex-wrap:wrap; }
+  .lk-b { height:44px; padding:0 18px; border-radius:999px; background:rgba(255,255,255,.14); border:.5px solid rgba(255,255,255,.25); color:#fff; font:700 14px inherit; display:inline-flex; align-items:center; gap:8px; cursor:pointer; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  .lk-b:active { transform:scale(.96); }
+  .lk-b.main { background:#fff; color:#0F172A; }
+  .lk-steps { display:flex; gap:6px; margin-top:16px; } .lk-steps i { width:22px; height:4px; border-radius:4px; background:rgba(255,255,255,.25); transition:all .3s; } .lk-steps i.on { width:34px; background:#fff; }
+  .seg { display:flex; padding:3px; border-radius:12px; background:var(--soft); gap:3px; }
+  .seg span { flex:1; text-align:center; padding:7px 4px; border-radius:9px; font-size:12.5px; font-weight:700; color:var(--ink-2); cursor:pointer; transition:all .2s; }
+  .seg span.on { background:var(--card); color:var(--ink); box-shadow:0 2px 8px rgba(15,23,42,.1); }
   /* ---------- wishlist ---------- */
   .wl-btn { margin-left:auto; display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 8px 0 10px; border-radius:999px; background:rgba(255,255,255,.18); border:.5px solid rgba(255,255,255,.3); font-size:12.5px; cursor:pointer; }
   .wl-btn b { min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:#F43F5E; color:#fff; font-size:11px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(244,63,94,.5); }
@@ -699,6 +787,32 @@
   .we-pri { display:flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:var(--ink-2); } .we-pri span { margin-right:4px; }
   .we-pri i { cursor:pointer; display:flex; padding:3px; border-radius:8px; transition:transform .2s var(--ease); } .we-pri i:active { transform:scale(1.3); }
   .we-acts { display:flex; gap:8px; margin-top:-2px; }
+  .wl2-top { padding:calc(18px + var(--safe-top, 0px)) 18px 6px; }
+  .wl2-h { display:flex; align-items:center; gap:10px; font-size:30px; font-weight:900; letter-spacing:-.6px; }
+  .wl2-h .hb { width:38px; height:38px; border-radius:13px; background:linear-gradient(140deg,#FB7185,#E11D48); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(225,29,72,.35); }
+  .wl2-s { color:var(--ink-2); font-size:13px; margin:4px 0 0 2px; }
+  .wl2-add { display:flex; align-items:center; gap:8px; margin:14px 0 12px; padding:6px 6px 6px 16px; border-radius:18px; background:var(--card); box-shadow:var(--shadow); }
+  .wl2-add input { flex:1; min-width:0; border:0; outline:0; background:none; font:600 15px inherit; color:var(--ink); height:40px; }
+  .wl2-add .go { width:42px; height:42px; border-radius:14px; background:linear-gradient(140deg,#FB7185,#E11D48); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .2s cubic-bezier(.22,1.4,.36,1); box-shadow:0 6px 16px rgba(225,29,72,.35); }
+  .wl2-add .go:active { transform:scale(.9); } .wl2-add .cam { width:42px; height:42px; border-radius:14px; background:var(--soft); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .wl2-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:4px 16px calc(110px + var(--safe-bottom, 0px)); }
+  .wi { position:relative; border-radius:22px; background:var(--card); box-shadow:var(--shadow); overflow:hidden; cursor:pointer; transition:transform .35s cubic-bezier(.22,1.28,.36,1), opacity .3s; }
+  .wi:active { transform:scale(.97); }
+  .wi .pic { aspect-ratio:1; width:100%; object-fit:cover; display:block; }
+  .wi .pic.ph { display:flex; align-items:center; justify-content:center; font-size:46px; font-weight:900; color:rgba(255,255,255,.95); background:linear-gradient(145deg,hsl(var(--h) 85% 72%),hsl(calc(var(--h) + 50) 75% 55%)); text-shadow:0 4px 16px rgba(0,0,0,.15); }
+  .wi .tx { padding:10px 12px 12px; } .wi .tt { font-weight:800; font-size:14px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
+  .wi .pr { margin-top:4px; font-size:12.5px; font-weight:800; color:var(--price, #E11D48); }
+  .wi .ck { position:absolute; top:9px; right:9px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.15); transition:transform .4s cubic-bezier(.22,1.6,.36,1), background .2s; }
+  .wi .ck:active { transform:scale(.8); }
+  .wi.done .ck { background:#22C55E; }
+  .wi.done .pic { filter:grayscale(.6) brightness(.95); } .wi.done .tt { color:var(--ink-3); text-decoration:line-through; }
+  .wi.pop .ck { transform:scale(1.35); }
+  .wi.bye { transform:scale(.6); opacity:0; }
+  .wi.new { animation:wiNew .7s cubic-bezier(.22,1.28,.36,1) both; }
+  @keyframes wiNew { from { transform:scale(.4) rotate(-6deg); opacity:0; } }
+  .wl2-empty { grid-column:1/-1; text-align:center; padding:48px 20px; color:var(--ink-2); }
+  .wl2-empty .big { width:84px; height:84px; margin:0 auto 14px; border-radius:28px; background:linear-gradient(140deg,#FB7185,#E11D48); display:flex; align-items:center; justify-content:center; box-shadow:0 14px 34px rgba(225,29,72,.35); animation:float 3s ease-in-out infinite; }
+  .wl2-seg { margin:0 16px 12px; }
   /* ---------- auto-fill (object recognition) ---------- */
   .af { display:flex; align-items:center; gap:10px; margin-top:10px; padding:10px 11px; border-radius:13px; background:var(--mint); color:var(--ink); animation:fade .25s; }
   .af .af-ic { width:32px; height:32px; border-radius:10px; background:linear-gradient(135deg,var(--brand-2),var(--brand)); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -958,7 +1072,7 @@ const Sync = {
     this.soon();
   },
   pending() { const d = this.dirty(); return SYNC_KINDS.reduce((n, k) => n + Object.keys(d[k]).length, 0); },
-  soon(ms) { clearTimeout(this.timer); this.timer = setTimeout(() => this.run(), ms || 250); },
+  soon(ms) { clearTimeout(this.timer); this.timer = setTimeout(() => this.run(), ms || 40); },
   key() { return DB.kv.syncKey || ''; },
   // This phone's own pairing code (the iPhone is the main device): typed or scanned on the computer
   ownKey() {
@@ -997,6 +1111,8 @@ const Sync = {
       const r = await fetch('api/sync/info', { cache: 'no-store' });
       if (r.ok) {
         this.server = await r.json();
+        document.body.classList.toggle('pc', !!this.server.key);
+        if (this.server.key && /^#add/.test(location.hash)) route(true); // the add form was opened before the computer was recognised
         PcLogin.check();
         if (document.getElementById('goCard')) drawGoCard();
         if (this.server.key && this.server.key !== DB.kv.syncKey) await this.pair(this.server.key, true);
@@ -1033,10 +1149,13 @@ const Sync = {
     let last = null;
     for (const s of cands) {
       if (F) F.setServer(s);
-      try { await this.linkWith(L.token); return true; }
+      try { await this.linkWith(L.token); if (F && F.hub) F.remember(cands); return true; }
       catch (e) { last = e; if (e.final) break; }
     }
     if (F) F.setServer(prev);
+    // iPhone: the Wi-Fi address only answers once the computer's certificate is installed and trusted on the iPhone
+    if (F && F.hub && !(last && last.final) && cands.some(s => !/trycloudflare\.com/.test(s)))
+      throw new Error(t('The iPhone cannot open the computer on this Wi-Fi yet. Install the computer’s certificate once: on the computer open Settings → Use on another device → Same Wi-Fi.'));
     // A browser tab that is not on the Trade computer: open the computer's own link (it links by itself there).
     // Not inside an installed app — leaving its address would start an empty app.
     if (!F && !Install.standalone()) { try { if (new URL(L.base).origin !== location.origin) { location.href = L.raw; return false; } } catch (e) {} }
@@ -1172,9 +1291,19 @@ const Sync = {
   },
   // Phone app: remember every address of the computer (Wi-Fi, cable, hotspot), so it is found again when one changes
   learnAddresses() {
-    if (!window.TradeApp || !TradeApp.remember || Date.now() - (this.learnedAt || 0) < 600000) return;
+    const F = this.finder();
+    if (!F || !F.remember || Date.now() - (this.learnedAt || 0) < 600000) return;
     this.learnedAt = Date.now();
-    fetch('api/sync/hello', { cache: 'no-store' }).then(r => r.json()).then(j => { if (j && j.urls) TradeApp.remember([TradeApp.server()].concat(j.urls)); }).catch(() => {});
+    fetch('api/sync/hello', { cache: 'no-store' }).then(r => r.json()).then(async j => {
+      if (!j || !j.urls) return;
+      if (!F.hub) return F.remember([F.server()].concat(j.urls));
+      // iPhone app: keep the Wi-Fi https addresses, and move to one of them when the phone can open it (no internet needed)
+      F.remember((j.secure || []).concat(F.server()));
+      if (!/trycloudflare\.com/.test(F.server())) return;
+      for (const u of j.secure || []) {
+        try { const h = await (await fetch(u + 'api/sync/hello', { cache: 'no-store' })).json(); if (h && h.id === j.id) { F.setServer(u); return; } } catch (e) {}
+      }
+    }).catch(() => {});
   },
   // Phone app: the computer cannot be reached at its saved address → look for it on this network and switch to it
   async rediscover(force) {
@@ -1245,9 +1374,9 @@ const Cloud = {
     this.soon();
   },
   pending() { const d = this.dirty(); return SYNC_KINDS.reduce((n, k) => n + Object.keys(d[k]).length, 0); },
-  soon(ms) { clearTimeout(this.timer); this.timer = setTimeout(() => this.run(), ms || 800); },
+  soon(ms) { clearTimeout(this.timer); this.timer = setTimeout(() => this.run(), ms || 150); },
   init() {
-    setInterval(() => { if (!document.hidden) this.run(); }, 30000);
+    setInterval(() => { if (!document.hidden) this.run(); }, 15000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) this.run(); });
     window.addEventListener('online', () => this.run());
     this.run();
@@ -1407,23 +1536,8 @@ const Cloud = {
     return last ? t('Saved on GitHub · {time}', { time: TradeReport.dateTimeLabel(last) }) : t('Connected to GitHub');
   }
 };
-// Banner on the main pages when this phone's products are NOT reaching the computer
-function paintConnect() {
-  const el = document.getElementById('connBar'); if (!el) return;
-  const off = !Sync.key() && Sync.reachable() && !(Sync.server && Sync.server.key);
-  const err = !!Sync.key() && Sync.status === 'error';
-  const key = off ? 'off' + (Sync.lost ? 'L' : '') : err ? 'err:' + Sync.error + Sync.pending() : '';
-  if (el.dataset.k === key) return; // nothing changed (avoids redrawing every few seconds)
-  el.dataset.k = key;
-  if (!key) { el.innerHTML = ''; return; }
-  const n = Sync.pending();
-  el.innerHTML = `<div class="connbar ${err ? 'err' : ''} reveal">
-    <div class="cb-ic">${ic(err ? 'refresh' : 'devices', '#fff', 18, 2.2)}</div>
-    <div class="cb-t"><b>${esc(err ? t('Not reaching the computer') : Sync.lost ? t('Connect this phone again') : t('This phone is not connected'))}</b>
-      <span>${esc(err ? Sync.error + (n ? ' · ' + t('{n} changes waiting', { n }) : '') : t('What you add here stays only on this phone. Connect it so the computer and your other devices get it.'))}</span></div>
-    <button class="btn sm" id="cbGo">${esc(err ? t('Retry') : t('Connect'))}</button></div>`;
-  document.getElementById('cbGo').onclick = () => err ? Sync.run() : (location.hash = 'devices');
-}
+// The iPhone is the real app and keeps every product itself: no banner asking to connect a computer
+function paintConnect() { const el = document.getElementById('connBar'); if (el && el.innerHTML) el.innerHTML = ''; }
 async function connectDialog() {
   const v = await dialog({
     title: t('Connect to the computer'),
@@ -1706,10 +1820,14 @@ function renderIndex() {
   drawList();
 }
 function productCard(p) {
-  return `<div class="pcard" onclick="location.hash='detail/${p.id}'">
+  return `<div class="swipe" data-id="${p.id}"><div class="sw-acts">
+      <button class="sw-btn sw-e" data-act="edit" aria-label="${esc(t('Edit'))}"><i>${ic('edit', '#fff', 17, 2.4)}</i>${esc(t('Edit'))}</button>
+      <button class="sw-btn sw-d" data-act="del" aria-label="${esc(t('Delete'))}"><i>${ic('trash', '#fff', 17, 2.4)}</i>${esc(t('Delete'))}</button></div>
+    <div class="pcard" onclick="if(!Swipe.eat())location.hash='detail/${p.id}'">
     <div class="thumb">
       ${p.images.length ? `<img src="${p.images[0]}" loading="lazy">` : `<div class="thumb-ph">${ic('image', '#B6C0CD', 28, 1.6)}</div>`}
       ${p.images.length > 1 ? `<div class="thumb-count">${ic('camera', '#fff', 11, 2.4)}${p.images.length}</div>` : ''}
+      ${(p.videos || []).length ? `<div class="thumb-vid">${ic('play', '#fff', 10, 2.6)}${p.videos.length}</div>` : ''}
     </div>
     <div class="body">
       <div class="name" data-notr>${esc(p.name)}</div>
@@ -1718,8 +1836,63 @@ function productCard(p) {
       <div class="where date">${dateChip(TradeReport.registeredAt(p))}${p.shopWechat === 'yes' ? `<span class="wxchip">${ic('wechat', '#16A34A', 11)}WeChat</span>` : ''}</div>
       <div class="bottom">${priceHtml(p.currency, p.price, p.unit, 'price')}<div class="go">${ic('right', B(), 14, 2.6)}</div></div>
     </div>
-  </div>`;
+  </div></div>`;
 }
+// Swipe a product card to the left → Edit / Delete. Follows the finger, rubber-bands past the end and
+// springs open or shut on release (or with a quick flick). One card open at a time; a tap elsewhere closes it.
+const Swipe = {
+  W: 164, open: null, moved: false,
+  eat() { if (this.moved) { this.moved = false; return true; } if (this.open) { this.close(); return true; } return false; },
+  set(el, x, snap) { const c = el.querySelector('.pcard'); c.classList.toggle('snap', !!snap); c.style.transform = x ? `translateX(${x}px)` : ''; el.classList.toggle('peek', x < -24); },
+  close(el) { el = el || this.open; if (!el) return; this.set(el, 0, true); el.classList.remove('open'); if (this.open === el) this.open = null; },
+  show(el) { if (this.open && this.open !== el) this.close(); this.set(el, -this.W, true); el.classList.add('open'); this.open = el; },
+  bind(list) {
+    let el = null, x0 = 0, y0 = 0, dx = 0, base = 0, dir = '', t0 = 0;
+    list.addEventListener('pointerdown', e => {
+      const s = e.target.closest('.swipe'); if (!s || e.target.closest('.sw-btn') || document.body.classList.contains('pc')) return;
+      el = s; x0 = e.clientX; y0 = e.clientY; dx = 0; dir = ''; t0 = Date.now(); base = s.classList.contains('open') ? -this.W : 0;
+    });
+    list.addEventListener('pointermove', e => {
+      if (!el) return;
+      const mx = e.clientX - x0, my = e.clientY - y0;
+      if (!dir) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; dir = Math.abs(mx) > Math.abs(my) ? 'x' : 'y'; if (dir === 'x' && this.open && this.open !== el) this.close(); }
+      if (dir !== 'x') { el = null; return; }
+      this.moved = true;
+      let x = base + mx;
+      if (x > 0) x = x / 4; // rubber band
+      if (x < -this.W) x = -this.W - Math.pow(-this.W - x, .8); // rubber band past the buttons
+      dx = x; this.set(el, x, false);
+    });
+    const end = () => {
+      if (!el) return;
+      const s = el; el = null;
+      if (dir !== 'x') return;
+      const fast = (Date.now() - t0) < 260;
+      if (dx < -this.W * .45 || (fast && dx < base - 30)) this.show(s); else this.close(s);
+      setTimeout(() => { this.moved = false; }, 60);
+    };
+    list.addEventListener('pointerup', end); list.addEventListener('pointercancel', end);
+    list.addEventListener('click', async e => {
+      const b = e.target.closest('.sw-btn'); if (!b) return;
+      e.stopPropagation();
+      const s = b.closest('.swipe'), id = s.dataset.id;
+      if (b.dataset.act === 'edit') { this.close(s); setTimeout(() => { location.hash = 'add/' + id; }, 180); return; }
+      // Delete: the card pours into the Trash (genie), then the gap closes
+      b.disabled = true;
+      const card = s.querySelector('.pcard'), img = card.querySelector('.thumb img');
+      this.set(s, 0, true); s.classList.remove('open', 'peek'); this.open = null;
+      await wait(260);
+      await store.remove(id);
+      await genieToTrash(card, img && img.src);
+      s.style.height = s.offsetHeight + 'px'; void s.offsetHeight;
+      s.classList.add('gone'); s.style.height = '0px';
+      await wait(380);
+      toast(t('Moved to Trash'));
+      renderIndex();
+    });
+    document.addEventListener('pointerdown', e => { if (this.open && !e.target.closest('.swipe.open')) this.close(); }, true);
+  }
+};
 function drawList() {
   const k = q.trim().toLowerCase();
   document.getElementById('clr').innerHTML = k ? `<div class="clear" onclick="q='';renderIndex();enter()">${ic('x', '#64748B', 13, 2.4)}</div>` : '';
@@ -1742,6 +1915,8 @@ function drawList() {
       </div>`
     : list.map(productCard).join('');
   stagger(el);
+  Swipe.open = null;
+  if (!el.dataset.sw) { el.dataset.sw = 1; Swipe.bind(el); }
 }
 
 // ---------- pages/markets ----------
@@ -2598,6 +2773,7 @@ async function renderSettings() {
     <div class="page r-body">
       <div id="connBar"></div>
       <div class="card" style="padding:4px 14px" id="goCard"></div>
+      <div class="card" id="lockCard"></div>
       <div class="card" id="aiCard"></div>
       <div class="card">
         <div class="setrow th-btn" id="themeBtn"><div class="icon-tile">${ic('palette', B(), 16)}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">Theme</div><div class="hint">${esc(TradeI18n.t(T().name))} · ${esc(t('{n} themes', { n: TradeThemes.LIST.length }))}</div></div>
@@ -2630,7 +2806,7 @@ async function renderSettings() {
   };
   document.getElementById('cropOld').onclick = cropExisting;
   drawGoCard();
-  drawAiCard(); drawEmailCard(); paintConnect();
+  drawLockCard(); drawAiCard(); drawEmailCard(); paintConnect();
 }
 // "Storage": says plainly where the database is kept, and offers the step that makes it permanent
 async function drawPersist() {
@@ -2731,12 +2907,40 @@ async function drawDevices() {
     finally { pg.disabled = false; pg.style.opacity = 1; }
   };
 }
+// ---- iPhone on the same Wi-Fi: it installs this computer's certificate once, then reaches it without internet ----
+function wifiCertHtml(info) {
+  if (!(info.secure || []).length || !info.urls.length) return '';
+  return `<details class="lk-alt" id="wcBox"><summary>${esc(t('Same Wi-Fi (iPhone, no internet needed) — set up once'))}</summary>
+    <div class="lk" style="margin-top:10px">
+      <div class="lk-qr" id="wcQr"></div>
+      <div class="lk-steps">
+        <div class="iph-steps">
+          <div><i>1</i><span>${esc(t('Scan this code with the iPhone camera → Safari → Allow'))}</span></div>
+          <div><i>2</i><span>${esc(t('iPhone Settings → Profile Downloaded → Install'))}</span></div>
+          <div><i>3</i><span>${esc(t('Settings → General → About → Certificate Trust Settings → turn on “{x}”', { x: info.caName || 'Trade' }))}</span></div>
+          <div><i>4</i><span>${esc(t('Open Trade on the iPhone and scan the QR code above again'))}</span></div>
+        </div>
+        <div class="hint" style="line-height:1.5;margin-top:10px">${esc(t('After this the iPhone and this computer sync on the same Wi-Fi, even without internet.'))}</div>
+        <div class="pair-url" data-notr style="margin-top:6px">${esc((info.secure || [])[0].replace(/\/$/, ''))}</div>
+      </div>
+    </div></details>`;
+}
+function paintWifiCert(info) {
+  const box = document.getElementById('wcBox'); if (!box) return;
+  box.addEventListener('toggle', () => {
+    const q = document.getElementById('wcQr'); if (!box.open || !q || q.dataset.done) return;
+    q.dataset.done = 1;
+    loadQr().then(() => { q.innerHTML = ''; new QRCode(q, { text: info.urls[0] + 'trade-ca.cer', width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); })
+      .catch(() => { q.innerHTML = `<div class="hint">${esc(t('QR needs internet once'))}</div>`; });
+  });
+}
 // ---- The computer: ONE QR code (like WhatsApp Web). It changes every minute and works for one scan. ----
 function linkText(info) {
   const lan = info.urls[0] || '';
   // Scanned inside Trade on the phone → linked. Scanned with the phone camera → opens Trade (to install it) and links there.
   const base = info.hubUrl || info.publicUrl || lan;
-  const servers = info.urls.slice(0, 3).concat(info.publicUrl || []);
+  // Wi-Fi https first (the iPhone app reaches it without internet), then plain Wi-Fi (Android), then the internet address
+  const servers = (info.secure || []).slice(0, 2).concat(info.urls.slice(0, 2), info.publicUrl || []);
   return base ? base + '#link=' + info.link + '&s=' + encodeURIComponent(servers.join('|')) : '';
 }
 function drawLinkQr(el, head, info) {
@@ -2759,6 +2963,7 @@ function drawLinkQr(el, head, info) {
     </div>
     ${!info.publicUrl ? `<div class="hint" style="margin-top:8px;line-height:1.5">${esc(info.hubUrl ? t('Opening the secure address for iPhones…') : t('iPhone: start Trade on this computer with npm run iphone, so the iPhone app can reach it.'))}</div>` : ''}
     <div class="hint" style="margin-top:8px;line-height:1.5">${esc(t('No Trade app on the phone yet? Scan this code with the phone camera to install it, then scan again from inside the app.'))}</div>
+    ${wifiCertHtml(info)}
     <details class="lk-alt"><summary>${esc(t('Can’t scan? Type the code instead'))}</summary>
       <div class="pinbox"><div class="k">${esc(t('In Trade on the phone: Settings → Use on another device → type'))}</div>
         <div class="pair-url" data-notr style="margin-top:6px">${esc(lan.replace(/^http:\/\/|\/$/g, ''))}</div>
@@ -2787,6 +2992,7 @@ function drawLinkQr(el, head, info) {
   drawPhones(phones);
   const paintQr = txt => loadQr().then(() => { const q = document.getElementById('qr'); if (q) { q.innerHTML = ''; new QRCode(q, { text: txt, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); } })
     .catch(() => { const q = document.getElementById('qr'); if (q) q.innerHTML = `<div class="hint">${esc(t('QR needs internet once'))}</div>`; });
+  paintWifiCert(info);
   if (text) {
     paintQr(text);
     document.getElementById('cpLink').onclick = () => { const l = linkText(info); (navigator.clipboard ? navigator.clipboard.writeText(l) : Promise.reject()).then(() => toast(t('Link copied')), () => prompt('Link', l)); };
@@ -2925,12 +3131,12 @@ async function drawAiCard() {
     el.innerHTML = head + `<div class="status">${ic('check', B(), 18, 2.6)}${esc(t('Ready — tap “Scan product with AI” when adding a product'))}</div>` +
       (st.canConfigure ? `<button class="btn sm" style="margin-top:10px" id="aiRemove">${esc(t('Remove key'))}</button>` : '');
   } else if (st.canConfigure) {
-    el.innerHTML = head + `<div class="hint" style="line-height:1.55;margin:-4px 0 12px">${esc(t('The scanner uses Claude (AI) to read the product, its label and its size. Create a key at console.anthropic.com → API keys, then paste it here. It stays on this computer.'))}</div>
+    el.innerHTML = head + `<div class="hint" style="line-height:1.55;margin:-4px 0 12px">${esc(st.phone ? t('The scanner uses Claude (AI) — an expert on products from all over the world — to read the item, its brand, label and size. Create a key at console.anthropic.com → API keys, then paste it here. It stays on this phone.') : t('The scanner uses Claude (AI) to read the product, its label and its size. Create a key at console.anthropic.com → API keys, then paste it here. It stays on this computer.'))}</div>
       <div class="addmk"><input class="input" id="aiKey" type="password" placeholder="sk-ant-…" autocomplete="off"><button class="btn primary" id="aiSave">${esc(t('Save'))}</button></div>`;
   } else {
     el.innerHTML = head + `<div class="hint" style="line-height:1.55">${esc(st.offline ? t('The scanner works when the app is opened from the Trade computer (same Wi-Fi). Open the app from the computer’s address and try again.') : t('Add a Claude API key on the computer: Settings → AI scanner. Then every paired phone can scan.'))}</div>`;
   }
-  const post = b => fetch('api/ai/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Could not save'); });
+  const post = st.phone ? b => b.clear ? PhoneAI.forget() : PhoneAI.save(b.apiKey) : b => fetch('api/ai/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Could not save'); });
   const sv = document.getElementById('aiSave');
   if (sv) sv.onclick = async () => {
     sv.disabled = true; sv.style.opacity = .7; sv.textContent = t('Checking key…');
@@ -3184,7 +3390,7 @@ function doneSheet(title, html) {
 
 // ---------- pages/add ----------
 let form = null, editId = '';
-function emptyForm() { return { images: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', marketName: '', shopName: '', shopWechat: '', wechatId: '', shopNote: '', location: null }; }
+function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', marketName: '', shopName: '', shopWechat: '', wechatId: '', shopNote: '', location: null }; }
 
 // ---------- Date card (registration date) ----------
 const WEEKDAYS = { en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], so: ['Axad', 'Isniin', 'Talaado', 'Arbaco', 'Khamiis', 'Jimco', 'Sabti'], zh: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'] };
@@ -3217,6 +3423,8 @@ function dateCard(ts, note) {
 const dateChip = ts => ts ? `<span class="dchip">${ic('calendar', B(), 11)}${esc(TradeReport.dateLabel(ts))}<i>· ${esc(ago(ts))}</i></span>` : '';
 
 function renderAdd(id) {
+  // The computer only shows products — they are recorded on the iPhone
+  if (document.body.classList.contains('pc')) { toast(t('Products are added on the iPhone — the computer only shows them')); location.replace('#' + (id ? 'detail/' + id : '')); return; }
   editId = id || ''; Scanner.pending = false; photoBusy = 0; AutoFill.reset();
   const old = id ? store.get(id) : null;
   loadCropPairs(old);
@@ -3246,6 +3454,11 @@ function renderAdd(id) {
       <input type="file" id="fileAlbum" accept="image/*" multiple hidden>
     </div>
     <div class="card">
+      <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('play', B(), 16)}</div>${esc(t('Videos'))}</div><span class="count" id="vidcount"></span></div>
+      <div id="videos"></div>
+      <input type="file" id="fileVideo" accept="video/*" hidden>
+    </div>
+    <div class="card">
       <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('tag', B(), 16)}</div>Product details</div></div>
       <div class="field"><div class="label">Product name <span class="req">*</span></div><input class="input" data-f="name" value="${esc(form.name)}" placeholder="e.g. Sports shoes"></div>
       <div class="field"><div class="label">Size</div><input class="input" data-f="size" value="${esc(form.size)}" placeholder="e.g. 38-45 / M, L, XL / 30x40cm"></div>
@@ -3269,14 +3482,111 @@ function renderAdd(id) {
   $body.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { form[el.dataset.f] = el.value; });
   document.getElementById('fileCamera').onchange = onFiles;
   document.getElementById('fileAlbum').onchange = onFiles;
+  document.getElementById('fileVideo').onchange = e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) Video.fromFile(fl); };
   document.getElementById('loc').onclick = chooseLocation;
   document.getElementById('save').onclick = save;
   // "Other" is chosen when the product's market is not in the registered list
   marketPick.other = !!form.marketName && !markets.find(form.marketName);
   document.getElementById('scanBtn').onclick = () => Scanner.open();
   Scanner.status();
-  drawImages(); drawLoc(); drawMarketPick(); drawWechat();
+  drawImages(); Video.draw(); drawLoc(); drawMarketPick(); drawWechat();
 }
+// ---------- Product videos: recorded in the app (small file, up to 30 s) or picked from the gallery ----------
+const MAX_VIDEOS = 3;
+const Video = {
+  MAX_S: 30, MAX_MB: 25, stream: null, rec: null,
+  fmt: s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0'),
+  draw() {
+    const el = document.getElementById('videos'); if (!el) return;
+    const v = form.videos || (form.videos = []);
+    document.getElementById('vidcount').textContent = v.length + '/' + MAX_VIDEOS;
+    el.innerHTML = `<div class="vids">${v.map((x, i) => `<div class="vid-box" data-i="${i}"><img src="${x.poster || ''}" alt=""><div class="play"><i>${ic('play', '#0F172A', 16, 2.6)}</i></div>
+        ${x.dur ? `<span class="dur">${this.fmt(x.dur)}</span>` : ''}<div class="del" data-del="${i}">${ic('x', '#fff', 11, 3)}</div></div>`).join('')}
+      ${v.length < MAX_VIDEOS ? `<div class="vid-box add" id="vidAdd">${ic('plus', B(), 22, 2.4)}${esc(t('Add video'))}</div>` : ''}</div>`;
+    el.querySelectorAll('[data-del]').forEach(d => d.onclick = e => { e.stopPropagation(); v.splice(+d.dataset.del, 1); this.draw(); });
+    el.querySelectorAll('.vid-box[data-i]').forEach(b => b.onclick = () => this.play(v[+b.dataset.i].src));
+    const a = document.getElementById('vidAdd'); if (a) a.onclick = () => this.menu();
+  },
+  menu() {
+    $overlay.innerHTML = `<div class="mask bottom" id="asMask"><div class="as" onclick="event.stopPropagation()">
+      <div class="as-group"><div class="as-title">${esc(t('Add a product video'))}</div>
+        <div class="as-item" id="vRec"><div class="icon-tile">${ic('camera', B(), 17)}</div><div><div>${esc(t('Record video'))}</div><div class="sub">${esc(t('Up to {n} seconds', { n: this.MAX_S }))}</div></div></div>
+        <div class="as-item" id="vPick"><div class="icon-tile">${ic('image', B(), 17)}</div><div><div>${esc(t('Choose from gallery'))}</div><div class="sub">${esc(t('A short video'))}</div></div></div></div>
+      <div class="as-cancel" id="asCancel">${esc(t('Cancel'))}</div></div></div>`;
+    document.getElementById('asMask').onclick = closeOverlay;
+    document.getElementById('asCancel').onclick = closeOverlay;
+    document.getElementById('vPick').onclick = () => { closeOverlay(); document.getElementById('fileVideo').click(); };
+    document.getElementById('vRec').onclick = () => { closeOverlay(); this.record(); };
+  },
+  play(src) {
+    $overlay.innerHTML = `<div class="mask" id="vpm"><div onclick="event.stopPropagation()" style="width:min(92vw,520px)"><video src="${src}" controls autoplay playsinline style="width:100%;border-radius:16px;background:#000;max-height:80vh"></video></div></div>`;
+    document.getElementById('vpm').onclick = closeOverlay;
+  },
+  mime() { const M = window.MediaRecorder; return M && ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => M.isTypeSupported && M.isTypeSupported(m)) || ''; },
+  async record() {
+    const live = window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder;
+    if (!live) { const i = document.getElementById('fileVideo'); i.setAttribute('capture', 'environment'); i.click(); i.removeAttribute('capture'); return; }
+    $overlay.innerHTML = `<div class="rec"><video id="recV" autoplay playsinline muted></video>
+      <div class="rec-top"><span class="rec-side" id="recX">${ic('x', '#fff', 20, 2.6)}</span><span class="rec-time" id="recT">0:00 / ${this.fmt(this.MAX_S)}</span><span class="rec-side" id="recFlip">${ic('refresh', '#fff', 20)}</span></div>
+      <div class="rec-bar"><span style="width:46px"></span><span class="rec-btn" id="recGo"><i></i></span><span style="width:46px"></span></div></div>`;
+    let facing = 'environment', chunks = [], t0 = 0, tick = null;
+    const stopAll = () => { clearInterval(tick); if (this.stream) this.stream.getTracks().forEach(tr => tr.stop()); this.stream = null; };
+    const start = async () => {
+      stopAll();
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, audio: true })
+          .catch(() => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing } }, audio: false }));
+        const v = document.getElementById('recV'); if (!v) return stopAll();
+        v.srcObject = this.stream;
+      } catch (e) { stopAll(); closeOverlay(); toast(t('Could not open the camera')); }
+    };
+    document.getElementById('recX').onclick = () => { if (this.rec && this.rec.state === 'recording') { this.rec.onstop = null; this.rec.stop(); } stopAll(); closeOverlay(); };
+    document.getElementById('recFlip').onclick = () => { if (!(this.rec && this.rec.state === 'recording')) { facing = facing === 'environment' ? 'user' : 'environment'; start(); } };
+    await start();
+    const go = document.getElementById('recGo'); if (!go) return;
+    go.onclick = () => {
+      if (this.rec && this.rec.state === 'recording') return this.rec.stop();
+      if (!this.stream) return;
+      chunks = []; const type = this.mime();
+      this.rec = new MediaRecorder(this.stream, Object.assign({ videoBitsPerSecond: 1200000, audioBitsPerSecond: 64000 }, type ? { mimeType: type } : {}));
+      this.rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      this.rec.onstop = async () => {
+        clearInterval(tick); const dur = (Date.now() - t0) / 1000; stopAll(); closeOverlay();
+        const blob = new Blob(chunks, { type: (this.rec.mimeType || type || 'video/mp4').split(';')[0] });
+        await this.add(blob, dur);
+      };
+      this.rec.start(1000); t0 = Date.now(); go.classList.add('on');
+      const T = document.getElementById('recT'); T.classList.add('on');
+      tick = setInterval(() => { const s = (Date.now() - t0) / 1000; T.textContent = this.fmt(s) + ' / ' + this.fmt(this.MAX_S); if (s >= this.MAX_S) this.rec.stop(); }, 250);
+    };
+  },
+  async fromFile(file) {
+    if (!/^video\//.test(file.type) && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) return toast(t('This is not a video'));
+    if (file.size > this.MAX_MB * 1048576) return dialog({ title: t('Video too long'), text: t('Keep product videos short (under {n} MB, about 30 seconds). Record one here — it makes a small file.', { n: this.MAX_MB }), ok: t('OK'), cancel: false });
+    await this.add(file, 0);
+  },
+  // Saves the clip as a data URL with a cover frame, so it is kept and synced like the photos
+  async add(blob, dur) {
+    const v = form.videos || (form.videos = []);
+    if (v.length >= MAX_VIDEOS) return toast(t('Maximum {n} videos', { n: MAX_VIDEOS }));
+    const src = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(blob); });
+    let poster = '';
+    try {
+      const el = document.createElement('video'); el.muted = true; el.playsInline = true; el.preload = 'auto'; el.src = URL.createObjectURL(blob);
+      await new Promise((ok, no) => { el.onloadeddata = ok; el.onerror = no; setTimeout(ok, 4000); });
+      if (!dur && isFinite(el.duration)) dur = el.duration;
+      el.currentTime = Math.min(0.3, (el.duration || 1) / 2);
+      await new Promise(ok => { el.onseeked = ok; setTimeout(ok, 1500); });
+      const s = Math.min(1, 480 / Math.max(el.videoWidth || 1, el.videoHeight || 1)), c = document.createElement('canvas');
+      c.width = Math.round((el.videoWidth || 320) * s); c.height = Math.round((el.videoHeight || 320) * s);
+      c.getContext('2d').drawImage(el, 0, 0, c.width, c.height);
+      poster = c.toDataURL('image/jpeg', 0.75);
+      URL.revokeObjectURL(el.src);
+    } catch (e) {}
+    v.push({ src, poster, dur: Math.round(dur || 0), at: Date.now() });
+    this.draw(); toast(t('Video added ✓'));
+  }
+};
 // Shop on WeChat: tick Yes / No; Yes asks for the WeChat ID / number
 function drawWechat() {
   const el = document.getElementById('wxPick'); if (!el) return;
@@ -4028,12 +4338,95 @@ async function save() {
 }
 
 // ---------- AI scanner: camera → photo → Claude reads name, size, description ----------
+// Claude on the phone itself: the key the user pasted in Settings stays on this phone (never synced or backed up),
+// and the phone sends the photos straight to Claude — the iPhone does not need the computer for the scanner.
+const PhoneAI = {
+  MODEL: 'claude-opus-5-5', sdk: null,
+  load() { return this.sdk || (this.sdk = import('https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.7.0/+esm').then(m => m.default || m.Anthropic)); },
+  async client(key) { const Anthropic = await this.load(); return { Anthropic, c: new Anthropic({ apiKey: key || DB.kv.aiKey, dangerouslyAllowBrowser: true }) }; },
+  async save(key) {
+    key = String(key || '').trim();
+    if (!/^sk-ant-/.test(key)) throw new Error(t('This does not look like a Claude API key (it starts with sk-ant-)'));
+    const { Anthropic, c } = await this.client(key);
+    try { await c.models.retrieve(this.MODEL); }
+    catch (e) { throw new Error(e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError ? t('This API key was refused by Claude. Copy it again from console.anthropic.com → API keys.') : e instanceof Anthropic.APIConnectionError ? t('No internet — try again when the phone is online') : e.message); }
+    await DB.setKV('aiKey', key); Scanner.st = null;
+  },
+  async forget() { await DB.setKV('aiKey', ''); Scanner.st = null; },
+  // Same answer shape as the computer's scanner (preview/scanner.js)
+  schema: {
+    type: 'object', additionalProperties: false,
+    required: ['name', 'name_options', 'name_en', 'category', 'brand', 'model', 'size', 'size_source', 'specs', 'colors', 'material', 'label_text', 'price', 'currency', 'unit', 'confidence'],
+    properties: {
+      name: { type: 'string', description: 'Exact trade name in the requested language' },
+      name_options: { type: 'array', items: { type: 'string' }, description: '2-4 other specific names it could be, most likely first' },
+      name_en: { type: 'string' },
+      category: { type: 'string', description: 'Product category, e.g. "Phone charger", "Disposable cup", "Running shoe"' },
+      brand: { type: 'string', description: 'Brand if printed or clearly recognisable, else empty' },
+      model: { type: 'string', description: 'Model name or number if printed or clearly recognisable, else empty' },
+      size: { type: 'string', description: 'Size / capacity / dimensions, e.g. "350 ml", "38-45", "6.1 inch", "20 W", "30x40 cm". Empty if unknown' },
+      size_source: { type: 'string', enum: ['label', 'known_model', 'estimate', 'none'] },
+      specs: { type: 'string', description: 'Key specs a buyer asks about (power, capacity, connector, compatible devices…), short; empty if none' },
+      colors: { type: 'array', items: { type: 'string' } },
+      material: { type: 'string' },
+      label_text: { type: 'string', description: 'Exact text read from labels/tags/boxes, as written; empty if none' },
+      price: { type: ['number', 'null'] },
+      currency: { type: 'string', enum: ['¥', '$', ''] },
+      unit: { type: 'string', enum: ['pcs', 'pair', 'kg', 'box', 'carton', 'dozen', 'set', 'meter', 'roll', 'bag'] },
+      confidence: { type: 'number', description: '0 to 1 — how sure you are about the name' }
+    }
+  },
+  prompt(language) {
+    return 'You are a world expert in identifying products of every kind sold anywhere in the world: electronics and devices ' +
+      '(phones, chargers, cables, earphones, smart watches, computer parts, appliances), household goods, kitchenware, packaging and disposables, ' +
+      'clothing, shoes, bags, cosmetics, toys, tools, hardware, auto parts, furniture, stationery, food and drink. ' +
+      'These photos show ONE product a trader found in a wholesale market. Identify it precisely.\n' +
+      '- Read every visible label, tag, sticker, box print, model number and size marking (Chinese and English) and use them.\n' +
+      '- If you recognise the exact brand and model, use what you know about it: its real name, its official size/capacity/dimensions and key specs (size_source = known_model).\n' +
+      '- For size: prefer what is printed (label). Otherwise a known model\'s real size. Otherwise a careful estimate only when a reference makes it possible (estimate). Else none.\n' +
+      '- The name must be the exact trade name a buyer would search for: brand/model when known, otherwise material + type + use. Never a bare word like "cup", "bag", "cable" or "box".\n' +
+      '  Examples: "USB-C to Lightning fast charging cable 1 m", "20 W USB-C wall charger", "Wireless Bluetooth earbuds with charging case", "Double wall paper coffee cup", "PET cold drink cup with dome lid", "Kraft paper bag with handle", "Stainless steel vacuum flask".\n' +
+      '- Write name, specs and category in ' + language + '.';
+  },
+  async scan(images, lang) {
+    if (!navigator.onLine) throw new Error(t('No internet — try again when the phone is online'));
+    const language = { en: 'English', so: 'Somali', zh: 'Simplified Chinese' }[lang] || 'English';
+    const { Anthropic, c } = await this.client();
+    const content = images.slice(0, 6).map(im => ({ type: 'image', source: { type: 'base64', media_type: im.mediaType || 'image/jpeg', data: im.data } }));
+    content.push({ type: 'text', text: this.prompt(language) });
+    let res;
+    try {
+      res = await c.beta.messages.create({
+        model: this.MODEL, max_tokens: 16000,
+        // If the model declines a photo, the API retries it on a fallback model in the same call
+        betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+        output_config: { format: { type: 'json_schema', schema: this.schema }, effort: 'medium' },
+        messages: [{ role: 'user', content }]
+      });
+    } catch (e) {
+      if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) throw new Error(t('The AI key is not valid. Check it in Settings → AI scanner.'));
+      if (e instanceof Anthropic.RateLimitError) throw new Error(t('The AI service is busy — try again in a moment.'));
+      if (e instanceof Anthropic.APIConnectionError) throw new Error(t('No internet — try again when the phone is online'));
+      throw new Error(e.message || String(e));
+    }
+    if (res.stop_reason === 'refusal') throw new Error(t('The AI declined to read this photo.'));
+    const txt = (res.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    let j; try { j = JSON.parse(txt); } catch (e) { throw new Error(t('The AI answer could not be read — try again.')); }
+    // Shown in the result sheet: brand / model / specs join the size line so the buyer sees them
+    if (j.size_source === 'known_model') j.size_source = 'label';
+    j.size = [j.size, j.specs].filter(Boolean).join(' · ');
+    return j;
+  }
+};
 const Scanner = {
   stream: null, pending: false, st: null,
   async status() {
+    // The iPhone keeps its own Claude key and asks Claude directly — no computer needed
+    if (DB.kv.aiKey) return this.st = { configured: true, phone: true, canConfigure: true };
     let st;
     try { const r = await fetch('api/ai/status', { cache: 'no-store' }); st = r.ok ? await r.json() : { configured: false, offline: true }; }
     catch (e) { st = { configured: false, offline: true }; }
+    if (!st.configured && !st.canConfigure) st = { configured: false, phone: true, canConfigure: true };
     return this.st = st;
   },
   // Opens the phone camera app (file input). Must run inside the tap, so it never waits for the network first.
@@ -4044,7 +4437,7 @@ const Scanner = {
     this.status(); // refresh for next time
     if (!st.configured) return this.notReady(st);
     // (after pairing the camera must be opened by a new tap, phones block it otherwise)
-    if (!Sync.key()) return this.needPair(() => toast(t('Connected ✓ — tap Scan again')));
+    if (!st.phone && !Sync.key()) return this.needPair(() => toast(t('Connected ✓ — tap Scan again')));
     const live = window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
     if (!live) return this.pickPhoto(); // phone camera app (http on the Wi-Fi address)
     $overlay.innerHTML = `<div class="scanner">
@@ -4093,7 +4486,8 @@ const Scanner = {
   async notReady(st) {
     const v = await dialog({
       title: t('AI scanner is not set up'),
-      text: st.offline ? t('The scanner works when the app is opened from the Trade computer (same Wi-Fi). Open the app from the computer’s address and try again.')
+      text: st.phone ? t('Add your Claude API key once in Settings → AI scanner. It stays on this phone.')
+        : st.offline ? t('The scanner works when the app is opened from the Trade computer (same Wi-Fi). Open the app from the computer’s address and try again.')
         : st.canConfigure ? t('The scanner needs a Claude API key. Add it in Settings → AI scanner on this computer.')
         : t('Add a Claude API key on the computer: Settings → AI scanner. Then every paired phone can scan.'),
       ok: st.canConfigure ? t('Open settings') : t('OK'), cancel: st.canConfigure ? t('Cancel') : false
@@ -4118,7 +4512,7 @@ const Scanner = {
     if (!images.length) return toast(t('Add a photo first'));
     const st = await this.status();
     if (!st.configured) return this.notReady(st);
-    if (!Sync.key()) return this.needPair(() => this.analyse(images));
+    if (!st.phone && !Sync.key()) return this.needPair(() => this.analyse(images));
     const steps = [t('Looking at the product…'), t('Reading labels and sizes…')];
     $overlay.innerHTML = `<div class="mask"><div class="scanning">
       <div class="sg-photo"><img src="${images[0]}"><div class="sc-laser"></div><i class="k1"></i><i class="k2"></i><i class="k3"></i><i class="k4"></i></div>
@@ -4126,6 +4520,7 @@ const Scanner = {
     let k = 0; const tick = setInterval(() => { const el = document.getElementById('sgStep'); if (el) el.textContent = steps[Math.min(++k, steps.length - 1)]; }, 2600);
     try {
       const payload = { images: await Promise.all(images.map(s => this.prep(s))), lang: TradeI18n.getLang() };
+      if (st.phone) { const j = await PhoneAI.scan(payload.images, payload.lang); clearInterval(tick); return this.result(j); }
       const r = await fetch('api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-trade-key': Sync.key() }, body: JSON.stringify(payload) });
       const j = await r.json().catch(() => ({}));
       if (r.status === 403) { clearInterval(tick); closeOverlay(); await DB.setKV('syncKey', ''); return this.needPair(() => this.analyse(images)); }
@@ -4150,7 +4545,7 @@ const Scanner = {
       <div class="sr-head"><div class="ok" style="margin:0;width:44px;height:44px">${ic('scan', '#fff', 20, 2.4)}</div>
         <div style="flex:1;min-width:0;text-align:left"><div class="sheet-title" style="margin:0">${esc(t('Product recognised'))}</div>
         <div class="conf"><div class="conf-bar"><i style="width:${conf}%"></i></div><span>${esc(t('{n}% sure', { n: conf }))}</span></div></div></div>
-      ${(r.colors || []).length || r.material ? `<div class="chips" style="justify-content:flex-start;margin:10px 0 2px">${(r.colors || []).map(c => `<span class="chip">${esc(c)}</span>`).join('')}${r.material ? `<span class="chip teal">${esc(r.material)}</span>` : ''}</div>` : ''}
+      ${(r.colors || []).length || r.material || r.brand ? `<div class="chips" style="justify-content:flex-start;margin:10px 0 2px">${r.brand ? `<span class="chip teal" data-notr>${esc([r.brand, r.model].filter(Boolean).join(" "))}</span>` : ""}${r.category ? `<span class="chip">${esc(r.category)}</span>` : ""}${(r.colors || []).map(c => `<span class="chip">${esc(c)}</span>`).join('')}${r.material ? `<span class="chip teal">${esc(r.material)}</span>` : ''}</div>` : ''}
       <div class="sr-rows">${rows.map(x => `<label class="sr-row"><input type="checkbox" data-k="${x[0]}" ${x[3] ? 'checked' : ''}><div style="min-width:0;flex:1"><div class="k">${esc(x[1])}</div><div class="v" data-notr>${esc(x[2]).replace(/\n/g, '<br>')}</div></div></label>`).join('')}</div>
       ${r.label_text ? `<div class="sr-label"><div class="k">${esc(t('Text on the label'))}</div><div data-notr>${esc(r.label_text)}</div></div>` : ''}
       <div class="sheet-actions"><button class="btn" id="srNo">${esc(t('Cancel'))}</button><button class="btn primary" id="srOk">${ic('check', '#fff', 17, 2.8)}${esc(t('Fill in'))}</button></div>
@@ -4170,6 +4565,238 @@ const Scanner = {
   }
 };
 
+// ---------- Lock screen (iPhone): pattern, a 6-digit backup PIN and Face ID ----------
+// Everything stays on this phone (DB.kv, never synced or backed up). The pattern and PIN are kept only as
+// PBKDF2 hashes with a random salt. Wrong tries wait longer each time (also after closing the app).
+// While the app is in the background its screen is blurred, so the app switcher shows nothing.
+const Lock = {
+  el: null, hiddenAt: 0, resolve: null,
+  cfg() { const c = DB.kv.lock; return c && c.hash ? c : null; },
+  on() { return !!this.cfg() && !document.body.classList.contains('pc'); },
+  b64: a => btoa(String.fromCharCode(...new Uint8Array(a))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+  unb64: s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)),
+  async hash(secret, salt) {
+    const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), 'PBKDF2', false, ['deriveBits']);
+    return this.b64(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: this.unb64(salt), iterations: 120000, hash: 'SHA-256' }, k, 256));
+  },
+  init() {
+    document.addEventListener('visibilitychange', () => {
+      if (!this.on()) return;
+      if (document.hidden) { this.hiddenAt = Date.now(); document.body.classList.add('privacy'); return; }
+      document.body.classList.remove('privacy');
+      const after = DB.kv.lockAfter == null ? 60000 : DB.kv.lockAfter;
+      if (!this.el && this.hiddenAt && Date.now() - this.hiddenAt >= after) this.show();
+    });
+    if (this.on()) this.show();
+  },
+  async faceOk() { try { return !!(window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch (e) { return false; } },
+  async faceCreate() {
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)), rp: { name: 'Trade' },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'Trade', displayName: 'Trade' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' }, timeout: 60000 } });
+    return this.b64(cred.rawId);
+  },
+  async faceCheck() {
+    const c = this.cfg(); if (!c || !c.face) return false;
+    try {
+      const a = await navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{ type: 'public-key', id: this.unb64(c.face) }], userVerification: 'required', timeout: 60000 } });
+      return !!(a && a.response && a.response.authenticatorData && (new Uint8Array(a.response.authenticatorData)[32] & 4)); // "user verified" flag
+    } catch (e) { return false; }
+  },
+  clock() {
+    const d = new Date(), T = this.el && this.el.querySelector('.lk-time'), D = this.el && this.el.querySelector('.lk-date');
+    if (T) T.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (D) D.textContent = d.toLocaleDateString([TradeI18n.getLang() === 'zh' ? 'zh-CN' : 'en-GB'], { weekday: 'long', day: 'numeric', month: 'long' });
+  },
+  lockSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="11" width="15" height="10" rx="2.6"/><path class="shackle" d="M8 11V7.5a4 4 0 0 1 8 0V11"/><circle cx="12" cy="16" r="1.2" fill="#fff"/></svg>',
+  frame(inner, acts) {
+    return `<div class="lk-lock">${this.lockSvg}</div><div class="lk-time"></div><div class="lk-date"></div>${inner}<div class="lk-acts">${acts || ''}</div>`;
+  },
+  mount(html) {
+    if (this.el) this.el.remove();
+    const el = document.createElement('div'); el.className = 'lk'; el.innerHTML = html;
+    (document.querySelector('.phone') || document.body).appendChild(el); this.el = el;
+    this.clock(); clearInterval(this.ti); this.ti = setInterval(() => this.clock(), 10000);
+    return el;
+  },
+  close(ok) {
+    const el = this.el; if (!el) return;
+    clearInterval(this.ti); clearInterval(this.cd);
+    el.classList.add(ok ? 'ok' : 'x');
+    setTimeout(() => el.classList.add('out'), ok ? 260 : 0);
+    setTimeout(() => { el.remove(); if (this.el === el) this.el = null; }, ok ? 820 : 560);
+    const r = this.resolve; this.resolve = null; if (r) r(!!ok);
+  },
+  // Pattern pad: 3x3 dots; returns the dots as "0-4-8"
+  pad(el, done) {
+    const P = [50, 150, 250], pts = [], SVGN = 'http://www.w3.org/2000/svg';
+    el.innerHTML = `<svg viewBox="0 0 300 300"><defs><linearGradient id="ppg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#E0E7FF"/></linearGradient></defs><polyline points=""/><line x1="0" y1="0" x2="0" y2="0" style="display:none"/></svg>` +
+      [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => `<div class="pp-d" data-i="${i}" style="left:${P[i % 3] / 3}%;top:${P[Math.floor(i / 3)] / 3}%"><i></i></div>`).join('');
+    const pl = el.querySelector('polyline'), ln = el.querySelector('line'), dots = el.querySelectorAll('.pp-d');
+    let down = false, frozen = false;
+    const xy = e => { const r = el.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 300, (e.clientY - r.top) / r.height * 300]; };
+    const add = i => {
+      if (pts.includes(i)) return;
+      const last = pts[pts.length - 1];
+      if (last != null) { const mid = (last + i) / 2; if (Number.isInteger(mid) && (last % 3 + i % 3) % 2 === 0 && (Math.floor(last / 3) + Math.floor(i / 3)) % 2 === 0 && !pts.includes(mid)) add2(mid); }
+      add2(i);
+    };
+    const add2 = i => { pts.push(i); dots[i].classList.add('on'); pl.setAttribute('points', pts.map(k => P[k % 3] + ',' + P[Math.floor(k / 3)]).join(' ')); try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
+    const hit = ([x, y]) => { for (let i = 0; i < 9; i++) { const dx = x - P[i % 3], dy = y - P[Math.floor(i / 3)]; if (dx * dx + dy * dy < 34 * 34) return i; } return -1; };
+    el.onpointerdown = e => { if (frozen) return; down = true; el.setPointerCapture && el.setPointerCapture(e.pointerId); const i = hit(xy(e)); if (i >= 0) add(i); };
+    el.onpointermove = e => {
+      if (!down) return; const p = xy(e), i = hit(p); if (i >= 0) add(i);
+      const last = pts[pts.length - 1];
+      if (last != null) { ln.style.display = ''; ln.setAttribute('x1', P[last % 3]); ln.setAttribute('y1', P[Math.floor(last / 3)]); ln.setAttribute('x2', p[0]); ln.setAttribute('y2', p[1]); }
+    };
+    el.onpointerup = el.onpointercancel = () => { if (!down) return; down = false; ln.style.display = 'none'; if (pts.length) { frozen = true; done(pts.join('-'), pts.length); } };
+    return {
+      reset(state) {
+        if (state) el.classList.add(state);
+        setTimeout(() => { pts.length = 0; pl.setAttribute('points', ''); dots.forEach(d => d.classList.remove('on')); el.classList.remove('bad', 'good'); frozen = false; }, state === 'bad' ? 700 : state ? 400 : 0);
+      }
+    };
+  },
+  // 6-digit keypad
+  pin(el, done, extra) {
+    let v = '';
+    el.innerHTML = `<div class="pin-dots">${'<i></i>'.repeat(6)}</div><div class="pin-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<div class="pin-k" data-k="${n}">${n}</div>`).join('')}<div class="pin-k ghost" data-k="x">${extra || ''}</div><div class="pin-k" data-k="0">0</div><div class="pin-k ghost" data-k="b">${ic('left', '#fff', 22, 2.4)}</div></div>`;
+    const paint = () => el.querySelectorAll('.pin-dots i').forEach((d, i) => d.classList.toggle('on', i < v.length));
+    el.querySelectorAll('.pin-k').forEach(k => k.onclick = () => {
+      const c = k.dataset.k;
+      if (c === 'b') v = v.slice(0, -1); else if (c === 'x') { if (k.onextra) k.onextra(); return; } else if (v.length < 6) v += c;
+      paint();
+      if (v.length === 6) { const val = v; setTimeout(() => { v = ''; paint(); done(val); }, 160); }
+    });
+    return el.querySelector('[data-k="x"]');
+  },
+  waitLeft() { return Math.max(0, (DB.kv.lockUntil || 0) - Date.now()); },
+  async fail(card, msgEl) {
+    const n = (DB.kv.lockFails || 0) + 1; await DB.setKV('lockFails', n);
+    if (n >= 5) await DB.setKV('lockUntil', Date.now() + 30000 * Math.pow(2, Math.min(6, n - 5)));
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    try { navigator.vibrate && navigator.vibrate([40, 40, 40]); } catch (e) {}
+    msgEl.classList.add('bad'); this.countdown(msgEl, n);
+  },
+  countdown(msgEl, n) {
+    clearInterval(this.cd);
+    const tick = () => {
+      const left = this.waitLeft();
+      if (left > 0) { msgEl.textContent = t('Too many tries — wait {n} s', { n: Math.ceil(left / 1000) }); msgEl.classList.add('bad'); }
+      else { clearInterval(this.cd); msgEl.textContent = n ? t('Wrong pattern — try again') : t('Draw your pattern to unlock'); if (!n) msgEl.classList.remove('bad'); }
+    };
+    tick(); this.cd = setInterval(tick, 500);
+  },
+  async good() { await DB.setKV('lockFails', 0); await DB.setKV('lockUntil', 0); this.close(true); },
+  // The lock screen. cancel=true when it only checks it is you (e.g. before turning the lock off)
+  show(cancel, usePin) {
+    const c = this.cfg(); if (!c) return Promise.resolve(true);
+    return new Promise(res => {
+      if (this.resolve) this.resolve(false);
+      this.resolve = res;
+      const el = this.mount(this.frame(`<div class="lk-msg" id="lkMsg"></div><div class="lk-sub" id="lkSub"></div><div class="lk-card" id="lkCard"><div class="${usePin ? '' : 'pp'}" id="lkPad"></div></div>`,
+        `${c.face ? `<span class="lk-b main" id="lkFace">${ic('scan', '#0F172A', 18, 2.4)}${esc(t('Face ID'))}</span>` : ''}
+         <span class="lk-b" id="lkAlt">${esc(usePin ? t('Use pattern') : t('Use PIN'))}</span>${cancel ? `<span class="lk-b" id="lkX">${esc(t('Cancel'))}</span>` : ''}`));
+      const msg = el.querySelector('#lkMsg'), card = el.querySelector('#lkCard'), padEl = el.querySelector('#lkPad');
+      msg.textContent = usePin ? t('Enter your PIN') : t('Draw your pattern to unlock');
+      if (this.waitLeft()) this.countdown(msg, DB.kv.lockFails || 0);
+      const check = async (secret, which) => {
+        if (this.waitLeft()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); return false; }
+        const ok = (await this.hash(secret, c.salt)) === (which === 'pin' ? c.pin : c.hash);
+        if (ok) await this.good(); else await this.fail(card, msg);
+        return ok;
+      };
+      if (usePin) this.pin(padEl, v => check(v, 'pin'));
+      else { const p = this.pad(padEl, async v => { const ok = await check(v, 'pattern'); p.reset(ok ? 'good' : 'bad'); }); }
+      el.querySelector('#lkAlt').onclick = () => { const r = this.resolve; this.resolve = null; this.show(cancel, !usePin).then(r); };
+      const fx = el.querySelector('#lkFace'); if (fx) fx.onclick = async () => { if (this.waitLeft()) return; if (await this.faceCheck()) this.good(); else { msg.textContent = t('Face ID did not work — use your pattern'); msg.classList.add('bad'); } };
+      const x = el.querySelector('#lkX'); if (x) x.onclick = () => this.close(false);
+    });
+  },
+  // Set up (or change) the lock: pattern → same again → backup PIN → same again → Face ID
+  setup() {
+    return new Promise(res => {
+      this.resolve = res;
+      let first = '', pinFirst = '', pattern = '';
+      const step = (n, title, sub, body, acts) => {
+        const el = this.mount(this.frame(`<div class="lk-steps">${[0, 1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</div><div class="lk-msg" id="lkMsg">${esc(title)}</div><div class="lk-sub" id="lkSub">${esc(sub)}</div><div class="lk-card" id="lkCard">${body}</div>`, `${acts || ''}<span class="lk-b" id="lkX">${esc(t('Cancel'))}</span>`));
+        el.querySelector('#lkX').onclick = () => this.close(false);
+        return el;
+      };
+      const drawPat = () => {
+        const el = step(0, t('Draw a new pattern'), t('Connect at least 4 dots'), '<div class="pp" id="lkPad"></div>');
+        const p = this.pad(el.querySelector('#lkPad'), (v, len) => {
+          if (len < 4) { el.querySelector('#lkMsg').textContent = t('Connect at least 4 dots'); el.querySelector('#lkMsg').classList.add('bad'); return p.reset('bad'); }
+          first = v; p.reset('good'); setTimeout(confirmPat, 450);
+        });
+      };
+      const confirmPat = () => {
+        const el = step(1, t('Draw the same pattern again'), t('To make sure you remember it'), '<div class="pp" id="lkPad"></div>');
+        const p = this.pad(el.querySelector('#lkPad'), v => {
+          if (v !== first) { const m = el.querySelector('#lkMsg'); m.textContent = t('Not the same — start again'); m.classList.add('bad'); p.reset('bad'); setTimeout(drawPat, 900); return; }
+          pattern = v; p.reset('good'); setTimeout(pin1, 450);
+        });
+      };
+      const pin1 = () => { const el = step(2, t('Choose a 6-digit backup PIN'), t('Use it if you forget the pattern'), '<div id="lkPad"></div>'); this.pin(el.querySelector('#lkPad'), v => { pinFirst = v; pin2(); }); };
+      const pin2 = () => {
+        const el = step(2, t('Enter the PIN again'), '', '<div id="lkPad"></div>');
+        this.pin(el.querySelector('#lkPad'), async v => {
+          if (v !== pinFirst) { const m = el.querySelector('#lkMsg'); m.textContent = t('Not the same — start again'); m.classList.add('bad'); el.querySelector('#lkCard').classList.add('shake'); setTimeout(pin1, 900); return; }
+          await save(null); face();
+        });
+      };
+      const save = async faceId => {
+        const salt = this.b64(crypto.getRandomValues(new Uint8Array(16)));
+        await DB.setKV('lock', { salt, hash: await this.hash(pattern, salt), pin: await this.hash(pinFirst, salt), face: faceId, at: Date.now() });
+        await DB.setKV('lockFails', 0); await DB.setKV('lockUntil', 0);
+      };
+      const face = async () => {
+        if (!await this.faceOk()) return this.close(true);
+        const el = step(3, t('Unlock with Face ID?'), t('Faster than drawing the pattern. Your pattern and PIN keep working.'), `<div style="width:220px;height:150px;display:flex;align-items:center;justify-content:center">${ic('scan', '#fff', 70, 1.6)}</div>`,
+          `<span class="lk-b main" id="lkYes">${esc(t('Use Face ID'))}</span><span class="lk-b" id="lkNo">${esc(t('Not now'))}</span>`);
+        el.querySelector('#lkX').style.display = 'none';
+        el.querySelector('#lkNo').onclick = () => this.close(true);
+        el.querySelector('#lkYes').onclick = async () => {
+          try { const id = await this.faceCreate(); const c = this.cfg(); await DB.setKV('lock', Object.assign({}, c, { face: id })); toast(t('Face ID is on ✓')); }
+          catch (e) { toast(t('Face ID could not be turned on')); }
+          this.close(true);
+        };
+      };
+      drawPat();
+    });
+  }
+};
+// Settings → Security
+async function drawLockCard() {
+  const el = document.getElementById('lockCard'); if (!el) return;
+  if (document.body.classList.contains('pc')) { el.style.display = 'none'; return; }
+  const c = Lock.cfg(), faceOk = await Lock.faceOk(), after = DB.kv.lockAfter == null ? 60000 : DB.kv.lockAfter;
+  const head = `<div class="card-head"><div class="card-title"><div class="icon-tile">${ic('shield', B(), 16)}</div>${esc(t('Lock screen'))}</div>${c ? `<span class="chip green">${esc(t('On'))}</span>` : ''}</div>`;
+  if (!c) {
+    el.innerHTML = head + `<div class="hint" style="line-height:1.55;margin:-4px 0 12px">${esc(t('Lock Trade with a pattern, a backup PIN and Face ID. Your products stay private even if someone else holds your phone.'))}</div>
+      <button class="btn primary" id="lkOn">${ic('shield', '#fff', 17)}${esc(t('Set up lock'))}</button>`;
+  } else {
+    el.innerHTML = head + `
+      ${faceOk ? `<div class="setrow"><div class="icon-tile">${ic('scan', B(), 16)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${esc(t('Face ID'))}</div><div class="hint">${esc(t('Unlock with your face'))}</div></div><div class="switch ${c.face ? 'on' : ''}" id="lkFaceSw"></div></div>` : ''}
+      <div class="setrow" style="flex-direction:column;align-items:stretch;gap:8px"><div style="font-weight:700;font-size:14px">${esc(t('Lock after leaving the app'))}</div>
+        <div class="seg" id="lkAfter">${[[0, 'Immediately'], [60000, '1 min'], [300000, '5 min']].map(x => `<span data-a="${x[0]}" class="${after === x[0] ? 'on' : ''}">${esc(t(x[1]))}</span>`).join('')}</div></div>
+      <div class="row-btns" style="margin-top:8px"><button class="btn sm soft" id="lkChange">${esc(t('Change pattern & PIN'))}</button><button class="btn sm danger" id="lkOff">${esc(t('Turn off'))}</button></div>`;
+  }
+  const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
+  on('lkOn', async () => { if (await Lock.setup()) toast(t('Lock is on ✓')); drawLockCard(); });
+  on('lkChange', async () => { if (await Lock.show(true) && await Lock.setup()) toast(t('Saved ✓')); drawLockCard(); });
+  on('lkOff', async () => { if (await Lock.show(true)) { await DB.setKV('lock', null); toast(t('Lock is off')); } drawLockCard(); });
+  on('lkFaceSw', async () => {
+    const cur = Lock.cfg(); if (!cur) return;
+    if (cur.face) { if (await Lock.show(true)) await DB.setKV('lock', Object.assign({}, cur, { face: null })); }
+    else { try { await DB.setKV('lock', Object.assign({}, cur, { face: await Lock.faceCreate() })); toast(t('Face ID is on ✓')); } catch (e) { toast(t('Face ID could not be turned on')); } }
+    drawLockCard();
+  });
+  document.querySelectorAll('#lkAfter span').forEach(sp => sp.onclick = async () => { await DB.setKV('lockAfter', Number(sp.dataset.a)); drawLockCard(); });
+}
+
 // ---------- pages/wishlist: things you like, written by you (kept on the computer and every paired device) ----------
 const wishes = {
   all() { return DB.wishes.slice(); },
@@ -4182,72 +4809,64 @@ const wishes = {
   async remove(id) { DB.wishes = DB.wishes.filter(w => w.id !== id); await DB.write('wishes', 'delete', id); }
 };
 let wishTab = 'want';
+const newWishId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+// Wishlist: one line to add, a photo grid, tap the circle when you got it
 function renderWishlist() {
   simpleNav(''); tabbar('wishlist');
   const all = wishes.all(), want = all.filter(w => !w.done), got = all.filter(w => w.done);
-  $body.innerHTML = `
-    ${hero('heart', 'Wishlist', 'Things you like — write them down so you never forget', `<div class="stats">
-        <div class="stat"><div class="stat-v" data-count="${all.length}">${all.length}</div><div class="stat-k">${esc(t('All'))}</div></div>
-        <div class="stat"><div class="stat-v" data-count="${want.length}">${want.length}</div><div class="stat-k">${esc(t('Still want'))}</div></div>
-        <div class="stat"><div class="stat-v" data-count="${got.length}">${got.length}</div><div class="stat-k">${esc(t('Got it'))}</div></div>
-      </div>`)}
-    <div class="search-wrap"><div id="connBar"></div>
-      <div class="search wl-add"><span class="wl-heart">${ic('heart', '#fff', 16, 2.4)}</span><input id="wlNew" placeholder="${esc(t('What do you like? Type it here…'))}" maxlength="120" enterkeyhint="done"><span class="wl-go" id="wlGo">${ic('plus', '#fff', 18, 2.8)}</span></div></div>
-    <div class="fchips" id="wlTabs">
-      ${[['want', 'Still want', want.length], ['got', 'Got it', got.length], ['all', 'All', all.length]].map(x => `<span class="fchip ${wishTab === x[0] ? 'on' : ''}" data-w="${x[0]}">${esc(t(x[1]))}<b>${x[2]}</b></span>`).join('')}
+  $body.innerHTML = `<div class="wl2-top">
+      <div class="wl2-h"><span class="hb">${ic('heart', '#fff', 19, 2.6)}</span>${esc(t('Wishlist'))}</div>
+      <div class="wl2-s">${esc(t('{a} you want · {b} you got', { a: want.length, b: got.length }))}</div>
+      <div class="wl2-add"><input id="wlNew" placeholder="${esc(t('What do you like? Type it here…'))}" maxlength="120" enterkeyhint="done">
+        <span class="cam" id="wlCam">${ic('camera', B(), 19)}</span><span class="go" id="wlGo">${ic('plus', '#fff', 20, 2.8)}</span></div>
     </div>
-    <div class="page list" id="wlList"></div>`;
+    <div class="seg wl2-seg" id="wlTabs">${[['want', 'Still want', want.length], ['got', 'Got it', got.length]].map(x => `<span data-w="${x[0]}" class="${wishTab === x[0] ? 'on' : ''}">${esc(t(x[1]))} · ${x[2]}</span>`).join('')}</div>
+    <div class="wl2-grid" id="wlList"></div>
+    <input type="file" id="wlFile" accept="image/*" hidden>`;
   const inp = document.getElementById('wlNew');
-  const quick = async () => {
-    const title = norm(inp.value);
+  const add = async image => {
+    const title = norm(inp.value) || (image ? t('Something I like') : '');
     if (!title) { inp.focus(); return toast(t('Write what you like first')); }
-    const w = { id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title, note: '', price: '', currency: '¥', priority: 2, image: '', link: '', done: false, createdAt: Date.now() };
-    await wishes.save(w);
-    inp.value = ''; wishTab = wishTab === 'got' ? 'want' : wishTab;
+    const w = { id: newWishId(), title, note: '', price: '', currency: '¥', priority: 2, image: image || '', link: '', done: false, createdAt: Date.now() };
+    await wishes.save(w); inp.value = ''; wishTab = 'want';
+    renderWishlist();
+    const card = document.querySelector(`[data-wid="${w.id}"]`); if (card) card.classList.add('new');
     toast(t('Added to your wishlist ♥'));
-    renderWishlist(); countUp($body);
-    const card = document.querySelector(`[data-wid="${w.id}"]`); if (card) card.classList.add('wl-new');
   };
-  inp.onkeydown = e => { if (e.key === 'Enter') quick(); };
-  document.getElementById('wlGo').onclick = quick;
-  document.querySelectorAll('#wlTabs .fchip').forEach(el => el.onclick = () => { wishTab = el.dataset.w; renderWishlist(); });
+  inp.onkeydown = e => { if (e.key === 'Enter') add(); };
+  document.getElementById('wlGo').onclick = () => add();
+  document.getElementById('wlCam').onclick = () => document.getElementById('wlFile').click();
+  document.getElementById('wlFile').onchange = async e => {
+    const fl = e.target.files[0]; e.target.value = ''; if (!fl) return;
+    try { add(DB.kv.noCrop ? await compress(fl, 900, 0.8) : (await compress(fl, 900, 0.8, true)).src); } catch (err) { toast(t('Could not read one photo')); }
+  };
+  document.querySelectorAll('#wlTabs span').forEach(el => el.onclick = () => { wishTab = el.dataset.w; renderWishlist(); });
   drawWishes();
-  paintConnect();
 }
 function drawWishes() {
   const el = document.getElementById('wlList'); if (!el) return;
-  const list = wishes.all().filter(w => wishTab === 'all' || (wishTab === 'got' ? w.done : !w.done))
-    .sort((a, b) => (a.done - b.done) || ((b.priority || 0) - (a.priority || 0)) || ((b.createdAt || 0) - (a.createdAt || 0)));
+  const list = wishes.all().filter(w => wishTab === 'got' ? w.done : !w.done).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   if (!list.length) {
-    el.innerHTML = `<div class="card empty"><div class="empty-art wl-art">${ic('heart', '#fff', 34, 2)}</div>
+    el.innerHTML = `<div class="wl2-empty"><div class="big">${ic('heart', '#fff', 38, 2)}</div>
       <div class="empty-title">${esc(t(wishTab === 'got' ? 'Nothing ticked yet' : 'Your wishlist is empty'))}</div>
-      <div class="muted">${esc(t(wishTab === 'got' ? 'When you get something, tap its circle and it moves here.' : 'Write anything you like — a product, a colour, a shop, an idea. Add a photo and a price if you want.'))}</div></div>`;
+      <div class="muted">${esc(t(wishTab === 'got' ? 'When you get something, tap its circle and it moves here.' : 'Type anything you like above, or tap the camera to add it with a photo.'))}</div></div>`;
     return;
   }
-  const hearts = n => [1, 2, 3].map(i => `<i class="${i <= (n || 0) ? 'on' : ''}">${ic('heart', i <= (n || 0) ? '#F43F5E' : '#CBD5E1', 12, 2.6)}</i>`).join('');
-  el.innerHTML = list.map(w => `<div class="wcard ${w.done ? 'done' : ''}" data-wid="${w.id}">
-      <span class="wl-check" data-tick="${w.id}">${w.done ? ic('check', '#fff', 14, 3.2) : ''}</span>
-      ${w.image ? `<img class="wl-img" src="${w.image}" loading="lazy">` : `<div class="wl-img ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
-      <div class="wl-body">
-        <div class="wl-title" data-notr>${esc(w.title)}</div>
-        ${w.note ? `<div class="wl-note" data-notr>${esc(w.note)}</div>` : ''}
-        <div class="wl-meta"><span class="wl-hearts">${hearts(w.priority)}</span>
-          ${Number(w.price) > 0 ? `<span class="chip teal">${esc(w.currency || '¥')}${esc(TradeReport.money(Number(w.price)))}</span>` : ''}
-          ${w.link ? `<span class="chip">${ic('link', '#64748B', 11, 2.4)}${esc(t('Link'))}</span>` : ''}
-          <span class="wl-ago">${esc(ago(w.createdAt || w.updatedAt || Date.now()))}</span></div>
-      </div></div>`).join('');
+  el.innerHTML = list.map(w => `<div class="wi ${w.done ? 'done' : ''}" data-wid="${w.id}">
+      ${w.image ? `<img class="pic" src="${w.image}" loading="lazy">` : `<div class="pic ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+      <span class="ck" data-tick="${w.id}">${ic('check', w.done ? '#fff' : '#94A3B8', 16, 3)}</span>
+      <div class="tx"><div class="tt" data-notr>${esc(w.title)}</div>${Number(w.price) > 0 ? `<div class="pr">${esc(w.currency || '¥')}${esc(TradeReport.money(Number(w.price)))}</div>` : ''}</div></div>`).join('');
   stagger(el);
-  el.querySelectorAll('.wcard').forEach(c => c.onclick = e => {
-    if (e.target.closest('[data-tick]')) return;
-    editWish(c.dataset.wid);
-  });
+  el.querySelectorAll('.wi').forEach(c => c.onclick = e => { if (!e.target.closest('[data-tick]')) editWish(c.dataset.wid); });
   el.querySelectorAll('[data-tick]').forEach(b => b.onclick = async e => {
     e.stopPropagation();
     const w = wishes.get(b.dataset.tick); if (!w) return;
-    const card = b.closest('.wcard'); card.classList.add(w.done ? 'untick' : 'tick');
+    const card = b.closest('.wi'); card.classList.add('pop'); card.classList.toggle('done', !w.done);
+    b.innerHTML = ic('check', !w.done ? '#fff' : '#94A3B8', 16, 3);
     await wishes.save(Object.assign({}, w, { done: !w.done, doneAt: w.done ? 0 : Date.now() }));
     if (!w.done) toast(t('Nice — you got it ✓'));
-    setTimeout(() => renderWishlist(), 420);
+    setTimeout(() => card.classList.add('bye'), 380);
+    setTimeout(() => renderWishlist(), 700);
   });
 }
 // Full editor: title, note, photo, price, how much you want it, link — then save or delete
@@ -4260,7 +4879,7 @@ function editWish(id) {
         <div class="we-photo tap" id="wePhoto">${w.image ? `<img src="${w.image}">` : `${ic('camera', B(), 24)}<span>${esc(t('Photo'))}</span>`}</div>
         <div style="flex:1;min-width:0">
           <div class="field" style="margin-bottom:8px"><div class="label">${esc(t('What do you like?'))} <span class="req">*</span></div><input class="input" id="weTitle" value="${esc(w.title)}" maxlength="120"></div>
-          <div class="we-pri"><span>${esc(t('How much?'))}</span>${[1, 2, 3].map(i => `<i data-p="${i}" class="${i <= w.priority ? 'on' : ''}">${ic('heart', i <= w.priority ? '#F43F5E' : '#CBD5E1', 20, 2.4)}</i>`).join('')}</div>
+
         </div>
       </div>
       <div class="field"><div class="label">${esc(t('Note'))}</div><textarea class="input textarea" id="weNote" rows="2" maxlength="800">${esc(w.note)}</textarea></div>
@@ -4268,17 +4887,16 @@ function editWish(id) {
         <div class="field" style="flex:1"><div class="label">${esc(t('Price'))}</div>
           <div class="joined"><select class="addon" id="weCur">${CURRENCIES.map(c => `<option ${c === w.currency ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="wePrice" inputmode="decimal" value="${esc(w.price)}"></div></div>
       </div>
-      <div class="field"><div class="label">${esc(t('Link or where you saw it'))}</div><input class="input" id="weLink" value="${esc(w.link)}" autocapitalize="off"></div>
+
       ${old ? `<div class="we-acts">
         <button class="btn sm soft" id="weProd">${ic('box', B(), 15)}${esc(t('Save as a product'))}</button>
         <button class="btn sm danger" id="weDel" style="width:44px;flex-shrink:0">${ic('trash', '#E11D48', 16)}</button></div>` : ''}
       <div class="sheet-actions"><button class="btn" id="weNo">${esc(t('Cancel'))}</button><button class="btn primary" id="weOk">${ic('heart', '#fff', 16, 2.6)}${esc(t('Save'))}</button></div>
       <input type="file" id="weFile" accept="image/*" hidden>
     </div></div>`;
-    const keep = () => { w.title = document.getElementById('weTitle').value; w.note = document.getElementById('weNote').value; w.price = document.getElementById('wePrice').value; w.currency = document.getElementById('weCur').value; w.link = document.getElementById('weLink').value; };
+    const keep = () => { w.title = document.getElementById('weTitle').value; w.note = document.getElementById('weNote').value; w.price = document.getElementById('wePrice').value; w.currency = document.getElementById('weCur').value; };
     document.getElementById('wem').onclick = closeOverlay;
     document.getElementById('weNo').onclick = closeOverlay;
-    $overlay.querySelectorAll('.we-pri i').forEach(h => h.onclick = () => { keep(); w.priority = Number(h.dataset.p); draw(); });
     document.getElementById('wePhoto').onclick = () => { keep(); document.getElementById('weFile').click(); };
     document.getElementById('weFile').onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
@@ -4290,7 +4908,7 @@ function editWish(id) {
       keep();
       const title = norm(w.title);
       if (!title) return toast(t('Write what you like first'));
-      const rec = Object.assign({}, old || {}, w, { id: old ? old.id : 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title, note: String(w.note || '').trim(), link: String(w.link || '').trim(),
+      const rec = Object.assign({}, old || {}, w, { id: old ? old.id : newWishId(), title, note: String(w.note || '').trim(), link: String(w.link || '').trim(),
         price: Number(w.price) > 0 ? String(Number(w.price)) : '', createdAt: old ? old.createdAt : Date.now() });
       await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); renderWishlist();
     };
@@ -4329,6 +4947,7 @@ function renderDetail(id) {
         </div>
         <div class="moq"><span>Value at minimum order</span><span class="moq-v">${esc(p.currency)}${moq.int}.${moq.dec}</span></div>
       </div>
+      ${(p.videos || []).length ? `<div class="card d-vids"><div class="card-head"><div class="card-title"><div class="icon-tile">${ic('play', B(), 16)}</div>${esc(t('Videos'))}</div></div>${p.videos.map(v => `<video src="${v.src}" poster="${v.poster || ''}" controls playsinline preload="metadata"></video>`).join('')}</div>` : ''}
       ${dateCard(TradeReport.registeredAt(p))}
       <div class="card" style="margin-top:12px">
         <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('store', B(), 16)}</div>Where to buy</div></div>
@@ -4353,7 +4972,7 @@ function renderDetail(id) {
           <div class="mini-price">${money(x.currency, x.price)}${x.currency === p.currency ? `<div class="mini-sub" style="color:${x.price < p.price ? '#16A34A' : x.price > p.price ? 'var(--price)' : 'var(--ink-3)'}">${x.price < p.price ? 'cheaper' : x.price > p.price ? 'dearer' : 'same price'}</div>` : ''}</div></div>`).join('')}
       </div>` : ''}
     </div>`;
-  $tabbar.innerHTML = `<div class="bar-fixed">
+  $tabbar.innerHTML = `<div class="bar-fixed" id="pcHideBar">
     <button class="btn danger" style="width:48px;flex-shrink:0" id="del">${ic('trash', '#E11D48', 19)}</button>
     <button class="btn primary" style="flex:1" onclick="location.hash='add/${p.id}'">${ic('edit', '#fff', 17)}Edit product</button></div>`;
   const sw = document.getElementById('sw'), ctr = document.getElementById('ctr');
@@ -4406,6 +5025,7 @@ const PcLogin = {
             </div>
             <div class="pl-note">${ic('phone', B(), 16)}<span>${esc(t('Your iPhone is the parent: it keeps your products, even offline. This computer shows them and syncs live while they are connected.'))}</span></div>
             <div class="hint pl-warn" id="plWarn"></div>
+            ${wifiCertHtml(info)}
             <details class="lk-alt"><summary>${esc(t('Can’t scan? Type the code instead'))}</summary>
               <div class="pinbox"><div class="k">${esc(t('In Trade on the phone: Settings → Use on another device → type'))}</div>
               <div class="pin" id="plPin" data-notr></div><div class="hint">${esc(t('Changes every 10 minutes'))}</div></div></details>
@@ -4417,6 +5037,7 @@ const PcLogin = {
           <div class="pl-right"><div class="lk-qr pl-qr" id="plQr"></div><div class="hint" style="text-align:center;margin-top:10px">${esc(t('The code changes every minute'))}</div></div>
         </div>
         <div class="pl-foot" data-notr>${esc(t('iPhone app'))}: <b>https://mitm00.github.io/TradeApp/</b></div>`;
+      paintWifiCert(info);
       document.getElementById('plGhGo').onclick = () => {
         const L = Cloud.parseLink(document.getElementById('plGh').value);
         if (!L) return dialog({ title: 'GitHub', text: t('This is not the link from Trade on the iPhone'), ok: t('OK'), cancel: false });
@@ -4452,6 +5073,7 @@ const PcLogin = {
   applyLang(DB.kv.lang);
   applyTheme(DB.kv.theme || 'cherry');
   document.body.classList.toggle('noanim', !!DB.kv.noanim);
+  Lock.init();
   await Folder.init();
   // Opened with the link from the iPhone (#gh=…): take it out of the address first, so it is not kept in history
   const ghL = Cloud.parseLink(location.hash);
