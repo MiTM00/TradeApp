@@ -1204,7 +1204,7 @@ const SyncBar = {
     Object.keys(this.srcs).forEach(k => { if (Date.now() - this.srcs[k].at > 20000) this.end(k, true); });
     if (!Object.keys(this.srcs).length && !this.shown && !this.closing) { clearInterval(this.dog); this.dog = null; }
   },
-  end(src, ok, msg) {
+  end(src, ok, msg, title) {
     if (!this.srcs[src]) return;
     delete this.srcs[src];
     if (Object.keys(this.srcs).length) return this.shown && !this.closing && this.paint();
@@ -1213,7 +1213,7 @@ const SyncBar = {
     const el = this.mount();
     this.closing = true;
     el.classList.toggle('bad', !ok); el.classList.add('done');
-    el.querySelector('.sb-t b').textContent = ok ? t('Synced ✓') : t('Sync stopped');
+    el.querySelector('.sb-t b').textContent = title || (ok ? t('Synced ✓') : t('Sync stopped'));
     el.querySelector('.sb-t small').textContent = msg || (ok ? t('Everything is saved') : t('It tries again by itself'));
     el.style.setProperty('--p', 1); el.querySelector('.sb-n').textContent = '';
     clearTimeout(this.hideT);
@@ -5566,6 +5566,51 @@ const PcLogin = {
   hide() { clearInterval(this.t); if (this.el) { this.el.remove(); this.el = null; } }
 };
 
+// ---------- Live update: a new version published on GitHub Pages reaches the iPhone without closing the app ----------
+// build.js replaces BUILD with the build id and writes version.json next to the app. Every 30 s (and when Trade
+// comes back to the screen) the phone asks for version.json; a different id → it updates itself with a short notice,
+// waiting until no form, sheet or popup is open, so nothing being typed is lost.
+const BUILD = 'dev';
+const LiveUpdate = {
+  busy: false,
+  init() {
+    if (BUILD === 'dev' || location.protocol === 'file:') return;
+    try { const u = sessionStorage.getItem('trade-updated'); if (u === BUILD) { sessionStorage.removeItem('trade-updated'); setTimeout(() => toast(t('Trade is up to date ✓')), 900); } } catch (e) {}
+    const check = () => this.check();
+    setInterval(() => { if (!document.hidden) check(); }, 30000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    window.addEventListener('online', check);
+    setTimeout(check, 4000);
+  },
+  async check() {
+    if (this.busy) return;
+    try {
+      const j = await (await fetch('version.json?t=' + Date.now(), { cache: 'no-store' })).json();
+      if (!j || !j.v || j.v === BUILD) return;
+      // the same new version was already tried a moment ago (an old copy came back): do not reload again and again
+      let tried = {}; try { tried = JSON.parse(sessionStorage.getItem('trade-upd-try') || '{}'); } catch (e) {}
+      if (tried.v === j.v && Date.now() - tried.at < 5 * 60000) return;
+      this.busy = true; this.apply(j);
+    } catch (e) {}
+  },
+  async apply(j) {
+    try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (e) {}
+    const label = t('New version of Trade');
+    SyncBar.set('update', { label, total: 0, sub: t('Updating…'), now: true });
+    const safe = () => !$overlay.innerHTML.trim() && !/^#add/.test(location.hash) && !Lock.el && !document.querySelector('.mask.cfm') && !document.querySelector('.dock');
+    const go = async () => {
+      if (!safe()) { SyncBar.set('update', { label, sub: t('Updates when you finish what you are doing') }); return setTimeout(go, 3000); }
+      SyncBar.set('update', { label, sub: t('Updating…') });
+      await wait(1500); // time for the new offline copy to install
+      if (!safe()) return go();
+      try { sessionStorage.setItem('trade-upd-try', JSON.stringify({ v: j.v, at: Date.now() })); sessionStorage.setItem('trade-updated', j.v); } catch (e) {}
+      SyncBar.end('update', true, t('Opening the new version…'), t('Updated ✓'));
+      setTimeout(() => location.reload(), 900);
+    };
+    go();
+  }
+};
+
 // ---------- start ----------
 (async () => {
   await DB.init();
@@ -5585,6 +5630,7 @@ const PcLogin = {
   if (!await Persist.check()) Persist.ask();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
   setTimeout(() => Install.show(), 1200);
+  LiveUpdate.init();
 })();
 </script>
 </body>

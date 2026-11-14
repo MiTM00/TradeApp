@@ -18,6 +18,13 @@ see `Cloud` in `preview/index.html`). That repository is not this code repositor
 
 The iPhone app (GitHub Pages, home screen) is the only real app; the data lives permanently on the iPhone. The computer is only where Claude Code develops Trade. There is no Android app (removed 2026-11-13).
 
+## Every code change goes live to the iPhone
+
+After every change to the app, without being asked: test it, commit, push to `main` (the GitHub Actions workflow
+`pages.yml` publishes it to GitHub Pages), then check that https://mitm00.github.io/TradeApp/version.json shows the
+new build. The iPhone checks `version.json` every 30 s and updates itself (`LiveUpdate` in `preview/index.html`;
+`preview/build.js` stamps the build id) — no need to bump the cache name by hand.
+
 ## Language
 
 The user writes Somali: answer in Somali. Code, comments and README stay in English.

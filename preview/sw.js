@@ -9,10 +9,10 @@ const SHELL = [
 ]
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()))
+  e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => c.add(new Request(u, { cache: 'no-cache' })).catch(() => {})))).then(() => self.skipWaiting()))
 })
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== 'trade-models' && k !== CACHE + '-tiles').map(k => caches.delete(k)))).then(() => self.clients.claim()))
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== 'trade-models' && k !== 'trade-tiles').map(k => caches.delete(k)))).then(() => self.clients.claim()))
 })
 self.addEventListener('fetch', e => {
   const req = e.request
@@ -20,6 +20,8 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url)
   // Sync, pairing, AI and backups always go to the computer — never answered from the cache
   if (url.origin === location.origin && url.pathname.includes('/api/')) return
+  // Which version is published (live update): always asked fresh
+  if (url.origin === location.origin && url.pathname.endsWith('/version.json')) return
   // Where the computer is now (written by the computer on GitHub Pages): always fresh, never kept
   if (url.origin === location.origin && url.pathname.includes('/hub/')) return
   // Map tiles: cache first (saves data), app files: network first
@@ -32,13 +34,14 @@ self.addEventListener('fetch', e => {
   }
   if (url.origin !== location.origin && !tile && !/cdnjs\.cloudflare\.com/.test(url.host)) return
   if (tile) {
-    e.respondWith(caches.open(CACHE + '-tiles').then(c => c.match(req).then(hit => hit || fetch(req).then(r => { c.put(req, r.clone()); return r }))))
+    e.respondWith(caches.open('trade-tiles').then(c => c.match(req).then(hit => hit || fetch(req).then(r => { c.put(req, r.clone()); return r }))))
     return
   }
   // Saved copy: used when there is no network, the address is gone (an old iPhone tunnel answers with an error page)
   // or the network is too slow — so the installed app always opens.
   const saved = () => caches.match(req, { ignoreSearch: req.mode === 'navigate' }).then(hit => hit || (req.mode === 'navigate' ? caches.match('index.html').then(h => h || caches.match('./')) : undefined))
-  const net = fetch(req).then(r => {
+  // no-cache: ask the server every time (GitHub Pages lets browsers keep files 10 min), so a new version arrives at once
+  const net = fetch(req, url.origin === location.origin ? { cache: 'no-cache' } : undefined).then(r => {
     if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r }
     return saved().then(hit => hit || r)
   })
