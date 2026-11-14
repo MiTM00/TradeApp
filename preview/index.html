@@ -370,6 +370,9 @@
   .as-item .sub { font-size:11.5px; color:var(--ink-3); font-weight:400; }
   .as-cancel { margin-top:8px; background:var(--card); border-radius:16px; text-align:center; padding:14px; font-size:15px; font-weight:700; cursor:pointer; }
   .dialog { width:100%; max-width:330px; background:var(--card); border-radius:20px; padding:20px; animation:zoom .25s var(--ease); }
+  .mask.cfm { position:fixed; z-index:100000; transition:opacity .18s; } .mask.cfm.out { opacity:0; }
+  .cfm .dialog { text-align:center; } .cfm .dialog-actions { text-align:left; }
+  .cfm-ic { width:52px; height:52px; margin:2px auto 10px; border-radius:17px; display:flex; align-items:center; justify-content:center; background:rgba(225,29,72,.1); }
   .dialog-title { font-size:17px; font-weight:800; margin-bottom:6px; }
   .dialog-text { font-size:13.5px; color:var(--ink-2); margin-bottom:14px; line-height:1.5; }
   .dialog .field:last-of-type { margin-bottom:4px; }
@@ -1194,6 +1197,7 @@ const SyncBar = {
     if (!this.dog) this.dog = setInterval(() => this.watch(), 4000);
     if (this.closing) return; // the "Synced ✓" pill finishes first; a sync still running shows again after it
     if (this.shown) return this.paint();
+    if (p.now) { clearTimeout(this.showT); this.showT = null; this.shown = true; return this.paint(); } // a change the person made: show at once
     if (!this.showT) this.showT = setTimeout(() => { this.showT = null; if (!this.closing && Object.keys(this.srcs).length) { this.shown = true; this.paint(); } }, 350);
   },
   watch() {
@@ -1284,7 +1288,12 @@ const Sync = {
     const d = this.dirty();
     d[kind][id] = deleted ? { id, deleted: true, updatedAt: Date.now() } : Date.now() * 1000 + (this.n = (this.n + 1) % 1000);
     DB.write('kv', 'put', d, 'dirty').catch(() => {});
-    if (!this.applying) Cloud.mark(kind, id, deleted);
+    if (!this.applying) {
+      Cloud.mark(kind, id, deleted);
+      // Every change shows where it goes: GitHub / the computer (their own progress), or only this phone
+      if (!Cloud.here() && !this.key()) { SyncBar.set('local', { label: t('Saving…'), now: true }); setTimeout(() => SyncBar.end('local', true, t('Saved on this phone')), 250); }
+      else if (this.key() && !Cloud.here()) SyncBar.set('pc', { label: t('Sending to the computer'), total: 0, sub: t('Getting ready…'), now: true });
+    }
     this.soon();
   },
   pending() { const d = this.dirty(); return SYNC_KINDS.reduce((n, k) => n + Object.keys(d[k]).length, 0); },
@@ -1497,7 +1506,7 @@ const Sync = {
       // forget what the computer now has (unless it changed again while sending)
       SYNC_KINDS.forEach(k => Object.keys(sent[k]).forEach(id => { if (d[k][id] === sent[k][id]) delete d[k][id]; }));
       const got = SYNC_KINDS.reduce((a, k) => a + (j[k] || []).length, 0);
-      if (got) SyncBar.set('pc', { label: t('Getting products from the computer'), done: 0, total: got, unit: '{n} of {total}' });
+      if (got) SyncBar.set('pc', { label: t('Getting products from the computer'), done: 0, total: got, unit: '{n} of {total}', now: true });
       const changed = await this.apply(j);
       SyncBar.end('pc', true, t('Saved on the computer'));
       await DB.setKV('dirty', d);
@@ -1600,6 +1609,7 @@ const Cloud = {
     const d = this.dirty();
     d[kind][id] = deleted ? { id, deleted: true, updatedAt: Date.now() } : Date.now() * 1000 + Math.floor(Math.random() * 1000);
     DB.write('kv', 'put', d, 'ghDirty').catch(() => {});
+    if (this.here()) SyncBar.set('gh', { label: t('Saving to GitHub'), total: 0, sub: t('{n} changes waiting', { n: this.pending() }), now: true });
     this.soon();
   },
   pending() { const d = this.dirty(); return SYNC_KINDS.reduce((n, k) => n + Object.keys(d[k]).length, 0); },
@@ -1697,7 +1707,7 @@ const Cloud = {
     const RE = /^(products|markets|wishes|trash)\/([\w-]{1,80})\.json$/;
     const todo = (tree.tree || []).filter(f => f.type === 'blob' && RE.test(f.path) && shas[f.path] !== f.sha);
     for (const f of todo) {
-      SyncBar.set('gh', { label: t('Getting products from GitHub'), done: done++, total: todo.length, unit: '{n} of {total} files' });
+      SyncBar.set('gh', { label: t('Getting products from GitHub'), done: done++, total: todo.length, unit: '{n} of {total} files', now: true });
       const m = RE.exec(f.path);
       const b = await this.api('/git/blobs/' + f.sha);
       if (!b.ok) throw new Error('GitHub ' + b.status);
@@ -1937,6 +1947,26 @@ function dialog({ title, text, fields, ok, danger, cancel, alt }) {
   });
 }
 
+// "Are you sure?" before anything is deleted or removed. Opens above whatever is on screen (a sheet stays as it is).
+// Resolves true only when the person taps the red button.
+function confirmDel({ title, text, ok, icon }) {
+  return new Promise(resolve => {
+    const box = document.createElement('div');
+    box.className = 'mask cfm';
+    box.innerHTML = `<div class="dialog" role="alertdialog" aria-modal="true">
+      <div class="cfm-ic">${ic(icon || 'trash', '#E11D48', 24, 2.2)}</div>
+      <div class="dialog-title">${esc(title || t('Are you sure?'))}</div>${text ? `<div class="dialog-text">${esc(text)}</div>` : ''}
+      <div class="dialog-actions"><button class="btn" data-a="no">${esc(t('Cancel'))}</button><button class="btn danger" data-a="ok">${esc(ok || t('Delete'))}</button></div></div>`;
+    (document.querySelector('.phone') || document.body).appendChild(box);
+    const done = v => { box.classList.add('out'); setTimeout(() => box.remove(), 180); document.removeEventListener('keydown', key, true); resolve(v); };
+    const key = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+    document.addEventListener('keydown', key, true);
+    box.onclick = e => { e.stopPropagation(); const a = e.target.closest('[data-a]'); if (a) done(a.dataset.a === 'ok'); else if (e.target === box) done(false); };
+    box.onpointerdown = e => e.stopPropagation();
+    setTimeout(() => { const b = box.querySelector('[data-a="no"]'); if (b) b.focus({ preventScroll: true }); }, 30);
+  });
+}
+
 const TABS = [['', 'grid', 'Products'], ['markets', 'market', 'Markets'], null, ['report', 'chart', 'Reports'], ['settings', 'settings', 'Settings']];
 function tabbar(sel) {
   $tabbar.innerHTML = sel == null ? '' : `<div class="tabbar">${TABS.map((t, i) => t
@@ -2118,7 +2148,9 @@ const Swipe = {
       e.stopPropagation();
       const s = b.closest('.swipe'), id = s.dataset.id;
       if (b.dataset.act === 'edit') { this.close(s); setTimeout(() => { location.hash = 'add/' + id; }, 180); return; }
-      // Delete: the card pours into the Trash (genie), then the gap closes
+      // Delete: asks first, then the card pours into the Trash (genie), then the gap closes
+      const pr = store.get(id);
+      if (!await confirmDel({ title: t('Move to Trash?'), text: `"${(pr && pr.name) || ''}" — ${t('you can put it back from the Trash')}` })) { this.close(s); return; }
       b.disabled = true;
       const card = s.querySelector('.pcard'), img = card.querySelector('.thumb img');
       this.set(s, 0, true); s.classList.remove('open', 'peek'); this.open = null;
@@ -2676,7 +2708,10 @@ function emailSetup(st) {
   const close = () => { closeOverlay(); drawEmailCard(); };
   document.getElementById('es').onclick = closeOverlay; document.getElementById('esNo').onclick = closeOverlay;
   const post = b => fetch('api/email/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Could not save'); });
-  const del = document.getElementById('esDel'); if (del) del.onclick = async () => { await post({ clear: true }); toast('Email removed'); close(); };
+  const del = document.getElementById('esDel'); if (del) del.onclick = async () => {
+    if (!await confirmDel({ title: t('Remove email?'), text: t('Reports can no longer be sent by email until you set it up again.'), ok: t('Remove'), icon: 'send' })) return;
+    await post({ clear: true }); toast('Email removed'); close();
+  };
   document.getElementById('esOk').onclick = async () => {
     const err = document.getElementById('esErr');
     try {
@@ -3390,7 +3425,10 @@ async function drawAiCard() {
     try { await post({ apiKey: document.getElementById('aiKey').value.trim() }); Scanner.st = null; toast(t('Key works ✓')); drawAiCard(); }
     catch (e) { sv.disabled = false; sv.style.opacity = 1; sv.textContent = t('Save'); dialog({ title: t('AI scanner'), text: e.message, ok: t('OK'), cancel: false }); }
   };
-  const rm = document.getElementById('aiRemove'); if (rm) rm.onclick = async () => { await post({ clear: true }); drawAiCard(); };
+  const rm = document.getElementById('aiRemove'); if (rm) rm.onclick = async () => {
+    if (!await confirmDel({ title: t('Remove the AI key?'), text: t('The AI scanner stops working until you add a key again.'), ok: t('Remove'), icon: 'scan' })) return;
+    await post({ clear: true }); drawAiCard();
+  };
 }
 
 const backupData = () => ({ app: 'trade', version: 3, exportedAt: Date.now(), products: DB.products, markets: DB.markets, wishes: DB.wishes, trash: DB.trash, settings: { theme: DB.kv.theme || 'cherry' } });
@@ -3756,7 +3794,11 @@ const Video = {
     el.innerHTML = `<div class="vids">${v.map((x, i) => `<div class="vid-box" data-i="${i}"><img src="${x.poster || ''}" alt=""><div class="play"><i>${ic('play', '#0F172A', 16, 2.6)}</i></div>
         ${x.dur ? `<span class="dur">${this.fmt(x.dur)}</span>` : ''}<div class="del" data-del="${i}">${ic('x', '#fff', 11, 3)}</div></div>`).join('')}
       ${v.length < MAX_VIDEOS ? `<div class="vid-box add" id="vidAdd">${ic('plus', B(), 22, 2.4)}${esc(t('Add video'))}</div>` : ''}</div>`;
-    el.querySelectorAll('[data-del]').forEach(d => d.onclick = e => { e.stopPropagation(); v.splice(+d.dataset.del, 1); this.draw(); });
+    el.querySelectorAll('[data-del]').forEach(d => d.onclick = async e => {
+      e.stopPropagation();
+      if (!await confirmDel({ title: t('Remove this video?'), ok: t('Remove') })) return;
+      v.splice(+d.dataset.del, 1); this.draw();
+    });
     el.querySelectorAll('.vid-box[data-i]').forEach(b => b.onclick = () => this.play(v[+b.dataset.i].src));
     const a = document.getElementById('vidAdd'); if (a) a.onclick = () => this.menu();
   },
@@ -3893,6 +3935,12 @@ function addPhoto() {
   document.getElementById('asCamera').onclick = () => { closeOverlay(); document.getElementById('fileCamera').click(); };
   document.getElementById('asAlbum').onclick = () => { closeOverlay(); document.getElementById('fileAlbum').click(); };
 }
+async function delFormImage(i) {
+  const src = form.images[i]; if (!src) return;
+  if (!await confirmDel({ title: t('Remove this photo?'), ok: t('Remove'), icon: 'image' })) return;
+  const at = form.images.indexOf(src); if (at >= 0) form.images.splice(at, 1);
+  drawImages();
+}
 function drawImages() {
   document.getElementById('imgcount').textContent = form.images.length + '/' + MAX_IMAGES;
   const el = document.getElementById('images');
@@ -3902,7 +3950,7 @@ function drawImages() {
           ${i === 0 ? '<div class="cover-tag">Cover</div>' : `<div class="cover-tag set" onclick="form.images.unshift(form.images.splice(${i},1)[0]);drawImages()">Set cover</div>`}
           ${cropUndo.has(src) ? `<div class="crop-badge">${ic('sparkle', '#fff', 10, 2.6)}${esc(t('Cropped'))}</div>` : ''}
           <div class="crop-tag ${cropUndo.has(src) ? 'on' : ''}" onclick="cropEditor(${i})" title="${esc(t('Crop photo'))}" aria-label="${esc(t('Crop photo'))}">${ic('crop', '#fff', 13, 2.4)}</div>
-          <div class="del" onclick="form.images.splice(${i},1);drawImages()">${ic('x', '#fff', 11, 3)}</div></div>`).join('')}
+          <div class="del" onclick="delFormImage(${i})">${ic('x', '#fff', 11, 3)}</div></div>`).join('')}
         ${Array.from({ length: photoBusy }, (_, k) => `<div class="img-box busy-ph">${busyPreviews[k] ? `<img src="${busyPreviews[k]}">` : ''}<div class="ce-laser on"></div><span class="bp-t">${ic('scan', '#fff', 13, 2.4)}${esc(t('Finding the product…'))}</span></div>`).join('')}
         ${form.images.length + photoBusy < MAX_IMAGES ? `<div class="img-box add" id="drop">${ic('plus', B(), 22, 2.4)}Add photo</div>` : ''}</div>`;
   const d = document.getElementById('drop'); if (d) d.onclick = addPhoto;
@@ -5115,7 +5163,7 @@ async function drawLockCard() {
   const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
   on('lkOn', async () => { if (await Lock.setup()) toast(t('Lock is on ✓')); drawLockCard(); });
   on('lkChange', async () => { if (await Lock.show(true) && await Lock.setup()) toast(t('Saved ✓')); drawLockCard(); });
-  on('lkOff', async () => { if (await Lock.show(true)) { await DB.setKV('lock', null); toast(t('Lock is off')); } drawLockCard(); });
+  on('lkOff', async () => { if (!await confirmDel({ title: t('Turn off the lock?'), text: t('Anyone holding your phone can then open Trade.'), ok: t('Turn off'), icon: 'shield' })) return; if (await Lock.show(true)) { await DB.setKV('lock', null); toast(t('Lock is off')); } drawLockCard(); });
   on('lkFaceSw', async () => {
     const cur = Lock.cfg(); if (!cur) return;
     if (cur.face) { if (await Lock.show(true, Lock.type(cur) === 'pattern' ? 'pattern' : 'pin')) await DB.setKV('lock', Object.assign({}, cur, { face: null, type: Lock.type(cur) === 'face' ? 'pin' : Lock.type(cur) })); }
@@ -5316,6 +5364,8 @@ function editWish(id, tab) {
       $('pfPrice').onkeydown = e => { if (e.key === 'Enter') add(); };
       document.querySelectorAll('[data-del]').forEach(x => x.onclick = async () => {
         keep();
+        const p = w.prices.find(q => q.id === x.dataset.del); if (!p) return;
+        if (!await confirmDel({ title: t('Delete this price?'), text: `${p.market || ''} · ${p.currency || '¥'}${TradeReport.money(Number(p.price))}`, icon: 'coins' })) return;
         const it = x.closest('.pf-it'); it.classList.add('bye');
         await wait(260);
         w.prices = w.prices.filter(p => p.id !== x.dataset.del); await keepPrices(); draw();
@@ -5355,7 +5405,7 @@ function editWish(id, tab) {
       draw();
     };
     const del = $('weDel'); if (del) del.onclick = async () => {
-      if (!await dialog({ title: t('Move to Trash?'), text: `"${old.title}" — ${t('you can put it back from the Trash')}`, ok: t('Delete'), danger: true })) return;
+      if (!await confirmDel({ title: t('Move to Trash?'), text: `"${old.title}" — ${t('you can put it back from the Trash')}` })) return;
       const sheet = del.closest('.we');
       await wishes.remove(old.id);
       if (sheet) await genieToTrash(sheet, old.image);
@@ -5440,7 +5490,9 @@ function renderDetail(id) {
   const cw = document.getElementById('copyWx');
   if (cw) cw.onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(p.wechatId) : Promise.reject()).then(() => toast(t('WeChat ID copied — paste it in WeChat → Add contacts')), () => prompt('WeChat', p.wechatId));
   document.getElementById('del').onclick = async () => {
-    const b = document.getElementById('del'); if (b.disabled) return; b.disabled = true;
+    const b = document.getElementById('del'); if (b.disabled) return;
+    if (!await confirmDel({ title: t('Move to Trash?'), text: `"${p.name || ''}" — ${t('you can put it back from the Trash')}` })) return;
+    b.disabled = true;
     // What flies into the Trash: the photo on screen (or the name card when there is no photo)
     const sw = document.getElementById('sw'), img = sw && sw.children[Math.round(sw.scrollLeft / (sw.clientWidth || 1))];
     const src = img ? document.querySelector('.gallery') : document.querySelector('.d-sheet .card');
