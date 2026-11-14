@@ -15,7 +15,7 @@ let state = null
 function loadState() { if (!state) { try { state = JSON.parse(fs.readFileSync(STATE(), 'utf8')) } catch (e) { state = {} } state.shas = state.shas || {} } return state }
 function saveState() { const tmp = STATE() + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(state)); fs.renameSync(tmp, STATE()) }
 
-const status = { configured: false, last: 0, error: '', busy: false }
+const status = { configured: false, last: 0, error: '', busy: false, progress: null } // progress: { phase: 'down'|'up', done, total } while files move
 let etag = ''
 
 async function api(c, p, opts) {
@@ -56,12 +56,14 @@ async function pull(c) {
   if (r.status === 401) throw new Error('GitHub did not accept this token')
   if (!r.ok) throw new Error('GitHub ' + r.status)
   const tree = await r.json(), st = loadState(), list = []
-  for (const f of tree.tree || []) {
-    if (f.type !== 'blob' || !PATH_RE.test(f.path) || st.shas[f.path] === f.sha) continue
+  const todo = (tree.tree || []).filter(f => f.type === 'blob' && PATH_RE.test(f.path) && st.shas[f.path] !== f.sha)
+  status.progress = todo.length ? { phase: 'down', done: 0, total: todo.length } : null
+  for (const f of todo) {
     const b = await api(c, '/git/blobs/' + f.sha)
     if (!b.ok) throw new Error('GitHub ' + b.status)
     try { const [, kind] = PATH_RE.exec(f.path); list.push([kind, JSON.parse(Buffer.from((await b.json()).content, 'base64').toString('utf8'))]) } catch (e) {}
     st.shas[f.path] = f.sha
+    status.progress.done++
   }
   const applied = list.length ? store.applyMany(list) : 0
   saveState()
@@ -74,9 +76,9 @@ async function pull(c) {
 async function push(c) {
   const st = loadState()
   let sent = 0
-  for (const [kind, rec] of store.allRecords()) {
-    const p = kind + '/' + rec.id + '.json', s = text(rec), sha = blobSha(s)
-    if (st.shas[p] === sha) continue
+  const todo = store.allRecords().map(([kind, rec]) => { const p = kind + '/' + rec.id + '.json', s = text(rec); return [kind, rec, p, s, blobSha(s)] }).filter(x => st.shas[x[2]] !== x[4])
+  status.progress = todo.length ? { phase: 'up', done: 0, total: todo.length } : null
+  for (const [kind, rec, p, s] of todo) {
     const body = { message: (rec.deleted ? 'Delete ' : 'Save ') + kind.replace(/s$/, '') + ' ' + (rec.name || rec.id) + ' (computer)', content: Buffer.from(s, 'utf8').toString('base64'), branch: c.branch }
     if (st.shas[p]) body.sha = st.shas[p]
     let r = await api(c, '/contents/' + p, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -85,7 +87,7 @@ async function push(c) {
     if (r.status === 403 || r.status === 404) throw new Error('The token can read but not write. Give it Contents: Read and write.')
     if (!r.ok) throw new Error('GitHub ' + r.status)
     st.shas[p] = (await r.json()).content.sha
-    saveState(); sent++
+    saveState(); sent++; status.progress.done++
   }
   if (sent) { etag = ''; console.log('GitHub: saved ' + sent + ' record(s)') }
   return sent
@@ -101,7 +103,7 @@ function run() {
     status.busy = true
     try { await pull(c); await push(c); status.last = Date.now(); status.error = '' }
     catch (e) { status.error = /fetch failed|ENOTFOUND|ECONNRESET|ETIMEDOUT/i.test(e.message) ? 'GitHub cannot be reached — check the internet' : e.message; console.log('GitHub:', status.error) }
-    finally { status.busy = false; running = null }
+    finally { status.busy = false; status.progress = null; running = null }
   })()
   return running
 }

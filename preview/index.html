@@ -135,16 +135,21 @@
   /* Swipe a card to the left: Edit and Delete slide out from under it (spring like macOS) */
   .swipe { position:relative; margin-bottom:11px; border-radius:var(--radius); transition:height .38s cubic-bezier(.32,.72,0,1), margin .38s cubic-bezier(.32,.72,0,1), opacity .3s; }
   .swipe .pcard.snap { transition:transform .5s cubic-bezier(.22,1.28,.36,1); }
-  .swipe.open .pcard { box-shadow:0 10px 30px rgba(15,23,42,.18); }
-  .sw-acts { position:absolute; top:0; right:0; bottom:0; display:flex; gap:8px; align-items:stretch; padding:6px 2px 6px 0; }
-  .sw-btn { width:72px; border:0; border-radius:16px; color:#fff; font:700 12px/1.1 inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer;
-    opacity:0; transform:scale(.55) translateX(16px); transition:transform .42s cubic-bezier(.22,1.4,.36,1), opacity .25s, filter .2s; -webkit-tap-highlight-color:transparent; }
-  .sw-btn.sw-e { background:linear-gradient(160deg,#3B82F6,#6366F1); box-shadow:0 6px 16px rgba(79,70,229,.35); }
-  .sw-btn.sw-d { background:linear-gradient(160deg,#FB7185,#E11D48); box-shadow:0 6px 16px rgba(225,29,72,.35); }
-  .sw-btn:active { filter:brightness(.9); transform:scale(.94); }
-  .sw-btn i { width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center; }
-  .swipe.peek .sw-btn, .swipe.open .sw-btn { opacity:1; transform:none; }
-  .swipe.open .sw-btn.sw-d { transition-delay:.05s; }
+  /* The tray under the card: two round actions that grow with the finger (--p = 0…1), like iOS */
+  .sw-acts { position:absolute; inset:0; display:flex; justify-content:flex-end; align-items:center; gap:14px; padding-right:18px; border-radius:var(--radius);
+    background:linear-gradient(90deg,transparent 0%,var(--soft) 45%,var(--soft) 100%); opacity:calc(var(--p,0) * 1.4); }
+  .sw-btn { width:60px; padding:0; border:0; background:none; color:var(--ink-2); font:700 11.5px/1.1 inherit; letter-spacing:.1px; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer;
+    opacity:var(--p,0); transform:scale(calc(.45 + var(--p,0) * .55)); transition:transform .45s cubic-bezier(.22,1.4,.36,1), opacity .25s; -webkit-tap-highlight-color:transparent; }
+  .sw-btn i { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; transition:transform .2s; }
+  .sw-btn i::after { content:''; position:absolute; inset:0; border-radius:50%; background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 55%); pointer-events:none; }
+  .sw-btn.sw-e i { background:linear-gradient(150deg,#60A5FA,#4F46E5); box-shadow:0 8px 18px -4px rgba(79,70,229,.55); }
+  .sw-btn.sw-d i { background:linear-gradient(150deg,#FB7185,#E11D48); box-shadow:0 8px 18px -4px rgba(225,29,72,.55); }
+  .sw-btn.sw-e { transition-delay:.04s; }
+  .sw-btn:active i { transform:scale(.88); }
+  .swipe:not(.drag) .sw-btn { transition:transform .45s cubic-bezier(.22,1.4,.36,1), opacity .25s; }
+  .swipe.drag .sw-btn, .swipe.drag .sw-acts { transition:none; }
+  .sw-acts { transition:opacity .3s; }
+  .swipe.open .pcard { box-shadow:0 14px 34px -8px rgba(15,23,42,.28); }
   .swipe.gone { opacity:0; margin-bottom:0; }
   body.noanim .swipe .pcard.snap, body.noanim .sw-btn { transition:none; }
   .thumb-vid { position:absolute; right:6px; bottom:6px; display:flex; align-items:center; gap:3px; padding:2px 7px; border-radius:999px; background:rgba(225,29,72,.85); color:#fff; font-size:10px; font-weight:700; }
@@ -613,10 +618,34 @@
   .pl-qr { width:284px; height:284px; padding:10px; } .pl-qr img, .pl-qr canvas { width:264px !important; height:264px !important; }
   .pl-foot { text-align:center; margin:22px 16px 30px; font-size:13px; color:var(--ink-3); }
   @media (max-width:640px) { .pl-card { margin:-140px 16px 0; padding:26px 20px; gap:26px; } .pl-band { height:220px; } }
-  .lk { display:flex; gap:18px; align-items:center; flex-wrap:wrap; justify-content:center; }
+  .lkrow { display:flex; gap:18px; align-items:center; flex-wrap:wrap; justify-content:center; }
   .lk-qr { width:236px; height:236px; padding:8px; background:#fff; border-radius:18px; box-shadow:0 8px 24px rgba(15,23,42,.12), inset 0 0 0 1px var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; box-sizing:border-box; transition:box-shadow .3s, transform .3s; }
   .lk-qr img, .lk-qr canvas { width:220px !important; height:220px !important; display:block; }
   .lk-qr.done { box-shadow:0 0 0 4px var(--brand-2), 0 8px 24px rgba(15,23,42,.12); transform:scale(.97); }
+  /* Face ID (lock screen + setup) */
+  .lk-face { width:150px; height:150px; margin:26px auto 0; display:flex; align-items:center; justify-content:center; border-radius:42px; cursor:pointer; position:relative; }
+  .lk-face::before { content:''; position:absolute; inset:0; border-radius:42px; background:rgba(255,255,255,.08); border:.5px solid rgba(255,255,255,.2); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); transition:background .3s; }
+  .lk-face .fx { width:88px; height:88px; position:relative; overflow:visible; }
+  .fx .fx-c, .fx .fx-f { transition:transform .5s cubic-bezier(.22,1.4,.36,1), opacity .3s; transform-origin:32px 32px; }
+  .fx .fx-ok { stroke-dasharray:46; stroke-dashoffset:46; opacity:0; }
+  .lk-face.scan .fx-c { animation:fxScan 1.1s ease-in-out infinite; }
+  .lk-face.scan .fx-f { animation:fxLook 1.6s ease-in-out infinite; }
+  @keyframes fxScan { 50% { transform:scale(.86); } }
+  @keyframes fxLook { 25% { transform:translateX(-3px); } 75% { transform:translateX(3px); } }
+  .lk-face.ok::before { background:rgba(34,197,94,.3); }
+  .lk-face.ok .fx-c { transform:scale(.9) rotate(90deg); opacity:.35; } .lk-face.ok .fx-f { opacity:0; transform:scale(.6); }
+  .lk-face.ok .fx-ok { opacity:1; stroke-dashoffset:0; stroke:#4ADE80; transition:stroke-dashoffset .45s .12s ease-out, opacity .1s .12s; }
+  .lk-face.bad { animation:lkShake .5s cubic-bezier(.36,.07,.19,.97); } .lk-face.bad .fx { stroke:#FDA4AF; }
+  .lk-opts { display:flex; flex-direction:column; gap:10px; width:290px; max-width:calc(100vw - 72px); }
+  .lk-opt { display:flex; align-items:center; gap:13px; padding:13px 14px; border-radius:20px; background:rgba(255,255,255,.1); border:.5px solid rgba(255,255,255,.2); cursor:pointer; transition:transform .2s, background .2s; text-align:left; }
+  .lk-opt:active { transform:scale(.97); background:rgba(255,255,255,.2); }
+  .lk-oi { width:44px; height:44px; border-radius:14px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .lk-oi svg { width:26px; height:26px; } .lk-oi .fx { width:30px; height:30px; stroke-width:4.4; }
+  .lk-ot { flex:1; min-width:0; } .lk-ot b { display:flex; align-items:center; gap:7px; font-size:15.5px; } .lk-ot small { display:block; font-size:12px; opacity:.72; margin-top:2px; }
+  .lk-ot em { font-style:normal; font-size:10px; font-weight:800; padding:2px 7px; border-radius:999px; background:#fff; color:#0F172A; }
+  .lk-card.plain { background:none; border:0; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; padding:0; }
+  @media (max-height:860px) { .lk { padding-top:calc(30px + var(--safe-top, 0px)); } .lk-time { font-size:54px; margin-top:8px; } .lk-msg { margin-top:14px; } .lk-card { margin-top:12px; }
+    .pin-keys { gap:10px 22px; } .pin-k { width:66px; height:66px; } .pin-keys { grid-template-columns:repeat(3,66px); } .lk-face { margin-top:16px; } }
   .lk-steps { flex:1; min-width:200px; }
   .lk-steps > b { font-size:16px; }
   .lk-alt { margin-top:12px; }
@@ -750,6 +779,24 @@
   .lk-b:active { transform:scale(.96); }
   .lk-b.main { background:#fff; color:#0F172A; }
   .lk-steps { display:flex; gap:6px; margin-top:16px; } .lk-steps i { width:22px; height:4px; border-radius:4px; background:rgba(255,255,255,.25); transition:all .3s; } .lk-steps i.on { width:34px; background:#fff; }
+  .lk.setup .lk-time, .lk.setup .lk-date { display:none; }
+  .lk .lk-steps { flex:none; min-width:0; } /* not the link card's .lk-steps (flex:1), which pushed the keypad down */
+  /* Small iPhones (SE, 8, mini in Safari): everything — keypad down to 0 and the buttons — must fit on one screen */
+  @media (max-height:760px) {
+    .lk { padding-top:calc(22px + var(--safe-top, 0px)); padding-bottom:calc(14px + var(--safe-bottom, 0px)); }
+    .lk-lock { width:38px; height:38px; border-radius:13px; }
+    .lk-time { font-size:44px; margin-top:6px; } .lk-date { font-size:13px; margin-top:3px; }
+    .lk-msg { margin-top:10px; } .lk-card { margin-top:8px; padding:12px; border-radius:26px; }
+    .pin-dots { margin:2px 0 12px; }
+    .pin-keys { grid-template-columns:repeat(3,60px); gap:9px 22px; } .pin-k { width:60px; height:60px; font-size:25px; }
+    .pp { width:232px; height:232px; } .lk-face { width:124px; height:124px; margin-top:14px; }
+    .lk-acts { padding-top:10px; } .lk-b { height:40px; } .lk-steps { margin-top:8px; }
+  }
+  @media (max-height:620px) {
+    .lk-date { display:none; } .lk-time { font-size:36px; }
+    .pin-keys { grid-template-columns:repeat(3,54px); gap:7px 20px; } .pin-k { width:54px; height:54px; font-size:22px; }
+    .pp { width:208px; height:208px; }
+  }
   .seg { display:flex; padding:3px; border-radius:12px; background:var(--soft); gap:3px; }
   .seg span { flex:1; text-align:center; padding:7px 4px; border-radius:9px; font-size:12.5px; font-weight:700; color:var(--ink-2); cursor:pointer; transition:all .2s; }
   .seg span.on { background:var(--card); color:var(--ink); box-shadow:0 2px 8px rgba(15,23,42,.1); }
@@ -812,6 +859,52 @@
   @keyframes wiNew { from { transform:scale(.4) rotate(-6deg); opacity:0; } }
   .wl2-empty { grid-column:1/-1; text-align:center; padding:48px 20px; color:var(--ink-2); }
   .wl2-empty .big { width:84px; height:84px; margin:0 auto 14px; border-radius:28px; background:linear-gradient(140deg,#FB7185,#E11D48); display:flex; align-items:center; justify-content:center; box-shadow:0 14px 34px rgba(225,29,72,.35); animation:float 3s ease-in-out infinite; }
+  .wl2-add .cam { position:relative; overflow:visible; } .wl2-add .cam img { width:100%; height:100%; object-fit:cover; border-radius:14px; display:block; }
+  .wl2-add .cam i { position:absolute; top:-5px; right:-5px; width:19px; height:19px; border-radius:50%; background:#0F172A; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+  .wl2-add { padding-left:6px; }
+  .wi .cl { display:flex; align-items:center; gap:4px; margin-top:3px; font-size:11.5px; font-weight:600; color:var(--ink-2); min-width:0; }
+  .we-main { display:flex; gap:12px; align-items:center; }
+  .we-main .field { flex:1; min-width:0; margin:0; }
+  .we-more { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; margin:14px 0 4px; height:42px; border:0; border-radius:13px; background:var(--soft); color:var(--ink); font:700 13.5px inherit; cursor:pointer; }
+  .we-more .ic { transition:transform .35s cubic-bezier(.22,1.4,.36,1); } .we.open .we-more .ic { transform:rotate(180deg); }
+  .we-x { display:grid; grid-template-rows:0fr; transition:grid-template-rows .4s cubic-bezier(.32,.72,0,1), opacity .3s; opacity:0; }
+  .we.open .we-x { grid-template-rows:1fr; opacity:1; }
+  .we-x > div { overflow:hidden; } .we-x .in { padding-top:10px; }
+  .we-x .textarea.big { min-height:150px; resize:vertical; }
+  .we .we-acts { margin-top:12px; }
+  /* wishlist: Item / Prices tabs and the market price feed */
+  .we-tabs { margin:0 0 14px; } .we-tabs span { display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 4px; font-size:13.5px; }
+  .we-tabs span .ic { flex:none; padding:0; border-radius:0; background-color:transparent; box-shadow:none; }
+  .we-tabs span .we-n { flex:none; padding:0 6px; border-radius:999px; box-shadow:none; color:#fff; background:var(--brand); }
+  .we-n { min-width:19px; height:19px; padding:0 6px; border-radius:999px; background:var(--brand); color:#fff; font-size:10.5px; display:inline-flex; align-items:center; justify-content:center; }
+  .pf-sum { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .pf-sum > div { padding:10px; border-radius:14px; background:var(--soft); min-width:0; }
+  .pf-sum > div:first-child { background:linear-gradient(150deg,#DCFCE7,#BBF7D0); } .pf-sum > div:first-child b { color:#15803D; }
+  .pf-sum span { display:block; font-size:10.5px; font-weight:700; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pf-sum b { display:block; font-size:16px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pf-sum small { display:block; font-size:10.5px; color:var(--ink-3); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pf-add { display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:16px; border:1.5px dashed var(--brand-2); background:var(--mint); }
+  .pf-h { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:800; color:var(--brand); }
+  .pf-add .input { background:var(--card); }
+  .pf-row { display:flex; gap:8px; } .pf-go { width:auto; flex-shrink:0; padding:0 16px; }
+  .pf-list { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .pf-it { display:flex; align-items:center; gap:10px; padding:10px 8px 10px 10px; border-radius:15px; background:var(--card); box-shadow:var(--shadow); transition:transform .26s var(--ease), opacity .26s; }
+  .pf-it.best { box-shadow:0 0 0 1.5px #4ADE80, var(--shadow); }
+  .pf-it.new { animation:wiNew .6s cubic-bezier(.22,1.28,.36,1) both; } .pf-it.bye { transform:translateX(-30px); opacity:0; }
+  .pf-ic { width:36px; height:36px; border-radius:11px; background:var(--mint); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .pf-it.best .pf-ic { background:#DCFCE7; }
+  .pf-tx { flex:1; min-width:0; } .pf-tx b { display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pf-tx span { display:flex; align-items:center; gap:3px; font-size:11.5px; color:var(--ink-3); font-weight:600; margin-top:1px; white-space:nowrap; overflow:hidden; } .pf-tx em { font-style:normal; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; }
+  .pf-pr { text-align:right; font-size:15.5px; font-weight:800; color:var(--price); font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .pf-pr small { display:block; font-size:10px; font-weight:800; color:#16A34A; }
+  .pf-it.best .pf-pr { color:#15803D; }
+  .pf-x { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; } .pf-x:active { background:var(--soft); }
+  .pf-empty { text-align:center; padding:22px 16px 6px; font-size:12.5px; color:var(--ink-3); line-height:1.5; } .pf-empty .ic { margin-bottom:6px; }
+  .wi-f { display:flex; align-items:center; gap:6px; margin-top:5px; flex-wrap:wrap; }
+  .wi-f .pr { margin:0; } .wi-f .qty { font-size:11px; font-weight:700; padding:2px 7px; border-radius:999px; background:var(--soft); color:var(--ink-2); }
+  .wi-f .mk { display:inline-flex; align-items:center; gap:2px; font-size:11px; font-weight:700; color:var(--ink-3); margin-left:auto; }
+  .tr-keep { display:flex; gap:8px; align-items:flex-start; margin-top:12px; padding:9px 11px; border-radius:12px; background:#F0FDF4; color:#166534; font-size:12px; font-weight:600; line-height:1.45; }
+  .tr-keep .ic { margin-top:1px; }
   .wl2-seg { margin:0 16px 12px; }
   /* ---------- auto-fill (object recognition) ---------- */
   .af { display:flex; align-items:center; gap:10px; margin-top:10px; padding:10px 11px; border-radius:13px; background:var(--mint); color:var(--ink); animation:fade .25s; }
@@ -887,12 +980,39 @@
   .tr-item img, .tr-item .ph { width:60px; height:60px; border-radius:13px; object-fit:cover; flex-shrink:0; background:var(--soft); display:flex; align-items:center; justify-content:center; }
   .tr-item img { filter:saturate(.75); }
   .tr-name { font-size:14px; font-weight:800; } .tr-meta { font-size:11.5px; color:var(--ink-3); margin-top:2px; }
+  .tr-kind { display:inline-flex; align-items:center; gap:3px; color:#E11D48; font-weight:700; }
   .tr-acts { display:flex; gap:6px; flex-shrink:0; }
   .tr-acts .btn { width:auto; height:36px; padding:0 11px; font-size:13px; border-radius:11px; }
   .tr-acts .btn.icon { width:36px; padding:0; }
   .tr-item.out-r { transform:translateX(110%); opacity:0; }
   .tr-item.out-x { transform:scale(.6); opacity:0; }
   .tr-item.gone { max-height:0; margin:0; padding-top:0; padding-bottom:0; }
+  /* sync progress pill (SyncBar) */
+  .sbar { position:absolute; left:50%; top:calc(10px + var(--safe-top, 0px)); z-index:5000; width:min(330px, calc(100% - 32px)); box-sizing:border-box; display:flex; align-items:center; gap:11px; padding:9px 14px 12px 9px; border-radius:20px; overflow:hidden; pointer-events:none;
+    color:#fff; background:rgba(15,23,42,.82); backdrop-filter:blur(20px) saturate(1.6); -webkit-backdrop-filter:blur(20px) saturate(1.6); box-shadow:0 12px 34px rgba(15,23,42,.32), inset 0 0 0 .5px rgba(255,255,255,.18);
+    transform:translate(-50%,-140%); opacity:0; transition:transform .45s cubic-bezier(.32,.72,0,1), opacity .3s; --p:0; }
+  .sbar.on { transform:translate(-50%,0); opacity:1; }
+  .sb-ring { position:relative; width:36px; height:36px; flex-shrink:0; }
+  .sb-ring svg { width:36px; height:36px; transform:rotate(-90deg); }
+  .sb-ring circle { fill:none; stroke:rgba(255,255,255,.16); stroke-width:3.4; }
+  .sb-ring .sb-arc { stroke:var(--brand-2); stroke-linecap:round; stroke-dasharray:calc(var(--p) * 100) 100; transition:stroke-dasharray .35s ease, stroke .3s; }
+  .sbar.busy .sb-arc { stroke-dasharray:28 100; animation:sbSpin 1s linear infinite; transform-origin:18px 18px; }
+  @keyframes sbSpin { to { transform:rotate(360deg); } }
+  .sb-ic, .sb-ok { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transition:opacity .25s, transform .35s cubic-bezier(.22,1.4,.36,1); }
+  .sb-ic svg { animation:sbSpin 1.6s linear infinite; }
+  .sb-ok { opacity:0; transform:scale(.4); }
+  .sbar.done .sb-arc { stroke:#4ADE80; stroke-dasharray:100 100; animation:none; }
+  .sbar.done .sb-ic { opacity:0; } .sbar.done .sb-ok { opacity:1; transform:none; }
+  .sbar.bad .sb-arc { stroke:#FB7185; } .sbar.bad .sb-ok { opacity:0; }
+  .sb-t { flex:1; min-width:0; } .sb-t b { display:block; font-size:13.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sb-t small { display:block; font-size:11.5px; opacity:.72; margin-top:1px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sb-n { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; opacity:.9; }
+  .sb-line { position:absolute; left:0; right:0; bottom:0; height:3px; background:rgba(255,255,255,.08); }
+  .sb-line i { position:absolute; left:0; top:0; bottom:0; width:calc(var(--p) * 100%); background:linear-gradient(90deg,var(--brand-2),#A78BFA); border-radius:0 3px 3px 0; transition:width .35s ease; box-shadow:0 0 10px var(--brand-2); }
+  .sbar.busy .sb-line i { width:35%; animation:sbSlide 1.2s ease-in-out infinite; }
+  @keyframes sbSlide { from { left:-35%; } to { left:100%; } }
+  .sbar.done .sb-line i { width:100%; background:#4ADE80; box-shadow:0 0 10px #4ADE80; }
+  .sbar.bad .sb-line i { background:#FB7185; box-shadow:none; }
   /* the Dock with the trash can that slides up while a product is deleted (like macOS) */
   .dock { position:absolute; right:16px; bottom:calc(86px + var(--safe-bottom)); z-index:4000; transform:translateY(180%); padding:9px 12px 7px; border-radius:22px;
     background:rgba(255,255,255,.55); -webkit-backdrop-filter:blur(18px) saturate(1.6); backdrop-filter:blur(18px) saturate(1.6);
@@ -1034,20 +1154,25 @@ const store = {
   // Delete = move to the Trash (kept on this phone and on the computer, can be put back)
   async remove(id) {
     const p = this.get(id); if (!p) return;
-    const item = Object.assign({}, p); delete item._rev;
-    const rec = { id: p.id, kind: 'products', item, trashedAt: Date.now() };
-    const i = DB.trash.findIndex(x => x.id === p.id); i >= 0 ? DB.trash[i] = rec : DB.trash.push(rec);
-    await DB.write('trash', 'put', rec);
+    await toTrash('products', p);
     DB.products = DB.products.filter(x => x.id !== id); await DB.write('products', 'delete', id);
   }
 };
+// The Trash holds deleted products and deleted wishes (kind 'products' | 'wishes')
+const TRASH_KINDS = ['products', 'wishes'];
+async function toTrash(kind, item) {
+  item = Object.assign({}, item); delete item._rev;
+  const rec = { id: item.id, kind, item, trashedAt: Date.now() };
+  const i = DB.trash.findIndex(x => x.id === item.id); i >= 0 ? DB.trash[i] = rec : DB.trash.push(rec);
+  await DB.write('trash', 'put', rec);
+}
 const trash = {
-  all() { return DB.trash.filter(x => x.kind === 'products' && x.item).sort((a, b) => b.trashedAt - a.trashedAt); },
+  all() { return DB.trash.filter(x => TRASH_KINDS.includes(x.kind) && x.item).sort((a, b) => b.trashedAt - a.trashedAt); },
   count() { return this.all().length; },
   async restore(id) {
     const rec = DB.trash.find(x => x.id === id); if (!rec) return;
     const p = Object.assign({}, rec.item);
-    await store.upsert(p);
+    if (rec.kind === 'wishes') await wishes.save(p); else await store.upsert(p);
     DB.trash = DB.trash.filter(x => x.id !== id); await DB.write('trash', 'delete', id);
   },
   // Gone from the Trash for good (the computer still keeps a copy in data/deleted)
@@ -1056,6 +1181,78 @@ const trash = {
 };
 
 // ---------- Sync: the computer running Trade keeps a permanent copy and shares it with every paired device ----------
+// ---------- Sync progress: a glass pill under the header while products move (GitHub or the computer) ----------
+// set(src, { label, done, total, unit }) — total 0 = still counting; end(src, ok). Quick syncs (< 350 ms) show nothing.
+const SyncBar = {
+  el: null, srcs: {}, showT: null, hideT: null, shown: false,
+  set(src, p) {
+    this.srcs[src] = Object.assign(this.srcs[src] || {}, p);
+    clearTimeout(this.hideT);
+    if (this.shown) return this.paint();
+    if (!this.showT) this.showT = setTimeout(() => { this.showT = null; if (Object.keys(this.srcs).length) { this.shown = true; this.paint(); } }, 350);
+  },
+  end(src, ok, msg) {
+    if (!this.srcs[src]) return;
+    delete this.srcs[src];
+    if (Object.keys(this.srcs).length) return this.shown && this.paint();
+    clearTimeout(this.showT); this.showT = null;
+    if (!this.shown) return;
+    const el = this.mount();
+    el.classList.toggle('bad', !ok); el.classList.add('done');
+    el.querySelector('.sb-t b').textContent = ok ? t('Synced ✓') : t('Sync stopped');
+    el.querySelector('.sb-t small').textContent = msg || (ok ? t('Everything is saved') : t('It tries again by itself'));
+    el.style.setProperty('--p', 1); el.querySelector('.sb-n').textContent = '';
+    this.hideT = setTimeout(() => { el.classList.remove('on'); this.shown = false; setTimeout(() => { if (!this.shown && this.el === el) { el.remove(); this.el = null; } }, 400); }, ok ? 1300 : 2600);
+  },
+  mount() {
+    if (this.el && this.el.isConnected) return this.el;
+    const el = document.createElement('div'); el.className = 'sbar'; el.setAttribute('role', 'status');
+    el.innerHTML = `<div class="sb-ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15"/><circle class="sb-arc" cx="18" cy="18" r="15" pathLength="100"/></svg><span class="sb-ic">${ic('refresh', '#fff', 14, 2.4)}</span><span class="sb-ok">${ic('check', '#fff', 15, 3)}</span></div>
+      <div class="sb-t"><b></b><small></small></div><span class="sb-n" data-notr></span><div class="sb-line"><i></i></div>`;
+    (document.querySelector('.phone') || document.body).appendChild(el); this.el = el;
+    requestAnimationFrame(() => el.classList.add('on'));
+    return el;
+  },
+  paint() {
+    const p = Object.values(this.srcs)[0]; if (!p) return;
+    const el = this.mount(); el.classList.remove('done', 'bad'); el.classList.add('on');
+    const known = p.total > 0, f = known ? Math.min(1, p.done / p.total) : 0;
+    el.classList.toggle('busy', !known);
+    el.style.setProperty('--p', f);
+    el.querySelector('.sb-t b').textContent = p.label;
+    el.querySelector('.sb-t small').textContent = known ? (p.unit ? t(p.unit, { n: p.done, total: p.total }) : t('{n} of {total}', { n: p.done, total: p.total })) : (p.sub || t('Getting ready…'));
+    el.querySelector('.sb-n').textContent = known ? Math.round(f * 100) + '%' : '';
+  }
+};
+// POST with upload progress (fetch cannot report it). On the iPhone app api/… goes to the computer's address.
+function postProgress(url, body, headers, onUp) {
+  return new Promise((ok, no) => {
+    const F = window.TradeHub || window.TradeApp;
+    if (F && F.server) { if (!F.server()) return no(new TypeError('Failed to fetch')); url = F.server() + url; }
+    const x = new XMLHttpRequest(); x.open('POST', url);
+    Object.keys(headers || {}).forEach(k => x.setRequestHeader(k, headers[k]));
+    if (onUp) x.upload.onprogress = e => { if (e.lengthComputable) onUp(e.loaded, e.total); };
+    x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} ok({ status: x.status, ok: x.status >= 200 && x.status < 300, json: () => Promise.resolve(j) }); };
+    x.onerror = x.ontimeout = () => no(new TypeError('Failed to fetch'));
+    x.send(body);
+  });
+}
+// The computer's own screen: the Trade server syncs with GitHub — show its progress too
+const ServerSyncWatch = {
+  start() {
+    if (this.t) return;
+    this.t = setInterval(async () => {
+      if (document.hidden || !(Sync.server && Sync.server.key && Sync.server.github)) return;
+      try {
+        const s = await (await fetch('api/github/status', { cache: 'no-store' })).json(), p = s.progress;
+        if (s.busy && p && p.total) SyncBar.set('server', { label: p.phase === 'down' ? t('Getting products from GitHub') : t('Saving to GitHub'), done: p.done, total: p.total, unit: '{n} of {total} files' });
+        else if (SyncBar.srcs.server) { SyncBar.end('server', !s.error, s.error ? t(s.error) : ''); if (!s.error) refreshFromServer(); }
+      } catch (e) {}
+    }, 1200);
+  }
+};
+// After the server took new products from GitHub: fetch them into this screen right away
+function refreshFromServer() { Sync.soon(100); }
 const Sync = {
   applying: false, busy: false, timer: null, status: 'off', error: '', last: 0, server: null, n: 0,
   dirty() {
@@ -1101,6 +1298,7 @@ const Sync = {
     if (m) { await this.pair(m[1]); history.replaceState(null, '', location.pathname); }
     this.run();
     this.listen();
+    ServerSyncWatch.start();
     setInterval(() => this.run(), 15000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { this.probe(); this.run(); } });
     window.addEventListener('online', () => { this.foundAt = 0; this.run(); });
@@ -1254,7 +1452,12 @@ const Sync = {
     this.status = 'syncing'; this.paint();
     try {
       const { d, sent, body } = this.body();
-      const r = await fetch('api/sync', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-trade-key': this.key() }, body: JSON.stringify(body) });
+      const n = SYNC_KINDS.reduce((a, k) => a + body[k].length, 0), hdr = { 'Content-Type': 'application/json', 'x-trade-key': this.key() };
+      // Something to send: show how far it is (photos make it big). Nothing to send: a quiet check.
+      const label = t('Sending to the computer'), unit = n === 1 ? '1 change' : '{n} changes';
+      const r = n ? await postProgress('api/sync', JSON.stringify(body), hdr, (a, b) => SyncBar.set('pc', { label, done: a, total: b, sub: t(unit, { n }), unit: t(unit, { n }) + ' · ' + fmtSize(a) + ' / ' + fmtSize(b) }))
+        : await fetch('api/sync', { method: 'POST', headers: hdr, body: JSON.stringify(body) });
+      if (n) SyncBar.set('pc', { label, done: 0, total: 0, sub: t('The computer is saving…') });
       const j = await r.json().catch(() => ({}));
       if (r.status === 403 && this.key() === DB.kv.ownKey) {
         // The computer does not know this phone (never linked, or unlinked there). Everything stays on the phone.
@@ -1272,7 +1475,10 @@ const Sync = {
       if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
       // forget what the computer now has (unless it changed again while sending)
       SYNC_KINDS.forEach(k => Object.keys(sent[k]).forEach(id => { if (d[k][id] === sent[k][id]) delete d[k][id]; }));
+      const got = SYNC_KINDS.reduce((a, k) => a + (j[k] || []).length, 0);
+      if (got) SyncBar.set('pc', { label: t('Getting products from the computer'), done: 0, total: got, unit: '{n} of {total}' });
       const changed = await this.apply(j);
+      SyncBar.end('pc', true, t('Saved on the computer'));
       await DB.setKV('dirty', d);
       await DB.setKV('syncRev', j.rev);
       if (j.epoch) await DB.setKV('syncEpoch', j.epoch);
@@ -1284,10 +1490,11 @@ const Sync = {
     } catch (e) {
       this.status = 'error';
       this.error = /fetch|network|load failed/i.test(e.message) ? t('the computer cannot be reached') : e.message;
+      SyncBar.end('pc', false, this.error);
       if (this.error === t('the computer cannot be reached')) this.rediscover();
       // try again soon: what is waiting on this phone must reach the computer
       this.retry = Math.min(30000, (this.retry || 1500) * 2); this.soon(this.retry);
-    } finally { this.paint(); }
+    } finally { SyncBar.end('pc', false); this.paint(); } // (no-op after a normal end; covers the "not linked" returns)
   },
   // Phone app: remember every address of the computer (Wi-Fi, cable, hotspot), so it is found again when one changes
   learnAddresses() {
@@ -1335,6 +1542,7 @@ const Sync = {
         if (local && JSON.stringify(local) === JSON.stringify(clean)) continue;
         i >= 0 ? DB[k][i] = clean : DB[k].push(clean);
         await DB.write(k, 'put', clean); changed++;
+        if (SyncBar.srcs.pc) SyncBar.set('pc', { done: (SyncBar.srcs.pc.done || 0) + 1 });
       }
     } finally { this.applying = false; }
     return changed;
@@ -1446,10 +1654,12 @@ const Cloud = {
       await this.push();
       this.status = 'ok'; this.error = ''; this.last = Date.now(); this.retry = 0;
       await DB.setKV('ghLast', this.last);
+      SyncBar.end('gh', true, t('Saved on GitHub'));
       if (changed) refreshView();
     } catch (e) {
       this.status = 'error';
       this.error = /fetch|network|load failed/i.test(e.message) ? t('GitHub cannot be reached — check the internet') : e.message;
+      SyncBar.end('gh', false, this.error);
       this.retry = Math.min(60000, (this.retry || 2000) * 2); this.soon(this.retry);
     } finally { this.paint(); }
   },
@@ -1462,10 +1672,12 @@ const Cloud = {
     if (r.status === 401) throw new Error(t('GitHub did not accept this token'));
     if (!r.ok) throw new Error('GitHub ' + r.status);
     const tree = await r.json(), shas = this.shas();
-    let changed = 0;
-    for (const f of tree.tree || []) {
-      const m = /^(products|markets|wishes|trash)\/([\w-]{1,80})\.json$/.exec(f.path);
-      if (!m || f.type !== 'blob' || shas[f.path] === f.sha) continue;
+    let changed = 0, done = 0;
+    const RE = /^(products|markets|wishes|trash)\/([\w-]{1,80})\.json$/;
+    const todo = (tree.tree || []).filter(f => f.type === 'blob' && RE.test(f.path) && shas[f.path] !== f.sha);
+    for (const f of todo) {
+      SyncBar.set('gh', { label: t('Getting products from GitHub'), done: done++, total: todo.length, unit: '{n} of {total} files' });
+      const m = RE.exec(f.path);
       const b = await this.api('/git/blobs/' + f.sha);
       if (!b.ok) throw new Error('GitHub ' + b.status);
       let rec; try { rec = JSON.parse(this.dec((await b.json()).content)); } catch (e) { shas[f.path] = f.sha; continue; }
@@ -1498,7 +1710,11 @@ const Cloud = {
   // Every change on this phone → its file on GitHub (one at a time: GitHub takes one commit after another)
   async push() {
     const d = this.dirty(), shas = this.shas(), c = this.cfg();
-    for (const k of SYNC_KINDS) for (const id of Object.keys(d[k])) {
+    const all = SYNC_KINDS.flatMap(k => Object.keys(d[k]).map(id => [k, id]));
+    let done = 0;
+    for (const [k, id] of all) {
+      if (!(id in d[k])) continue;
+      SyncBar.set('gh', { label: t('Saving to GitHub'), done: done++, total: all.length, unit: '{n} of {total} files' });
       const token = d[k][id], rec = token && typeof token === 'object' ? token : DB[k].find(x => x.id === id);
       const path = k + '/' + id + '.json';
       if (!rec) { delete d[k][id]; continue; }
@@ -1821,8 +2037,8 @@ function renderIndex() {
 }
 function productCard(p) {
   return `<div class="swipe" data-id="${p.id}"><div class="sw-acts">
-      <button class="sw-btn sw-e" data-act="edit" aria-label="${esc(t('Edit'))}"><i>${ic('edit', '#fff', 17, 2.4)}</i>${esc(t('Edit'))}</button>
-      <button class="sw-btn sw-d" data-act="del" aria-label="${esc(t('Delete'))}"><i>${ic('trash', '#fff', 17, 2.4)}</i>${esc(t('Delete'))}</button></div>
+      <button class="sw-btn sw-e" data-act="edit" aria-label="${esc(t('Edit'))}"><i>${ic('edit', '#fff', 20, 2.3)}</i>${esc(t('Edit'))}</button>
+      <button class="sw-btn sw-d" data-act="del" aria-label="${esc(t('Delete'))}"><i>${ic('trash', '#fff', 20, 2.3)}</i>${esc(t('Delete'))}</button></div>
     <div class="pcard" onclick="if(!Swipe.eat())location.hash='detail/${p.id}'">
     <div class="thumb">
       ${p.images.length ? `<img src="${p.images[0]}" loading="lazy">` : `<div class="thumb-ph">${ic('image', '#B6C0CD', 28, 1.6)}</div>`}
@@ -1841,9 +2057,13 @@ function productCard(p) {
 // Swipe a product card to the left → Edit / Delete. Follows the finger, rubber-bands past the end and
 // springs open or shut on release (or with a quick flick). One card open at a time; a tap elsewhere closes it.
 const Swipe = {
-  W: 164, open: null, moved: false,
+  W: 166, open: null, moved: false,
   eat() { if (this.moved) { this.moved = false; return true; } if (this.open) { this.close(); return true; } return false; },
-  set(el, x, snap) { const c = el.querySelector('.pcard'); c.classList.toggle('snap', !!snap); c.style.transform = x ? `translateX(${x}px)` : ''; el.classList.toggle('peek', x < -24); },
+  set(el, x, snap) {
+    const c = el.querySelector('.pcard'); c.classList.toggle('snap', !!snap); el.classList.toggle('drag', !snap);
+    c.style.transform = x ? `translateX(${x}px)` : '';
+    el.style.setProperty('--p', Math.max(0, Math.min(1, -x / this.W)).toFixed(3)); el.classList.toggle('peek', x < -24);
+  },
   close(el) { el = el || this.open; if (!el) return; this.set(el, 0, true); el.classList.remove('open'); if (this.open === el) this.open = null; },
   show(el) { if (this.open && this.open !== el) this.close(); this.set(el, -this.W, true); el.classList.add('open'); this.open = el; },
   bind(list) {
@@ -2551,6 +2771,11 @@ async function genieToTrash(src, photo) {
   dock.classList.remove('on'); await wait(380); dock.remove();
 }
 
+// "3 products · 1 wish" — what is in the Trash
+function trashCountText(list) {
+  const w = list.filter(x => x.kind === 'wishes').length, p = list.length - w;
+  return [p ? plural(p, 'product') : '', w ? plural(w, 'wish') : ''].filter(Boolean).join(' · ');
+}
 function renderTrash() {
   simpleNav(t('Trash')); tabbar(null);
   const list = trash.all();
@@ -2558,15 +2783,16 @@ function renderTrash() {
     <div class="card">
       <div class="tr-top">${trashCan('tr-can')}<div style="flex:1;min-width:0">
         <div class="tr-title">${esc(t('Trash'))}</div>
-        <div class="tr-sub">${esc(list.length ? plural(list.length, 'product') + ' · ' + t('put back any time') : t('Deleted products wait here'))}</div></div></div>
+        <div class="tr-sub">${esc(list.length ? trashCountText(list) + ' · ' + t('put back any time') : t('Deleted products wait here'))}</div></div></div>
+      <div class="tr-keep">${ic('shield', '#16A34A', 14, 2.4)}<span>${esc(t('Kept until you delete it yourself — nothing leaves the Trash by itself, and it goes into every backup.'))}</span></div>
       ${list.length ? `<button class="btn soft tr-empty-btn" id="trEmpty">${ic('trash', B(), 16)}${esc(t('Empty Trash'))}</button>` : ''}
     </div>
     <div id="trList">${list.length ? list.map(x => {
-      const p = x.item, img = (p.images || [])[0];
+      const p = x.item, wish = x.kind === 'wishes', img = wish ? p.image : (p.images || [])[0];
       return `<div class="tr-item" data-id="${esc(x.id)}">
-        ${img ? `<img src="${img}" loading="lazy">` : `<div class="ph">${ic('image', '#B6C0CD', 22)}</div>`}
-        <div style="flex:1;min-width:0"><div class="tr-name ellipsis" data-notr>${esc(p.name || '')}</div>
-          <div class="tr-meta ellipsis">${esc(t('Deleted {when}', { when: ago(x.trashedAt) }))}</div></div>
+        ${img ? `<img src="${img}" loading="lazy">` : `<div class="ph">${ic(wish ? 'heart' : 'image', wish ? '#FB7185' : '#B6C0CD', 22)}</div>`}
+        <div style="flex:1;min-width:0"><div class="tr-name ellipsis" data-notr>${esc((wish ? p.title : p.name) || '')}</div>
+          <div class="tr-meta ellipsis">${wish ? `<span class="tr-kind">${ic('heart', '#E11D48', 11, 2.6)}${esc(t('Wishlist'))}</span> · ` : ''}${esc(t('Deleted {when}', { when: ago(x.trashedAt) }))}</div></div>
         <div class="tr-acts"><button class="btn soft" data-put="${esc(x.id)}">${ic('undo', B(), 15)}${esc(t('Put back'))}</button>
           <button class="btn icon" data-kill="${esc(x.id)}" aria-label="${esc(t('Delete forever'))}">${ic('x', '#E11D48', 15, 2.6)}</button></div></div>`;
     }).join('') : `<div class="card empty"><div class="empty-art">${ic('trash', B(), 34, 1.6)}</div><div class="empty-title">${esc(t('Trash is empty'))}</div>
@@ -2586,7 +2812,7 @@ function renderTrash() {
     await leave(el, 'out-x'); renderTrash();
   });
   const em = document.getElementById('trEmpty'); if (em) em.onclick = async () => {
-    if (!await dialog({ title: t('Empty Trash?'), text: t('{n} products are removed from the Trash on every device. The computer still keeps a copy in its data folder.', { n: list.length }), ok: t('Empty Trash'), danger: true })) return;
+    if (!await dialog({ title: t('Empty Trash?'), text: t('{n} items are removed from the Trash on every device. The computer still keeps a copy in its data folder.', { n: list.length }), ok: t('Empty Trash'), danger: true })) return;
     const items = [...$body.querySelectorAll('.tr-item')];
     items.forEach((el, i) => setTimeout(() => el.classList.add('out-x'), i * 60));
     await trash.empty();
@@ -2618,7 +2844,7 @@ function drawGoCard() {
       ${ic('right', '#94A3B8', 18, 2.6)}</div>
     <div class="go-row tap" id="goTr"><div class="go-ic tr">${ic('trash', '#fff', 20, 2.3)}</div>
       <div style="flex:1;min-width:0"><div class="go-t">${esc(t('Trash'))}</div>
-        <div class="go-s"><span class="ellipsis">${esc(n ? plural(n, 'product') + ' · ' + t('put back any time') : t('Trash is empty'))}</span></div></div>
+        <div class="go-s"><span class="ellipsis">${esc(n ? trashCountText(trash.all()) + ' · ' + t('put back any time') : t('Trash is empty'))}</span></div></div>
       ${n ? `<span class="go-n">${n}</span>` : ''}${ic('right', '#94A3B8', 18, 2.6)}</div>`;
   document.getElementById('goDt').onclick = () => location.hash = 'data';
   document.getElementById('goDv').onclick = () => location.hash = 'devices';
@@ -2911,7 +3137,7 @@ async function drawDevices() {
 function wifiCertHtml(info) {
   if (!(info.secure || []).length || !info.urls.length) return '';
   return `<details class="lk-alt" id="wcBox"><summary>${esc(t('Same Wi-Fi (iPhone, no internet needed) — set up once'))}</summary>
-    <div class="lk" style="margin-top:10px">
+    <div class="lkrow" style="margin-top:10px">
       <div class="lk-qr" id="wcQr"></div>
       <div class="lk-steps">
         <div class="iph-steps">
@@ -2949,7 +3175,7 @@ function drawLinkQr(el, head, info) {
   const text = linkText(info), lan = info.urls[0] || '';
   const phones = info.phones || [];
   el.innerHTML = head + (text ? `
-    <div class="lk">
+    <div class="lkrow">
       <div class="lk-qr" id="qr"></div>
       <div class="lk-steps">
         <b>${esc(t('Link a phone'))}</b>
@@ -3274,16 +3500,22 @@ async function drawCopies() {
   const m = document.getElementById('bkMore'); if (m) m.onclick = () => { drawCopies.all = true; drawCopies(); };
 }
 
+// Backup file name: date, name of the day and the full time (":" is not allowed in file names)
+function backupName(ts) {
+  const d = new Date(ts), p2 = n => String(n).padStart(2, '0');
+  const day = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()];
+  return `Trade-backup_${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${day}_${p2(d.getHours())}-${p2(d.getMinutes())}-${p2(d.getSeconds())}.json`;
+}
 async function backup() {
   const data = backupData();
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-  const name = 'Trade-backup-' + TradeReport.ymd(Date.now()) + '.json';
+  const name = backupName(data.exportedAt);
   const file = new File([blob], name, { type: 'application/json' });
   if (navigator.canShare && navigator.canShare({ files: [file] }) && /android|iphone|ipad/i.test(navigator.userAgent)) {
     try { await navigator.share({ files: [file], title: name }); } catch (e) { if (e.name === 'AbortError') return; saveFile(blob, name); }
   } else saveFile(blob, name);
   await DB.setKV('lastBackup', Date.now());
-  doneSheet(t('Backup saved ✓'), `<div class="file"><div class="ex-icon">${ic('shield', B(), 20)}</div><div style="flex:1;min-width:0"><div class="file-name ellipsis" data-notr>${esc(name)}</div><div class="hint">${fmtSize(blob.size)} · ${esc(plural(data.products.length, 'product'))} · ${esc(t('{n} photos', { n: photoCount(data.products) }))}</div></div></div>
+  doneSheet(t('Backup saved ✓'), `<div class="file"><div class="ex-icon">${ic('shield', B(), 20)}</div><div style="flex:1;min-width:0"><div class="file-name ellipsis" data-notr>${esc(name)}</div><div class="hint">${fmtSize(blob.size)} · ${esc(plural(data.products.length, 'product'))} · ${esc(t('{n} photos', { n: photoCount(data.products) }))}${data.trash.length ? ' · ' + esc(t('{n} in Trash', { n: data.trash.length })) : ''}</div></div></div>
     <div class="hint" style="margin-top:10px;line-height:1.5">${esc(t('Keep this file somewhere safe (Files, Google Drive, email to yourself). Restore it on any phone or computer.'))}</div>`);
   if (location.hash === '#backup') drawBackupCard();
 }
@@ -3325,7 +3557,7 @@ async function restorePreview(data, source) {
       <div class="rp-head"><div class="bk-orb sm">${ic('upload', '#fff', 20, 2.4)}</div><div style="flex:1;min-width:0;text-align:left">
         <div class="sheet-title" style="margin:0">${esc(t('Restore backup'))}</div>
         <div class="hint ellipsis" data-notr>${esc(source)}${data.exportedAt ? ' · ' + esc(TradeReport.dateTimeLabel(data.exportedAt)) : ''}</div></div></div>
-      <div class="rp-rows">${row('box', 'Products', diff.products)}${row('market', 'Markets', diff.markets)}${row('heart', 'Wishlist', diff.wishes)}</div>
+      <div class="rp-rows">${row('box', 'Products', diff.products)}${row('market', 'Markets', diff.markets)}${row('heart', 'Wishlist', diff.wishes)}${diff.trash.list.length ? row('trash', 'Trash', diff.trash) : ''}</div>
       <div class="rp-modes">
         <div class="rp-mode ${mode === 'merge' ? 'on' : ''}" data-m="merge"><span class="rp-radio"></span><div><b>${esc(t('Add to what I have'))}</b><span>${esc(t('New items are added, newer versions are kept. Nothing is removed.'))}</span></div></div>
         <div class="rp-mode ${mode === 'replace' ? 'on danger' : ''}" data-m="replace"><span class="rp-radio"></span><div><b>${esc(t('Make it exactly the backup'))}</b><span>${esc(extra ? t('{n} items that are not in the backup will be removed — also from the computer and other devices.', { n: extra }) : t('Every item is set back to the backup version.'))}</span></div></div>
@@ -3435,7 +3667,7 @@ function renderAdd(id) {
   // Opened from a wish ("Save as a product"): start with its name, photo, price and note
   if (!old && wishToProduct) {
     const w = wishToProduct; wishToProduct = null;
-    Object.assign(form, { name: w.title || '', images: w.image ? [w.image] : [], price: Number(w.price) > 0 ? String(w.price) : '', currency: CURRENCIES.includes(w.currency) ? w.currency : form.currency, shopNote: [w.note, w.link].filter(Boolean).join('\n') });
+    Object.assign(form, { name: w.title || '', images: w.image ? [w.image] : [], price: Number(w.price) > 0 ? String(w.price) : '', currency: CURRENCIES.includes(w.currency) ? w.currency : form.currency, marketName: w.market || form.marketName, minOrder: Number(w.qty) > 0 ? String(w.qty) : form.minOrder, shopNote: [w.client ? t('Client') + ': ' + w.client : '', w.note, w.link].filter(Boolean).join('\n') });
   }
   simpleNav(old ? 'Edit Product' : 'Add Product'); tabbar(null);
   const opt = (arr, v) => arr.map(x => `<option value="${x}" ${x === v ? 'selected' : ''}>${esc(t(x))}</option>`).join('');
@@ -4690,17 +4922,51 @@ const Lock = {
     tick(); this.cd = setInterval(tick, 500);
   },
   async good() { await DB.setKV('lockFails', 0); await DB.setKV('lockUntil', 0); this.close(true); },
-  // The lock screen. cancel=true when it only checks it is you (e.g. before turning the lock off)
-  show(cancel, usePin) {
+  // The Face ID mark (corners, eyes, nose, smile) — turns into a tick when the face is recognised
+  faceSvg: '<svg class="fx" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><g class="fx-c"><path d="M6 20V12a6 6 0 0 1 6-6h8"/><path d="M44 6h8a6 6 0 0 1 6 6v8"/><path d="M58 44v8a6 6 0 0 1-6 6h-8"/><path d="M20 58h-8a6 6 0 0 1-6-6v-8"/></g><g class="fx-f"><path d="M23 24v5"/><path d="M41 24v5"/><path d="M32 24v12h-3"/><path d="M24 43c4.5 4 11.5 4 16 0"/></g><path class="fx-ok" d="M19 33l9 9 17-19"/></svg>',
+  type(c) { c = c || this.cfg(); return c && c.type ? c.type : 'pattern'; },
+  // The lock screen. cancel=true when it only checks it is you (e.g. before turning the lock off).
+  // mode: 'face' | 'pin' | 'pattern' — empty = Face ID first when it is on (it starts by itself, like the iPhone).
+  show(cancel, mode) {
     const c = this.cfg(); if (!c) return Promise.resolve(true);
+    const typ = this.type(c), back = typ === 'pattern' ? 'pattern' : 'pin';
+    if (!mode) mode = c.face ? 'face' : back;
+    if (mode === 'face' && !c.face) mode = back;
     return new Promise(res => {
       if (this.resolve) this.resolve(false);
       this.resolve = res;
-      const el = this.mount(this.frame(`<div class="lk-msg" id="lkMsg"></div><div class="lk-sub" id="lkSub"></div><div class="lk-card" id="lkCard"><div class="${usePin ? '' : 'pp'}" id="lkPad"></div></div>`,
-        `${c.face ? `<span class="lk-b main" id="lkFace">${ic('scan', '#0F172A', 18, 2.4)}${esc(t('Face ID'))}</span>` : ''}
-         <span class="lk-b" id="lkAlt">${esc(usePin ? t('Use pattern') : t('Use PIN'))}</span>${cancel ? `<span class="lk-b" id="lkX">${esc(t('Cancel'))}</span>` : ''}`));
-      const msg = el.querySelector('#lkMsg'), card = el.querySelector('#lkCard'), padEl = el.querySelector('#lkPad');
-      msg.textContent = usePin ? t('Enter your PIN') : t('Draw your pattern to unlock');
+      const swap = m => { const r = this.resolve; this.resolve = null; this.show(cancel, m).then(r); };
+      const alt = mode === 'face' ? [back, back === 'pin' ? 'Use PIN' : 'Use pattern']
+        : mode === 'pin' ? (typ === 'pattern' ? ['pattern', 'Use pattern'] : null) : ['pin', 'Use PIN'];
+      const el = this.mount(this.frame(`<div class="lk-msg" id="lkMsg"></div><div class="lk-sub" id="lkSub"></div>${mode === 'face'
+          ? `<div class="lk-face" id="lkFaceBig">${this.faceSvg}</div>`
+          : `<div class="lk-card" id="lkCard"><div class="${mode === 'pin' ? '' : 'pp'}" id="lkPad"></div></div>`}`,
+        `${c.face && mode !== 'face' ? `<span class="lk-b main" id="lkFace">${ic('scan', '#0F172A', 18, 2.4)}${esc(t('Face ID'))}</span>` : ''}
+         ${alt ? `<span class="lk-b" id="lkAlt">${esc(t(alt[1]))}</span>` : ''}${cancel ? `<span class="lk-b" id="lkX">${esc(t('Cancel'))}</span>` : ''}`));
+      const msg = el.querySelector('#lkMsg'), sub = el.querySelector('#lkSub'), card = el.querySelector('#lkCard'), padEl = el.querySelector('#lkPad');
+      const a = el.querySelector('#lkAlt'); if (a) a.onclick = () => swap(alt[0]);
+      const fb = el.querySelector('#lkFace'); if (fb) fb.onclick = () => swap('face');
+      const x = el.querySelector('#lkX'); if (x) x.onclick = () => this.close(false);
+      if (mode === 'face') {
+        const big = el.querySelector('#lkFaceBig');
+        msg.textContent = t('Face ID');
+        let busy = false;
+        const scan = async () => {
+          if (busy || this.el !== el) return; busy = true;
+          big.classList.remove('bad'); big.classList.add('scan'); msg.textContent = t('Face ID'); sub.textContent = t('Look at your iPhone');
+          const t0 = Date.now(), ok = await this.faceCheck();
+          busy = false; big.classList.remove('scan');
+          if (this.el !== el) return;
+          if (ok) { big.classList.add('ok'); sub.textContent = ''; msg.textContent = t('Welcome back'); try { navigator.vibrate && navigator.vibrate(12); } catch (e) {} setTimeout(() => this.good(), 420); return; }
+          if (Date.now() - t0 < 900) { sub.textContent = t('Tap to unlock with Face ID'); return; } // the iPhone wants a tap first
+          void big.offsetWidth; big.classList.add('bad'); msg.textContent = t('Face not recognised'); sub.textContent = t('Tap to try again');
+          try { navigator.vibrate && navigator.vibrate([40, 40, 40]); } catch (e) {}
+        };
+        big.onclick = scan;
+        setTimeout(scan, 350); // starts by itself — when the iPhone knows the face, Trade opens without touching anything
+        return;
+      }
+      msg.textContent = mode === 'pin' ? t('Enter your PIN') : t('Draw your pattern to unlock');
       if (this.waitLeft()) this.countdown(msg, DB.kv.lockFails || 0);
       const check = async (secret, which) => {
         if (this.waitLeft()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); return false; }
@@ -4708,63 +4974,103 @@ const Lock = {
         if (ok) await this.good(); else await this.fail(card, msg);
         return ok;
       };
-      if (usePin) this.pin(padEl, v => check(v, 'pin'));
+      if (mode === 'pin') this.pin(padEl, v => check(v, 'pin'));
       else { const p = this.pad(padEl, async v => { const ok = await check(v, 'pattern'); p.reset(ok ? 'good' : 'bad'); }); }
-      el.querySelector('#lkAlt').onclick = () => { const r = this.resolve; this.resolve = null; this.show(cancel, !usePin).then(r); };
-      const fx = el.querySelector('#lkFace'); if (fx) fx.onclick = async () => { if (this.waitLeft()) return; if (await this.faceCheck()) this.good(); else { msg.textContent = t('Face ID did not work — use your pattern'); msg.classList.add('bad'); } };
-      const x = el.querySelector('#lkX'); if (x) x.onclick = () => this.close(false);
     });
   },
-  // Set up (or change) the lock: pattern → same again → backup PIN → same again → Face ID
+  // Set up (or change) the lock. First the person picks how Trade opens: Face ID, pattern or PIN.
+  //   Face ID → face → backup PIN → same again
+  //   Pattern → pattern → again → backup PIN → again → also Face ID?
+  //   PIN     → PIN → again → also Face ID?
   setup() {
-    return new Promise(res => {
+    return new Promise(async res => {
       this.resolve = res;
-      let first = '', pinFirst = '', pattern = '';
+      const faceOk = await this.faceOk();
+      let typ = '', first = '', pinFirst = '', pattern = '', faceId = null, N = 4;
       const step = (n, title, sub, body, acts) => {
-        const el = this.mount(this.frame(`<div class="lk-steps">${[0, 1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</div><div class="lk-msg" id="lkMsg">${esc(title)}</div><div class="lk-sub" id="lkSub">${esc(sub)}</div><div class="lk-card" id="lkCard">${body}</div>`, `${acts || ''}<span class="lk-b" id="lkX">${esc(t('Cancel'))}</span>`));
+        const el = this.mount(this.frame(`<div class="lk-steps">${Array.from({ length: N }, (_, i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</div><div class="lk-msg" id="lkMsg">${esc(title)}</div><div class="lk-sub" id="lkSub">${esc(sub)}</div><div class="lk-card" id="lkCard">${body}</div>`, `${acts || ''}<span class="lk-b" id="lkX">${esc(t('Cancel'))}</span>`));
+        el.classList.add('setup'); // no clock while setting up: the keypad needs the room on small iPhones
         el.querySelector('#lkX').onclick = () => this.close(false);
         return el;
       };
+      const opt = (k, icon, title, sub, best) => `<div class="lk-opt" data-k="${k}"><span class="lk-oi">${icon}</span><span class="lk-ot"><b>${esc(t(title))}${best ? `<em>${esc(t('Best'))}</em>` : ''}</b><small>${esc(t(sub))}</small></span>${ic('right', '#fff', 16, 2.6)}</div>`;
+      const choose = () => {
+        typ = ''; faceId = null; N = 4;
+        const el = step(0, t('How do you want to open Trade?'), t('You can change it later in Settings'),
+          `<div class="lk-opts">${faceOk ? opt('face', this.faceSvg, 'Face ID', 'Look at the phone and it opens', true) : ''}
+            ${opt('pattern', '<svg viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/><path d="M5 5L12 12L19 5M12 12V19" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>', 'Pattern', 'Draw a shape through the dots')}
+            ${opt('pin', '<svg viewBox="0 0 24 24" fill="#fff"><circle cx="4" cy="12" r="2.4"/><circle cx="10" cy="12" r="2.4"/><circle cx="16" cy="12" r="2.4"/><rect x="20" y="8" width="1.8" height="8" rx=".9"/></svg>', 'PIN code', 'Type 6 numbers')}</div>`);
+        el.querySelector('.lk-card').classList.add('plain');
+        el.querySelectorAll('.lk-opt').forEach(o => o.onclick = () => {
+          typ = o.dataset.k;
+          if (typ === 'face') { N = 4; faceStep(); } else if (typ === 'pattern') { N = 6; drawPat(); } else { N = 4; pin1(); }
+        });
+      };
+      // Face ID first: the iPhone asks for the face right away (the tap on the option is what allows it)
+      const faceStep = async () => {
+        const el = step(1, t('Face ID'), t('Look at your iPhone'), `<div class="lk-face scan" style="margin:6px auto">${this.faceSvg}</div>`);
+        el.querySelector('.lk-card').classList.add('plain');
+        const big = el.querySelector('.lk-face');
+        try {
+          faceId = await this.faceCreate();
+          big.classList.remove('scan'); big.classList.add('ok'); el.querySelector('#lkMsg').textContent = t('Face ID is ready ✓'); el.querySelector('#lkSub').textContent = '';
+          setTimeout(pin1, 1000);
+        } catch (e) {
+          big.classList.remove('scan'); big.classList.add('bad');
+          el.querySelector('#lkMsg').textContent = t('Face ID could not be turned on'); el.querySelector('#lkSub').textContent = t('Try again, or pick a pattern or PIN');
+          setTimeout(choose, 1800);
+        }
+      };
       const drawPat = () => {
-        const el = step(0, t('Draw a new pattern'), t('Connect at least 4 dots'), '<div class="pp" id="lkPad"></div>');
+        const el = step(1, t('Draw a new pattern'), t('Connect at least 4 dots'), '<div class="pp" id="lkPad"></div>');
         const p = this.pad(el.querySelector('#lkPad'), (v, len) => {
           if (len < 4) { el.querySelector('#lkMsg').textContent = t('Connect at least 4 dots'); el.querySelector('#lkMsg').classList.add('bad'); return p.reset('bad'); }
           first = v; p.reset('good'); setTimeout(confirmPat, 450);
         });
       };
       const confirmPat = () => {
-        const el = step(1, t('Draw the same pattern again'), t('To make sure you remember it'), '<div class="pp" id="lkPad"></div>');
+        const el = step(2, t('Draw the same pattern again'), t('To make sure you remember it'), '<div class="pp" id="lkPad"></div>');
         const p = this.pad(el.querySelector('#lkPad'), v => {
           if (v !== first) { const m = el.querySelector('#lkMsg'); m.textContent = t('Not the same — start again'); m.classList.add('bad'); p.reset('bad'); setTimeout(drawPat, 900); return; }
           pattern = v; p.reset('good'); setTimeout(pin1, 450);
         });
       };
-      const pin1 = () => { const el = step(2, t('Choose a 6-digit backup PIN'), t('Use it if you forget the pattern'), '<div id="lkPad"></div>'); this.pin(el.querySelector('#lkPad'), v => { pinFirst = v; pin2(); }); };
+      const pinAt = () => typ === 'pattern' ? 3 : typ === 'face' ? 2 : 1;
+      const pin1 = () => {
+        const main = typ === 'pin';
+        const el = step(pinAt(), t(main ? 'Choose a 6-digit PIN' : 'Choose a 6-digit backup PIN'),
+          t(main ? 'You type it to open Trade' : typ === 'face' ? 'Use it when Face ID cannot see you' : 'Use it if you forget the pattern'), '<div id="lkPad"></div>');
+        this.pin(el.querySelector('#lkPad'), v => { pinFirst = v; pin2(); });
+      };
       const pin2 = () => {
-        const el = step(2, t('Enter the PIN again'), '', '<div id="lkPad"></div>');
+        const el = step(pinAt() + (typ === 'face' ? 1 : 1), t('Enter the PIN again'), '', '<div id="lkPad"></div>');
         this.pin(el.querySelector('#lkPad'), async v => {
           if (v !== pinFirst) { const m = el.querySelector('#lkMsg'); m.textContent = t('Not the same — start again'); m.classList.add('bad'); el.querySelector('#lkCard').classList.add('shake'); setTimeout(pin1, 900); return; }
-          await save(null); face();
+          await save();
+          if (typ === 'face' || !faceOk) return this.close(true);
+          offerFace();
         });
       };
-      const save = async faceId => {
+      const save = async () => {
         const salt = this.b64(crypto.getRandomValues(new Uint8Array(16)));
-        await DB.setKV('lock', { salt, hash: await this.hash(pattern, salt), pin: await this.hash(pinFirst, salt), face: faceId, at: Date.now() });
+        const pin = await this.hash(pinFirst, salt);
+        await DB.setKV('lock', { type: typ, salt, hash: typ === 'pattern' ? await this.hash(pattern, salt) : pin, pin, face: faceId, at: Date.now() });
         await DB.setKV('lockFails', 0); await DB.setKV('lockUntil', 0);
       };
-      const face = async () => {
-        if (!await this.faceOk()) return this.close(true);
-        const el = step(3, t('Unlock with Face ID?'), t('Faster than drawing the pattern. Your pattern and PIN keep working.'), `<div style="width:220px;height:150px;display:flex;align-items:center;justify-content:center">${ic('scan', '#fff', 70, 1.6)}</div>`,
+      const offerFace = () => {
+        const el = step(N - 1, t('Also open with Face ID?'), t('Faster — your pattern and PIN keep working.'), `<div class="lk-face" style="margin:6px auto">${this.faceSvg}</div>`,
           `<span class="lk-b main" id="lkYes">${esc(t('Use Face ID'))}</span><span class="lk-b" id="lkNo">${esc(t('Not now'))}</span>`);
+        el.querySelector('.lk-card').classList.add('plain');
         el.querySelector('#lkX').style.display = 'none';
         el.querySelector('#lkNo').onclick = () => this.close(true);
         el.querySelector('#lkYes').onclick = async () => {
-          try { const id = await this.faceCreate(); const c = this.cfg(); await DB.setKV('lock', Object.assign({}, c, { face: id })); toast(t('Face ID is on ✓')); }
+          const big = el.querySelector('.lk-face'); big.classList.add('scan');
+          try { const id = await this.faceCreate(); await DB.setKV('lock', Object.assign({}, this.cfg(), { face: id })); big.classList.remove('scan'); big.classList.add('ok'); toast(t('Face ID is on ✓')); await wait(700); }
           catch (e) { toast(t('Face ID could not be turned on')); }
           this.close(true);
         };
       };
-      drawPat();
+      choose();
     });
   }
 };
@@ -4775,14 +5081,15 @@ async function drawLockCard() {
   const c = Lock.cfg(), faceOk = await Lock.faceOk(), after = DB.kv.lockAfter == null ? 60000 : DB.kv.lockAfter;
   const head = `<div class="card-head"><div class="card-title"><div class="icon-tile">${ic('shield', B(), 16)}</div>${esc(t('Lock screen'))}</div>${c ? `<span class="chip green">${esc(t('On'))}</span>` : ''}</div>`;
   if (!c) {
-    el.innerHTML = head + `<div class="hint" style="line-height:1.55;margin:-4px 0 12px">${esc(t('Lock Trade with a pattern, a backup PIN and Face ID. Your products stay private even if someone else holds your phone.'))}</div>
+    el.innerHTML = head + `<div class="hint" style="line-height:1.55;margin:-4px 0 12px">${esc(t('Choose how Trade opens: Face ID, a pattern or a PIN. Your products stay private even if someone else holds your phone.'))}</div>
       <button class="btn primary" id="lkOn">${ic('shield', '#fff', 17)}${esc(t('Set up lock'))}</button>`;
   } else {
     el.innerHTML = head + `
-      ${faceOk ? `<div class="setrow"><div class="icon-tile">${ic('scan', B(), 16)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${esc(t('Face ID'))}</div><div class="hint">${esc(t('Unlock with your face'))}</div></div><div class="switch ${c.face ? 'on' : ''}" id="lkFaceSw"></div></div>` : ''}
+      <div class="setrow"><div class="icon-tile">${ic(c.face ? 'scan' : 'shield', B(), 16)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${esc(t('Opens with'))}</div><div class="hint">${esc([c.face ? t('Face ID') : '', ({ pattern: t('Pattern'), pin: t('PIN code') })[Lock.type(c)] || '', Lock.type(c) !== 'pin' ? t('backup PIN') : ''].filter(Boolean).join(' · '))}</div></div></div>
+      ${faceOk ? `<div class="setrow"><div class="icon-tile">${ic('scan', B(), 16)}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">${esc(t('Face ID'))}</div><div class="hint">${esc(t('Opens by itself when it sees your face'))}</div></div><div class="switch ${c.face ? 'on' : ''}" id="lkFaceSw"></div></div>` : ''}
       <div class="setrow" style="flex-direction:column;align-items:stretch;gap:8px"><div style="font-weight:700;font-size:14px">${esc(t('Lock after leaving the app'))}</div>
         <div class="seg" id="lkAfter">${[[0, 'Immediately'], [60000, '1 min'], [300000, '5 min']].map(x => `<span data-a="${x[0]}" class="${after === x[0] ? 'on' : ''}">${esc(t(x[1]))}</span>`).join('')}</div></div>
-      <div class="row-btns" style="margin-top:8px"><button class="btn sm soft" id="lkChange">${esc(t('Change pattern & PIN'))}</button><button class="btn sm danger" id="lkOff">${esc(t('Turn off'))}</button></div>`;
+      <div class="row-btns" style="margin-top:8px"><button class="btn sm soft" id="lkChange">${esc(t('Change how it opens'))}</button><button class="btn sm danger" id="lkOff">${esc(t('Turn off'))}</button></div>`;
   }
   const on = (id, fn) => { const b = document.getElementById(id); if (b) b.onclick = fn; };
   on('lkOn', async () => { if (await Lock.setup()) toast(t('Lock is on ✓')); drawLockCard(); });
@@ -4790,7 +5097,7 @@ async function drawLockCard() {
   on('lkOff', async () => { if (await Lock.show(true)) { await DB.setKV('lock', null); toast(t('Lock is off')); } drawLockCard(); });
   on('lkFaceSw', async () => {
     const cur = Lock.cfg(); if (!cur) return;
-    if (cur.face) { if (await Lock.show(true)) await DB.setKV('lock', Object.assign({}, cur, { face: null })); }
+    if (cur.face) { if (await Lock.show(true, Lock.type(cur) === 'pattern' ? 'pattern' : 'pin')) await DB.setKV('lock', Object.assign({}, cur, { face: null, type: Lock.type(cur) === 'face' ? 'pin' : Lock.type(cur) })); }
     else { try { await DB.setKV('lock', Object.assign({}, cur, { face: await Lock.faceCreate() })); toast(t('Face ID is on ✓')); } catch (e) { toast(t('Face ID could not be turned on')); } }
     drawLockCard();
   });
@@ -4806,9 +5113,13 @@ const wishes = {
     i >= 0 ? DB.wishes[i] = w : DB.wishes.push(w);
     await DB.write('wishes', 'put', w);
   },
-  async remove(id) { DB.wishes = DB.wishes.filter(w => w.id !== id); await DB.write('wishes', 'delete', id); }
+  // Delete = move to the Trash, like products (can be put back)
+  async remove(id) {
+    const w = this.get(id); if (w) await toTrash('wishes', w);
+    DB.wishes = DB.wishes.filter(w => w.id !== id); await DB.write('wishes', 'delete', id);
+  }
 };
-let wishTab = 'want';
+let wishTab = 'want', wlDraft = '', wlPic = ''; // the add bar keeps its text and photo until + is tapped
 const newWishId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 // Wishlist: one line to add, a photo grid, tap the circle when you got it
 function renderWishlist() {
@@ -4817,31 +5128,46 @@ function renderWishlist() {
   $body.innerHTML = `<div class="wl2-top">
       <div class="wl2-h"><span class="hb">${ic('heart', '#fff', 19, 2.6)}</span>${esc(t('Wishlist'))}</div>
       <div class="wl2-s">${esc(t('{a} you want · {b} you got', { a: want.length, b: got.length }))}</div>
-      <div class="wl2-add"><input id="wlNew" placeholder="${esc(t('What do you like? Type it here…'))}" maxlength="120" enterkeyhint="done">
-        <span class="cam" id="wlCam">${ic('camera', B(), 19)}</span><span class="go" id="wlGo">${ic('plus', '#fff', 20, 2.8)}</span></div>
+      <div class="wl2-add"><span class="cam" id="wlCam">${wlPic ? `<img src="${wlPic}"><i id="wlPicX">${ic('x', '#fff', 10, 3)}</i>` : ic('camera', B(), 19)}</span>
+        <input id="wlNew" placeholder="${esc(t('Item you want…'))}" maxlength="120" enterkeyhint="done">
+        <span class="go" id="wlGo">${ic('plus', '#fff', 20, 2.8)}</span></div>
     </div>
     <div class="seg wl2-seg" id="wlTabs">${[['want', 'Still want', want.length], ['got', 'Got it', got.length]].map(x => `<span data-w="${x[0]}" class="${wishTab === x[0] ? 'on' : ''}">${esc(t(x[1]))} · ${x[2]}</span>`).join('')}</div>
     <div class="wl2-grid" id="wlList"></div>
     <input type="file" id="wlFile" accept="image/*" hidden>`;
   const inp = document.getElementById('wlNew');
-  const add = async image => {
-    const title = norm(inp.value) || (image ? t('Something I like') : '');
-    if (!title) { inp.focus(); return toast(t('Write what you like first')); }
-    const w = { id: newWishId(), title, note: '', price: '', currency: '¥', priority: 2, image: image || '', link: '', done: false, createdAt: Date.now() };
-    await wishes.save(w); inp.value = ''; wishTab = 'want';
+  inp.value = wlDraft;
+  inp.oninput = () => { wlDraft = inp.value; };
+  const add = async () => {
+    const image = wlPic, title = norm(inp.value) || (image ? t('Something I like') : '');
+    if (!title) { inp.focus(); return toast(t('Write the item you want first')); }
+    const w = { id: newWishId(), title, client: '', note: '', price: '', currency: '¥', priority: 2, image: image || '', link: '', done: false, createdAt: Date.now() };
+    await wishes.save(w); wlDraft = ''; wlPic = ''; wishTab = 'want';
     renderWishlist();
     const card = document.querySelector(`[data-wid="${w.id}"]`); if (card) card.classList.add('new');
     toast(t('Added to your wishlist ♥'));
   };
   inp.onkeydown = e => { if (e.key === 'Enter') add(); };
   document.getElementById('wlGo').onclick = () => add();
-  document.getElementById('wlCam').onclick = () => document.getElementById('wlFile').click();
+  document.getElementById('wlCam').onclick = e => {
+    if (e.target.closest('#wlPicX')) { wlPic = ''; wlDraft = inp.value; return renderWishlist(); }
+    document.getElementById('wlFile').click();
+  };
   document.getElementById('wlFile').onchange = async e => {
     const fl = e.target.files[0]; e.target.value = ''; if (!fl) return;
-    try { add(DB.kv.noCrop ? await compress(fl, 900, 0.8) : (await compress(fl, 900, 0.8, true)).src); } catch (err) { toast(t('Could not read one photo')); }
+    wlDraft = inp.value;
+    try { wlPic = DB.kv.noCrop ? await compress(fl, 900, 0.8) : (await compress(fl, 900, 0.8, true)).src; } catch (err) { return toast(t('Could not read one photo')); }
+    renderWishlist(); const i2 = document.getElementById('wlNew'); if (i2 && !i2.value) i2.focus();
   };
   document.querySelectorAll('#wlTabs span').forEach(el => el.onclick = () => { wishTab = el.dataset.w; renderWishlist(); });
   drawWishes();
+}
+// Card footer: pieces needed + the cheapest price seen (and in how many markets)
+function wishCardPrice(w) {
+  const c = wishCheapest(w), n = (w.prices || []).length, q = Number(w.qty) > 0 ? Number(w.qty) : 0;
+  const pr = c ? `${esc(c.currency || '¥')}${esc(TradeReport.money(Number(c.price)))}` : Number(w.price) > 0 ? `${esc(w.currency || '¥')}${esc(TradeReport.money(Number(w.price)))}` : '';
+  if (!pr && !q) return '';
+  return `<div class="wi-f">${pr ? `<span class="pr">${pr}</span>` : ''}${q ? `<span class="qty">${esc(q)} ${esc(t('pcs'))}</span>` : ''}${n ? `<span class="mk">${ic('market', '#94A3B8', 10, 2.4)}${n}</span>` : ''}</div>`;
 }
 function drawWishes() {
   const el = document.getElementById('wlList'); if (!el) return;
@@ -4855,7 +5181,7 @@ function drawWishes() {
   el.innerHTML = list.map(w => `<div class="wi ${w.done ? 'done' : ''}" data-wid="${w.id}">
       ${w.image ? `<img class="pic" src="${w.image}" loading="lazy">` : `<div class="pic ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
       <span class="ck" data-tick="${w.id}">${ic('check', w.done ? '#fff' : '#94A3B8', 16, 3)}</span>
-      <div class="tx"><div class="tt" data-notr>${esc(w.title)}</div>${Number(w.price) > 0 ? `<div class="pr">${esc(w.currency || '¥')}${esc(TradeReport.money(Number(w.price)))}</div>` : ''}</div></div>`).join('');
+      <div class="tx"><div class="tt" data-notr>${esc(w.title)}</div>${w.client ? `<div class="cl">${ic('user', '#94A3B8', 11, 2.4)}<span class="ellipsis" data-notr>${esc(w.client)}</span></div>` : ''}${wishCardPrice(w)}</div></div>`).join('');
   stagger(el);
   el.querySelectorAll('.wi').forEach(c => c.onclick = e => { if (!e.target.closest('[data-tick]')) editWish(c.dataset.wid); });
   el.querySelectorAll('[data-tick]').forEach(b => b.onclick = async e => {
@@ -4869,54 +5195,129 @@ function drawWishes() {
     setTimeout(() => renderWishlist(), 700);
   });
 }
-// Full editor: title, note, photo, price, how much you want it, link — then save or delete
-function editWish(id) {
+// Editor with two tabs:
+//  Item   — the item and its photo; "More" opens the client's name, how many pieces are needed and a big box for anything else.
+//  Prices — the price feed: every price seen for this item in a market (market, region, price), cheapest first.
+const wishCheapest = w => (w.prices || []).filter(p => Number(p.price) > 0).sort((a, b) => Number(a.price) - Number(b.price))[0] || null;
+function editWish(id, tab) {
   const old = id ? wishes.get(id) : null;
-  const w = Object.assign({ title: '', note: '', price: '', currency: '¥', priority: 2, image: '', link: '', done: false }, old ? JSON.parse(JSON.stringify(old)) : {});
+  const w = Object.assign({ title: '', client: '', qty: '', note: '', price: '', currency: '¥', priority: 2, image: '', link: '', prices: [], done: false }, old ? JSON.parse(JSON.stringify(old)) : {});
+  if (!Array.isArray(w.prices)) w.prices = [];
+  let more = !!(w.client || w.note || Number(w.qty) > 0), view = tab === 'prices' ? 'prices' : 'item';
+  let pf = { market: '', area: '', price: '', currency: (w.prices[w.prices.length - 1] || {}).currency || w.currency || '¥' }; // the "add a price" form
+  const $ = k => document.getElementById(k);
+  const keep = () => {
+    if ($('weTitle')) { w.title = $('weTitle').value; w.client = $('weClient').value; w.note = $('weNote').value; w.qty = $('weQty').value; }
+    if ($('pfMarket')) pf = { market: $('pfMarket').value, area: $('pfArea').value, price: $('pfPrice').value, currency: $('pfCur').value };
+  };
+  // Prices are kept at once on a wish that already exists, so none is lost if the sheet is closed without Save
+  const keepPrices = async () => { if (old) { const cur = wishes.get(old.id); if (cur) await wishes.save(Object.assign({}, cur, { prices: w.prices })); } };
+  const pricesHtml = () => {
+    const list = w.prices.slice().sort((a, b) => Number(a.price) - Number(b.price) || (b.at || 0) - (a.at || 0));
+    const low = list[0], high = list[list.length - 1], q = Number(w.qty) > 0 ? Number(w.qty) : 0;
+    const money = p => `${esc(p.currency || '¥')}${esc(TradeReport.money(Number(p.price)))}`;
+    const seenM = [...new Set([...DB.markets.map(m => m.name), ...w.prices.map(p => p.market)].filter(Boolean))];
+    const seenA = [...new Set(DB.wishes.flatMap(x => (x.prices || []).map(p => p.area)).filter(Boolean))];
+    return `${list.length ? `<div class="pf-sum">
+        <div><span>${esc(t('Cheapest'))}</span><b>${money(low)}</b><small data-notr>${esc(low.market)}</small></div>
+        <div><span>${esc(t('Highest'))}</span><b>${money(high)}</b><small data-notr>${esc(high.market)}</small></div>
+        <div><span>${esc(q ? t('{n} pcs at cheapest', { n: q }) : t('Prices'))}</span><b>${q ? `${esc(low.currency || '¥')}${esc(TradeReport.money(Number(low.price) * q))}` : list.length}</b><small>${esc(q ? t('total') : t('markets seen'))}</small></div></div>` : ''}
+      <div class="pf-add">
+        <div class="pf-h">${ic('plus', B(), 15, 2.8)}${esc(t('Add a price you saw'))}</div>
+        <input class="input" id="pfMarket" list="pfMarkets" placeholder="${esc(t('Market name'))}" value="${esc(pf.market)}" maxlength="80" autocomplete="off">
+        <datalist id="pfMarkets">${seenM.map(m => `<option value="${esc(m)}">`).join('')}</datalist>
+        <input class="input" id="pfArea" list="pfAreas" placeholder="${esc(t('Region / area'))}" value="${esc(pf.area)}" maxlength="80" autocomplete="off">
+        <datalist id="pfAreas">${seenA.map(a => `<option value="${esc(a)}">`).join('')}</datalist>
+        <div class="pf-row"><div class="joined" style="flex:1"><select class="addon" id="pfCur">${CURRENCIES.map(c => `<option ${c === pf.currency ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="pfPrice" inputmode="decimal" placeholder="${esc(t('Price they give'))}" value="${esc(pf.price)}"></div>
+          <button class="btn primary pf-go" id="pfAdd" type="button">${ic('check', '#fff', 16, 3)}${esc(t('Add'))}</button></div>
+      </div>
+      ${list.length ? `<div class="pf-list">${list.map((p, i) => `<div class="pf-it ${i === 0 && list.length > 1 ? 'best' : ''}">
+          <div class="pf-ic">${ic('market', i === 0 && list.length > 1 ? '#16A34A' : B(), 17)}</div>
+          <div class="pf-tx"><b data-notr>${esc(p.market || '—')}</b><span>${p.area ? `${ic('pin', '#94A3B8', 11, 2.4)}<em data-notr>${esc(p.area)}</em> · ` : ''}${esc(p.at ? ago(p.at) : '')}</span></div>
+          <div class="pf-pr">${money(p)}${i === 0 && list.length > 1 ? `<small>${esc(t('Cheapest'))}</small>` : ''}</div>
+          <span class="pf-x" data-del="${p.id}">${ic('x', '#94A3B8', 13, 2.6)}</span></div>`).join('')}</div>`
+      : `<div class="pf-empty">${ic('chart', '#94A3B8', 30, 1.8)}<div>${esc(t('No prices yet. Each time a market tells you a price for this item, add it here.'))}</div></div>`}`;
+  };
   const draw = () => {
-    $overlay.innerHTML = `<div class="mask bottom" id="wem"><div class="sheet we" onclick="event.stopPropagation()"><div class="grip"></div>
-      <div class="we-top">
+    $overlay.innerHTML = `<div class="mask bottom" id="wem"><div class="sheet we ${more ? 'open' : ''}" onclick="event.stopPropagation()"><div class="grip"></div>
+      <div class="seg we-tabs" id="weTabs"><span data-v="item" class="${view === 'item' ? 'on' : ''}">${ic('heart', view === 'item' ? '#E11D48' : '#94A3B8', 14, 2.6)}${esc(t('Item'))}</span><span data-v="prices" class="${view === 'prices' ? 'on' : ''}">${ic('coins', view === 'prices' ? B() : '#94A3B8', 14, 2.4)}${esc(t('Prices'))}${w.prices.length ? ` <b class="we-n">${w.prices.length}</b>` : ''}</span></div>
+      ${view === 'item' ? `
+      <div class="we-main">
         <div class="we-photo tap" id="wePhoto">${w.image ? `<img src="${w.image}">` : `${ic('camera', B(), 24)}<span>${esc(t('Photo'))}</span>`}</div>
-        <div style="flex:1;min-width:0">
-          <div class="field" style="margin-bottom:8px"><div class="label">${esc(t('What do you like?'))} <span class="req">*</span></div><input class="input" id="weTitle" value="${esc(w.title)}" maxlength="120"></div>
-
-        </div>
+        <div class="field"><div class="label">${esc(t('Item you want'))} <span class="req">*</span></div><input class="input" id="weTitle" value="${esc(w.title)}" maxlength="120" placeholder="${esc(t('e.g. Red handbag'))}"></div>
       </div>
-      <div class="field"><div class="label">${esc(t('Note'))}</div><textarea class="input textarea" id="weNote" rows="2" maxlength="800">${esc(w.note)}</textarea></div>
-      <div class="we-row">
-        <div class="field" style="flex:1"><div class="label">${esc(t('Price'))}</div>
-          <div class="joined"><select class="addon" id="weCur">${CURRENCIES.map(c => `<option ${c === w.currency ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="wePrice" inputmode="decimal" value="${esc(w.price)}"></div></div>
-      </div>
-
+      <button class="we-more" id="weMore" type="button">${esc(t(more ? 'Less' : 'More'))}${ic('down', B(), 15, 2.6)}</button>
+      <div class="we-x"><div><div class="in">
+        <div class="field"><div class="label">${esc(t('Client name'))}</div><input class="input" id="weClient" value="${esc(w.client)}" maxlength="80" autocomplete="off" placeholder="${esc(t('Who is it for?'))}"></div>
+        <div class="field"><div class="label">${esc(t('Pieces needed'))}</div><div class="joined"><input class="input" id="weQty" inputmode="numeric" value="${esc(w.qty)}" placeholder="${esc(t('How many pieces?'))}"><span class="addon" style="display:flex;align-items:center;padding:0 14px">${esc(t('pcs'))}</span></div></div>
+        <div class="field"><div class="label">${esc(t('Other information'))}</div><textarea class="input textarea big" id="weNote" rows="6" maxlength="3000" placeholder="${esc(t('Colour, size, when it is needed…'))}">${esc(w.note)}</textarea></div>
+      </div></div></div>
       ${old ? `<div class="we-acts">
         <button class="btn sm soft" id="weProd">${ic('box', B(), 15)}${esc(t('Save as a product'))}</button>
-        <button class="btn sm danger" id="weDel" style="width:44px;flex-shrink:0">${ic('trash', '#E11D48', 16)}</button></div>` : ''}
+        <button class="btn sm danger" id="weDel" style="width:44px;flex-shrink:0">${ic('trash', '#E11D48', 16)}</button></div>` : ''}`
+      : `<div class="pf" id="pf">${pricesHtml()}</div>`}
       <div class="sheet-actions"><button class="btn" id="weNo">${esc(t('Cancel'))}</button><button class="btn primary" id="weOk">${ic('heart', '#fff', 16, 2.6)}${esc(t('Save'))}</button></div>
       <input type="file" id="weFile" accept="image/*" hidden>
     </div></div>`;
-    const keep = () => { w.title = document.getElementById('weTitle').value; w.note = document.getElementById('weNote').value; w.price = document.getElementById('wePrice').value; w.currency = document.getElementById('weCur').value; };
-    document.getElementById('wem').onclick = closeOverlay;
-    document.getElementById('weNo').onclick = closeOverlay;
-    document.getElementById('wePhoto').onclick = () => { keep(); document.getElementById('weFile').click(); };
-    document.getElementById('weFile').onchange = async e => {
+    $('wem').onclick = closeOverlay;
+    $('weNo').onclick = closeOverlay;
+    document.querySelectorAll('#weTabs span').forEach(s => s.onclick = () => { if (s.dataset.v === view) return; keep(); view = s.dataset.v; draw(); });
+    $('weOk').onclick = async () => {
+      keep();
+      const title = norm(w.title);
+      if (!title) { if (view !== 'item') { view = 'item'; draw(); } return toast(t('Write the item you want first')); }
+      const cheap = wishCheapest(w);
+      const rec = Object.assign({}, old || {}, w, { id: old ? old.id : newWishId(), title, client: norm(w.client || ''), note: String(w.note || '').trim(), link: String(w.link || '').trim(),
+        qty: Number(w.qty) > 0 ? String(Math.round(Number(w.qty))) : '', price: cheap ? String(Number(cheap.price)) : (old && !(old.prices || []).length ? old.price || '' : ''),
+        currency: cheap ? cheap.currency || '¥' : w.currency, createdAt: old ? old.createdAt : Date.now() });
+      await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); renderWishlist();
+    };
+    if (view === 'prices') {
+      const add = async () => {
+        keep();
+        const market = norm(pf.market), price = Number(String(pf.price).replace(',', '.'));
+        if (!market) { $('pfMarket').focus(); return toast(t('Write the market name')); }
+        if (!(price > 0)) { $('pfPrice').focus(); return toast(t('Write the price they give')); }
+        const e = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), market, area: norm(pf.area), price: String(price), currency: pf.currency || '¥', at: Date.now() };
+        w.prices.push(e);
+        pf = { market: '', area: pf.area, price: '', currency: pf.currency };
+        await keepPrices();
+        draw(); toast(t('Price added ✓'));
+        const it = [...document.querySelectorAll('.pf-it')].find(x => x.querySelector(`[data-del="${e.id}"]`)); if (it) it.classList.add('new');
+      };
+      $('pfAdd').onclick = add;
+      $('pfPrice').onkeydown = e => { if (e.key === 'Enter') add(); };
+      document.querySelectorAll('[data-del]').forEach(x => x.onclick = async () => {
+        keep();
+        const it = x.closest('.pf-it'); it.classList.add('bye');
+        await wait(260);
+        w.prices = w.prices.filter(p => p.id !== x.dataset.del); await keepPrices(); draw();
+      });
+      return;
+    }
+    $('weMore').onclick = () => {
+      more = !more; const sh = $('weMore').closest('.we'); sh.classList.toggle('open', more);
+      $('weMore').innerHTML = esc(t(more ? 'Less' : 'More')) + ic('down', B(), 15, 2.6);
+      if (more) setTimeout(() => { $('weClient').focus({ preventScroll: true }); sh.scrollTo({ top: sh.scrollHeight, behavior: 'smooth' }); }, 260);
+    };
+    $('wePhoto').onclick = () => { keep(); $('weFile').click(); };
+    $('weFile').onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
-      const ph = document.getElementById('wePhoto'); ph.innerHTML = '<div class="spinner" style="width:24px;height:24px;border-width:3px"></div>';
+      const ph = $('wePhoto'); ph.innerHTML = '<div class="spinner" style="width:24px;height:24px;border-width:3px"></div>';
       try { const r = DB.kv.noCrop ? await compress(f, 900, 0.8) : (await compress(f, 900, 0.8, true)).src; w.image = r; } catch (err) { toast(t('Could not read one photo')); }
       draw();
     };
-    document.getElementById('weOk').onclick = async () => {
-      keep();
-      const title = norm(w.title);
-      if (!title) return toast(t('Write what you like first'));
-      const rec = Object.assign({}, old || {}, w, { id: old ? old.id : newWishId(), title, note: String(w.note || '').trim(), link: String(w.link || '').trim(),
-        price: Number(w.price) > 0 ? String(Number(w.price)) : '', createdAt: old ? old.createdAt : Date.now() });
-      await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); renderWishlist();
+    const del = $('weDel'); if (del) del.onclick = async () => {
+      if (!await dialog({ title: t('Move to Trash?'), text: `"${old.title}" — ${t('you can put it back from the Trash')}`, ok: t('Delete'), danger: true })) return;
+      const sheet = del.closest('.we');
+      await wishes.remove(old.id);
+      if (sheet) await genieToTrash(sheet, old.image);
+      closeOverlay(); toast(t('Moved to Trash')); renderWishlist();
     };
-    const del = document.getElementById('weDel'); if (del) del.onclick = async () => {
-      if (!await dialog({ title: t('Remove from wishlist?'), text: `"${old.title}"`, ok: t('Remove'), danger: true })) return;
-      await wishes.remove(old.id); toast(t('Removed')); renderWishlist();
+    const pr = $('weProd'); if (pr) pr.onclick = () => {
+      keep(); const cheap = wishCheapest(w);
+      wishToProduct = Object.assign({}, w, cheap ? { price: cheap.price, currency: cheap.currency, market: cheap.market } : {}); closeOverlay(); location.hash = 'add';
     };
-    const pr = document.getElementById('weProd'); if (pr) pr.onclick = () => { keep(); wishToProduct = Object.assign({}, w); closeOverlay(); location.hash = 'add'; };
   };
   draw();
 }

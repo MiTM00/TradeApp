@@ -17,6 +17,16 @@
     brand: '#DC2626', brand2: '#F87171', brandDark: '#991B1B', mint: '#FEF2F2', mint2: '#FEE2E2',
     price: '#E11D48', white: '#FFFFFF', amber: '#F59E0B'
   }
+  const hex6 = c => String(c || '').replace('#', '').toUpperCase()
+  const C_DEFAULT = Object.assign({}, C)
+  // The PDF follows the app theme (opts.colors = { brand, brandDark }); without it: the default red
+  function usePalette(col) {
+    Object.assign(C, C_DEFAULT)
+    if (col && /^#?[0-9a-f]{6}$/i.test(col.brand || '')) {
+      const b = '#' + hex6(col.brand)
+      Object.assign(C, { brand: b, brandDark: '#' + hex6(col.brandDark || col.brand), brand2: '#' + tint(b, 0.35), mint: '#' + tint(b, 0.94), mint2: '#' + tint(b, 0.85) })
+    }
+  }
   const FONT = '-apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", Arial, sans-serif'
 
   function pad(n) { return (n < 10 ? '0' : '') + n }
@@ -199,6 +209,7 @@
 
   async function buildPdf(products, env, onProgress, opts) {
     opts = opts || {}
+    usePalette(opts.colors)
     const sum = summarize(products)
     const sections = opts.sections || sum.markets.map(m => ({
       name: marketName(m.name), sub: LP(m.products.length, 'product') + ' · ' + LP(m.shops.length, 'shop'), products: m.products
@@ -243,48 +254,49 @@
         const sw = text(ctx, m.sub, W - M - 26, y + 48, { size: 22, color: C.mint2, align: 'right' })
         text(ctx, m.name, M + 26, y + 48, { size: 26, weight: 'bold', color: C.white, max: W - 2 * M - sw - 70 })
       }, true)
-      m.products.forEach(p => add(232, async y => {
-        const x0 = M, w = W - 2 * M, h = 216
-        ctx.save(); ctx.shadowColor = 'rgba(15,23,42,0.08)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4
-        ctx.fillStyle = C.white; rr(ctx, x0, y, w, h, 22); ctx.fill(); ctx.restore()
-        ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; rr(ctx, x0, y, w, h, 22); ctx.stroke()
-
-        cover(ctx, await load((p.images || [])[0]), x0 + 18, y + 18, 180, 180, 16)
-        if ((p.images || []).length > 1) pill(ctx, L('{n} photos', { n: p.images.length }), x0 + 28, y + 160, { bg: 'rgba(15,23,42,0.6)', color: C.white, size: 18 })
-
-        const tx = x0 + 224, rightW = 270, tw = w - 224 - rightW - 20
-        text(ctx, p.name, tx, y + 52, { size: 32, weight: 'bold', max: tw })
-        let px = tx
-        px += pill(ctx, L('MOQ {n} {unit}', { n: int(p.minOrder), unit: L(p.unit) }), px, y + 68, { bg: C.mint2, color: C.brand }) + 10
-        if (p.size) pill(ctx, L('Size {x}', { x: fit(ctx, p.size, tw - (px - tx) - 90) }), px, y + 68, { bg: '#F1F5F9', color: '#475569' })
-
-        const line = (label, value, ly, color) => {
-          const lw = text(ctx, label, tx, ly, { size: 22, weight: 'bold', color: C.brand })
-          text(ctx, value, tx + lw + 14, ly, { size: 22, color: color || C.ink, max: tw - lw - 14 })
-        }
-        line(L('Shop'), (p.shopName || '—') + (p.shopWechat === 'yes' && p.wechatId ? '  ·  WeChat: ' + p.wechatId : ''), y + 150)
-        const loc = p.location ? [p.location.name, p.location.address].filter(Boolean).join(' · ') : L('No location')
-        line(L('Location'), loc, y + 176, p.location ? C.sub : C.faint)
-        const reg = registeredAt(p)
-        line(L('Registered'), reg ? dateTimeLabel(reg) : '—', y + 202, C.sub)
-
-        const rx = x0 + w - 28
-        ctx.fillStyle = C.line; ctx.fillRect(x0 + w - rightW - 10, y + 24, 1.5, h - 48)
-        if (m.best && m.best.indexOf(p) >= 0) pill(ctx, L('Best price'), x0 + w - rightW + 10, y + 16, { bg: '#DCFCE7', color: '#15803D', size: 18, weight: 'bold' })
-        text(ctx, p.currency + money(p.price), rx, y + 76, { size: 40, weight: 'bold', color: C.price, align: 'right' })
-        text(ctx, L('per {unit}', { unit: L(p.unit) }), rx, y + 104, { size: 22, color: C.faint, align: 'right' })
-        text(ctx, L('Value at MOQ'), rx, y + 158, { size: 20, color: C.sub, align: 'right' })
-        text(ctx, p.currency + money(p.price * p.minOrder), rx, y + 192, { size: 28, weight: 'bold', align: 'right' })
-      }))
+      m.products.forEach(p => add(CARD_H + 18, y => drawProductCard(ctx, load, p, y, m.best && m.best.indexOf(p) >= 0)))
     })
+
+    // Photo gallery: every photo of every product, large, so the report always carries the pictures
+    const withPhotos = (opts.sections ? [].concat.apply([], sections.map(sec => sec.products)) : sum.products).filter(p => (p.images || []).length)
+    if (withPhotos.length) {
+      add(30, () => {})
+      add(70, y => {
+        text(ctx, L('Photo gallery'), M, y + 50, { size: 34, weight: 'bold' })
+        text(ctx, L('{n} photos', { n: withPhotos.reduce((a, p) => a + p.images.length, 0) }), W - M, y + 50, { size: 22, color: C.faint, align: 'right' })
+      }, true)
+      const GAP = 22, TW = (W - 2 * M - 2 * GAP) / 3
+      withPhotos.forEach(p => {
+        add(62, y => {
+          ctx.fillStyle = C.brand; rr(ctx, M, y + 14, 6, 34, 3); ctx.fill()
+          const sub = [p.marketName, p.shopName].filter(Boolean).join(' · ')
+          const sw = sub ? text(ctx, sub, W - M, y + 40, { size: 20, color: C.sub, align: 'right', max: 420 }) : 0
+          text(ctx, p.name || '—', M + 20, y + 41, { size: 26, weight: 'bold', max: W - 2 * M - sw - 50 })
+        }, true)
+        const imgs = p.images
+        for (let r = 0; r < imgs.length; r += 3) {
+          const row = imgs.slice(r, r + 3)
+          add(TW + GAP, async y => {
+            for (let i = 0; i < row.length; i++) {
+              const x = M + i * (TW + GAP)
+              ctx.save(); ctx.shadowColor = 'rgba(15,23,42,0.10)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4
+              ctx.fillStyle = C.white; rr(ctx, x, y, TW, TW, 20); ctx.fill(); ctx.restore()
+              contain(ctx, await load(row[i]), x + 8, y + 8, TW - 16, TW - 16, 14)
+              if (imgs.length > 1) pill(ctx, (r + i + 1) + ' / ' + imgs.length, x + 18, y + TW - 52, { bg: 'rgba(15,23,42,0.62)', color: C.white, size: 17, weight: 'bold' })
+            }
+          })
+        }
+      })
+    }
 
     // Paginate
     const pages = [[]]
-    const top1 = 640, topN = 170, limit = H - FOOT
+    const mosaic = [].concat.apply([], (opts.sections ? [].concat.apply([], sections.map(sec => sec.products)) : sum.products).map(p => (p.images || []).slice(0, 1))).slice(0, 6)
+    const top1 = mosaic.length ? MOSAIC_Y + MOSAIC_H + 36 : 640, topN = 170, limit = H - FOOT
     let y = top1
     blocks.forEach((b, i) => {
       let need = b.h
-      if (b.keepNext && blocks[i + 1]) need += blocks[i + 1].h
+      for (let j = i; blocks[j] && blocks[j].keepNext && blocks[j + 1]; j++) need += blocks[j + 1].h // a heading stays with what follows it
       if (y + need > limit && pages[pages.length - 1].length) { pages.push([]); y = topN }
       pages[pages.length - 1].push({ b, y })
       y += b.h
@@ -293,11 +305,12 @@
     const jpegs = []
     for (let pi = 0; pi < pages.length; pi++) {
       ctx.fillStyle = C.white; ctx.fillRect(0, 0, W, H)
-      if (pi === 0) drawCover(ctx, sum, date, opts)
+      if (pi === 0) { drawCover(ctx, sum, date, opts); if (mosaic.length) await drawMosaic(ctx, load, mosaic) }
       else drawRunningHeader(ctx, date)
       for (const it of pages[pi]) await it.b.draw(it.y)
       // footer
       ctx.fillStyle = C.line; ctx.fillRect(M, H - 70, W - 2 * M, 1.5)
+      ctx.fillStyle = C.brand; ctx.fillRect(M, H - 71, 90, 3.5)
       text(ctx, L('Generated {date} · Trade', { date }), M, H - 34, { size: 20, color: C.faint })
       text(ctx, L('Page {a} of {b}', { a: pi + 1, b: pages.length }), W - M, H - 34, { size: 20, color: C.faint, align: 'right' })
       jpegs.push(await env.toJpeg(canvas, 0.86))
@@ -305,6 +318,90 @@
     }
     const base = fileBase(opts, sum)
     return { bytes: Pdf.fromJpegs(jpegs, base.replace(/-/g, ' ')), pages: pages.length, fileName: base + '.pdf' }
+  }
+
+  // One product: big photo + the other photos beside it, the details, and the price panel
+  const CARD_H = 318
+  async function drawProductCard(ctx, load, p, y, best) {
+    const x0 = M, w = W - 2 * M, h = CARD_H, imgs = p.images || []
+    ctx.save(); ctx.shadowColor = 'rgba(15,23,42,0.09)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6
+    ctx.fillStyle = C.white; rr(ctx, x0, y, w, h, 26); ctx.fill(); ctx.restore()
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1.2; rr(ctx, x0, y, w, h, 26); ctx.stroke()
+
+    // photos
+    const P = h - 36, px0 = x0 + 18, py = y + 18
+    cover(ctx, await load(imgs[0]), px0, py, P, P, 18)
+    let tx = px0 + P + 24
+    if (imgs.length > 1) {
+      const TG = 10, TS = (P - 2 * TG) / 3, tx0 = px0 + P + 12
+      for (let i = 1; i < Math.min(4, imgs.length); i++) {
+        const ty = py + (i - 1) * (TS + TG)
+        cover(ctx, await load(imgs[i]), tx0, ty, TS, TS, 12)
+        if (i === 3 && imgs.length > 4) {
+          ctx.fillStyle = 'rgba(15,23,42,0.55)'; rr(ctx, tx0, ty, TS, TS, 12); ctx.fill()
+          text(ctx, '+' + (imgs.length - 4), tx0 + TS / 2, ty + TS / 2 + 12, { size: 32, weight: 'bold', color: C.white, align: 'center' })
+        }
+      }
+      tx = tx0 + TS + 24
+    }
+    if (imgs.length > 1) pill(ctx, L('{n} photos', { n: imgs.length }), px0 + 12, py + P - 46, { bg: 'rgba(15,23,42,0.6)', color: C.white, size: 16, weight: 'bold' })
+
+    // details
+    const PW = 252, panelX = x0 + w - PW - 18, tw = panelX - tx - 20
+    text(ctx, p.name || '—', tx, y + 62, { size: 34, weight: 'bold', max: tw })
+    let ly = y + 84
+    if (p.description) { text(ctx, String(p.description).replace(/\s+/g, ' '), tx, ly + 14, { size: 20, color: C.sub, max: tw }); ly += 26 }
+    font(ctx, 19, 'bold')
+    let px = tx
+    px += pill(ctx, L('MOQ {n} {unit}', { n: int(p.minOrder), unit: L(p.unit) }), px, ly + 4, { bg: C.mint2, color: C.brand, size: 19, weight: 'bold' }) + 10
+    if (p.size) { font(ctx, 19); pill(ctx, fit(ctx, L('Size {x}', { x: p.size }), Math.max(60, tw - (px - tx) - 30)), px, ly + 4, { bg: '#F1F5F9', color: '#475569', size: 19 }) }
+    const line = (label, value, yy, color) => {
+      ctx.fillStyle = C.brand2; ctx.beginPath(); ctx.arc(tx + 5, yy - 7, 5, 0, Math.PI * 2); ctx.fill()
+      const lw = text(ctx, label, tx + 18, yy, { size: 20, weight: 'bold', color: C.sub })
+      text(ctx, value, tx + 18 + lw + 12, yy, { size: 21, color: color || C.ink, max: tw - lw - 30 })
+    }
+    const loc = p.location ? [p.location.name, p.location.address].filter(Boolean).join(' · ') : L('No location')
+    const reg = registeredAt(p)
+    line(L('Shop'), (p.shopName || '—') + (p.shopWechat === 'yes' && p.wechatId ? '  ·  WeChat ' + p.wechatId : ''), y + h - 104)
+    line(L('Location'), loc, y + h - 70, p.location ? C.ink : C.faint)
+    line(L('Registered'), reg ? dateTimeLabel(reg) : '—', y + h - 36, C.sub)
+
+    // price panel
+    const g = ctx.createLinearGradient(panelX, y, panelX + PW, y + h)
+    g.addColorStop(0, C.mint); g.addColorStop(1, C.mint2)
+    ctx.fillStyle = g; rr(ctx, panelX, y + 18, PW, h - 36, 20); ctx.fill()
+    const cx = panelX + PW / 2, dy = best ? 22 : 0
+    if (best) { font(ctx, 17, 'bold'); const bw = ctx.measureText('★ ' + L('Best price')).width + 28; pill(ctx, '★ ' + L('Best price'), cx - bw / 2, y + 30, { bg: '#DCFCE7', color: '#15803D', size: 17, weight: 'bold' }) }
+    text(ctx, L('Price'), cx, y + 86 + dy, { size: 19, color: C.sub, weight: '600', align: 'center' })
+    text(ctx, (p.currency || '') + money(p.price), cx, y + 136 + dy, { size: 44, weight: 'bold', color: C.price, align: 'center', max: PW - 24 })
+    text(ctx, L('per {unit}', { unit: L(p.unit) }), cx, y + 166 + dy, { size: 19, color: C.faint, align: 'center' })
+    ctx.fillStyle = 'rgba(15,23,42,0.08)'; ctx.fillRect(panelX + 24, y + 196 + dy / 2, PW - 48, 1.5)
+    text(ctx, L('Value at MOQ'), cx, y + 236, { size: 18, color: C.sub, align: 'center' })
+    text(ctx, (p.currency || '') + money((Number(p.price) || 0) * (Number(p.minOrder) || 0)), cx, y + 272, { size: 28, weight: 'bold', align: 'center', max: PW - 24 })
+  }
+
+  // The whole photo inside the box (no cropping), on a soft background
+  function contain(ctx, img, x, y, w, h, r) {
+    ctx.save(); rr(ctx, x, y, w, h, r); ctx.clip()
+    ctx.fillStyle = '#F1F5F9'; ctx.fillRect(x, y, w, h)
+    if (img) {
+      const s = Math.min(w / img.width, h / img.height), dw = img.width * s, dh = img.height * s
+      ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
+    } else text(ctx, L('No photo'), x + w / 2, y + h / 2 + 8, { size: 22, color: C.faint, align: 'center' })
+    ctx.restore()
+  }
+
+  // Cover: a row of product photos under the numbers
+  const MOSAIC_Y = 676, MOSAIC_H = 176
+  async function drawMosaic(ctx, load, photos) {
+    const n = photos.length, gap = 16, tw = Math.min(MOSAIC_H * 1.25, (W - 2 * M - gap * (n - 1)) / n)
+    text(ctx, L('In this report'), M, MOSAIC_Y - 18, { size: 22, color: C.sub, weight: '600' })
+    for (let i = 0; i < n; i++) {
+      const x = M + i * (tw + gap)
+      ctx.save(); ctx.shadowColor = 'rgba(15,23,42,0.14)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6
+      ctx.fillStyle = C.white; rr(ctx, x, MOSAIC_Y, tw, MOSAIC_H, 20); ctx.fill(); ctx.restore()
+      cover(ctx, await load(photos[i]), x, MOSAIC_Y, tw, MOSAIC_H, 20)
+    }
   }
 
   function fileBase(opts, sum) {
@@ -373,7 +470,6 @@
       return (v < 16 ? '0' : '') + v.toString(16)
     }).join('').toUpperCase()
   }
-  const hex6 = c => String(c || '').replace('#', '').toUpperCase()
   const amapLink = (loc, name) => 'https://uri.amap.com/marker?position=' + loc.longitude + ',' + loc.latitude + '&name=' + encodeURIComponent(String(name || loc.name || '').slice(0, 40)) + '&coordinate=gaode&callnative=1'
   const curFmt = c => '"' + String(c).replace(/"/g, '') + '"#,##0.00'
 
@@ -631,7 +727,39 @@
 
     const summary = { name: L('Summary'), tabColor: K.dark, gridLines: false, portrait: true, cols: [2.5, 32, 22, 12, 30, 34], rows: srows, merges: smerges, footer: '&L&8Trade · ' + heading.replace(/&/g, '&&') + '&R&8' + L('Page {a} of {b}', { a: '&P', b: '&N' }) }
 
-    const allSheets = [productsSheet, summary].concat(await duplicatesSheet())
+    // ===== Photos sheet: every photo of every product (the Products sheet shows only the first) =====
+    async function photosSheet() {
+      const withP = list.filter(p => (p.images || []).length)
+      if (!withP.length) return []
+      const maxN = Math.min(10, Math.max.apply(null, withP.map(p => p.images.length)))
+      const PC = maxN + 1, plast = Xlsx.colName(PC - 1)
+      const prows = [], pmerges = [], pimages = []
+      const pFull = (style, v, height) => {
+        const cells = []
+        for (let i = 0; i < PC; i++) cells.push({ v: i === 0 ? v : '', s: style })
+        prows.push({ height, cells }); pmerges.push('A' + prows.length + ':' + plast + prows.length)
+      }
+      pFull(banner, L('Photo gallery'), 40)
+      pFull(bannerSub, L('{n} photos', { n: withP.reduce((a, p) => a + p.images.length, 0) }) + '   ·   ' + L('Generated {date}', { date }), 22)
+      pFull(strip, '', 5)
+      prows.push({ height: 10, cells: [] })
+      const nameS = i => z(i, { font: { b: true, sz: 12, color: K.ink }, align: { indent: 1, wrap: true, v: 'center' } })
+      for (let i = 0; i < withP.length; i++) {
+        const p = withP[i], r = prows.length
+        const cells = [{ v: p.name + '\n' + [p.marketName, p.shopName].filter(Boolean).join(' · '), s: nameS(i) }]
+        for (let c = 1; c < PC; c++) cells.push({ v: '', s: z(i) })
+        prows.push({ height: 96, cells })
+        for (let k = 0; k < Math.min(maxN, p.images.length); k++) {
+          const jpg = await thumbnail(env, load, p.images[k])
+          if (jpg) pimages.push({ row: r, col: k + 1, data: jpg, w: 112, h: 112, dx: 10, dy: 6, border: K.line })
+        }
+      }
+      const cols = [28]; for (let i = 0; i < maxN; i++) cols.push(19)
+      return [{ name: L('Photos'), tabColor: K.soft, gridLines: false, cols, rows: prows, merges: pmerges, images: pimages, freezeRow: 4,
+        footer: '&L&8Trade · ' + L('Photo gallery') + '&R&8' + L('Page {a} of {b}', { a: '&P', b: '&N' }) }]
+    }
+
+    const allSheets = [productsSheet].concat(await photosSheet(), [summary], await duplicatesSheet())
     return {
       bytes: Xlsx.build(allSheets, { title: heading }, ST),
       sheets: allSheets.length,
