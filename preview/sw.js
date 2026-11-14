@@ -1,6 +1,6 @@
 // Service worker: keeps the app working offline once it has been opened.
 // Network first for the app files (so updates arrive), cache as fallback.
-const CACHE = 'trade-v30'
+const CACHE = 'trade-v31'
 const SHELL = [
   './', 'index.html', 'remote.js', 'hub-config.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
   'utils/zip.js', 'utils/pdf.js', 'utils/xlsx.js', 'utils/report.js', 'utils/icons.js', 'utils/themes.js', 'utils/similar.js', 'utils/i18n.js', 'utils/jsqr.js',

@@ -895,6 +895,9 @@
   .pf-it.best .pf-ic { background:#DCFCE7; }
   .pf-tx { flex:1; min-width:0; } .pf-tx b { display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pf-tx span { display:flex; align-items:center; gap:3px; font-size:11.5px; color:var(--ink-3); font-weight:600; margin-top:1px; white-space:nowrap; overflow:hidden; } .pf-tx em { font-style:normal; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; }
+  .pf-tx .pf-num { display:inline-flex; max-width:100%; margin-top:5px; padding:3px 9px 3px 7px; gap:5px; border-radius:999px; background:var(--mint); color:var(--brand); font-size:12px; font-weight:800; font-variant-numeric:tabular-nums; text-overflow:ellipsis; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .pf-tx .pf-num.add { background:none; color:var(--ink-3); font-weight:700; padding-left:0; border:0; }
+  .pf-ct { position:relative; } .pf-ct > .ic { position:absolute; z-index:1; left:12px; top:50%; transform:translateY(-50%); pointer-events:none; } .pf-ct .input { padding-left:36px; width:100%; box-sizing:border-box; }
   .pf-pr { text-align:right; font-size:15.5px; font-weight:800; color:var(--price); font-variant-numeric:tabular-nums; flex-shrink:0; }
   .pf-pr small { display:block; font-size:10px; font-weight:800; color:#16A34A; }
   .pf-it.best .pf-pr { color:#15803D; }
@@ -1183,26 +1186,41 @@ const trash = {
 // ---------- Sync: the computer running Trade keeps a permanent copy and shares it with every paired device ----------
 // ---------- Sync progress: a glass pill under the header while products move (GitHub or the computer) ----------
 // set(src, { label, done, total, unit }) — total 0 = still counting; end(src, ok). Quick syncs (< 350 ms) show nothing.
+// It always goes away by itself: after "Synced ✓" it slides out, and a source that stops reporting is dropped after 20 s.
 const SyncBar = {
-  el: null, srcs: {}, showT: null, hideT: null, shown: false,
+  el: null, srcs: {}, showT: null, hideT: null, shown: false, closing: false, dog: null,
   set(src, p) {
-    this.srcs[src] = Object.assign(this.srcs[src] || {}, p);
-    clearTimeout(this.hideT);
+    this.srcs[src] = Object.assign(this.srcs[src] || {}, p, { at: Date.now() });
+    if (!this.dog) this.dog = setInterval(() => this.watch(), 4000);
+    if (this.closing) return; // the "Synced ✓" pill finishes first; a sync still running shows again after it
     if (this.shown) return this.paint();
-    if (!this.showT) this.showT = setTimeout(() => { this.showT = null; if (Object.keys(this.srcs).length) { this.shown = true; this.paint(); } }, 350);
+    if (!this.showT) this.showT = setTimeout(() => { this.showT = null; if (!this.closing && Object.keys(this.srcs).length) { this.shown = true; this.paint(); } }, 350);
+  },
+  watch() {
+    Object.keys(this.srcs).forEach(k => { if (Date.now() - this.srcs[k].at > 20000) this.end(k, true); });
+    if (!Object.keys(this.srcs).length && !this.shown && !this.closing) { clearInterval(this.dog); this.dog = null; }
   },
   end(src, ok, msg) {
     if (!this.srcs[src]) return;
     delete this.srcs[src];
-    if (Object.keys(this.srcs).length) return this.shown && this.paint();
+    if (Object.keys(this.srcs).length) return this.shown && !this.closing && this.paint();
     clearTimeout(this.showT); this.showT = null;
-    if (!this.shown) return;
+    if (!this.shown || this.closing) return;
     const el = this.mount();
+    this.closing = true;
     el.classList.toggle('bad', !ok); el.classList.add('done');
     el.querySelector('.sb-t b').textContent = ok ? t('Synced ✓') : t('Sync stopped');
     el.querySelector('.sb-t small').textContent = msg || (ok ? t('Everything is saved') : t('It tries again by itself'));
     el.style.setProperty('--p', 1); el.querySelector('.sb-n').textContent = '';
-    this.hideT = setTimeout(() => { el.classList.remove('on'); this.shown = false; setTimeout(() => { if (!this.shown && this.el === el) { el.remove(); this.el = null; } }, 400); }, ok ? 1300 : 2600);
+    clearTimeout(this.hideT);
+    this.hideT = setTimeout(() => {
+      el.classList.remove('on');
+      setTimeout(() => {
+        el.remove(); if (this.el === el) this.el = null;
+        this.shown = false; this.closing = false;
+        if (Object.keys(this.srcs).length) { this.shown = true; this.paint(); } // another sync started meanwhile
+      }, 450);
+    }, ok ? 1100 : 2400);
   },
   mount() {
     if (this.el && this.el.isConnected) return this.el;
@@ -1214,7 +1232,7 @@ const SyncBar = {
     return el;
   },
   paint() {
-    const p = Object.values(this.srcs)[0]; if (!p) return;
+    const p = Object.values(this.srcs)[0]; if (!p || this.closing) return;
     const el = this.mount(); el.classList.remove('done', 'bad'); el.classList.add('on');
     const known = p.total > 0, f = known ? Math.min(1, p.done / p.total) : 0;
     el.classList.toggle('busy', !known);
@@ -1234,6 +1252,7 @@ function postProgress(url, body, headers, onUp) {
     if (onUp) x.upload.onprogress = e => { if (e.lengthComputable) onUp(e.loaded, e.total); };
     x.onload = () => { let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} ok({ status: x.status, ok: x.status >= 200 && x.status < 300, json: () => Promise.resolve(j) }); };
     x.onerror = x.ontimeout = () => no(new TypeError('Failed to fetch'));
+    x.timeout = 60000 + Math.round(String(body).length / 50); // ~50 KB/s at the slowest, never waits forever
     x.send(body);
   });
 }
@@ -1455,9 +1474,11 @@ const Sync = {
       const n = SYNC_KINDS.reduce((a, k) => a + body[k].length, 0), hdr = { 'Content-Type': 'application/json', 'x-trade-key': this.key() };
       // Something to send: show how far it is (photos make it big). Nothing to send: a quiet check.
       const label = t('Sending to the computer'), unit = n === 1 ? '1 change' : '{n} changes';
-      const r = n ? await postProgress('api/sync', JSON.stringify(body), hdr, (a, b) => SyncBar.set('pc', { label, done: a, total: b, sub: t(unit, { n }), unit: t(unit, { n }) + ' · ' + fmtSize(a) + ' / ' + fmtSize(b) }))
+      let live = true; // a late upload event must not bring the pill back after the answer came
+      const r = n ? await postProgress('api/sync', JSON.stringify(body), hdr, (a, b) => { if (live) SyncBar.set('pc', { label, done: a, total: b, sub: t(unit, { n }), unit: t(unit, { n }) + ' · ' + fmtSize(a) + ' / ' + fmtSize(b) }); })
         : await fetch('api/sync', { method: 'POST', headers: hdr, body: JSON.stringify(body) });
-      if (n) SyncBar.set('pc', { label, done: 0, total: 0, sub: t('The computer is saving…') });
+      live = false;
+      if (SyncBar.srcs.pc) SyncBar.set('pc', { label, done: 0, total: 0, sub: t('The computer is saving…') });
       const j = await r.json().catch(() => ({}));
       if (r.status === 403 && this.key() === DB.kv.ownKey) {
         // The computer does not know this phone (never linked, or unlinked there). Everything stays on the phone.
@@ -5198,17 +5219,19 @@ function drawWishes() {
 // Editor with two tabs:
 //  Item   — the item and its photo; "More" opens the client's name, how many pieces are needed and a big box for anything else.
 //  Prices — the price feed: every price seen for this item in a market (market, region, price), cheapest first.
+// A phone number (digits, +, spaces, dashes; 6+ digits) — anything else is taken as a WeChat ID
+const isPhoneNo = s => /^\+?[\d\s()-]+$/.test(String(s || '').trim()) && String(s).replace(/\D/g, '').length >= 6;
 const wishCheapest = w => (w.prices || []).filter(p => Number(p.price) > 0).sort((a, b) => Number(a.price) - Number(b.price))[0] || null;
 function editWish(id, tab) {
   const old = id ? wishes.get(id) : null;
   const w = Object.assign({ title: '', client: '', qty: '', note: '', price: '', currency: '¥', priority: 2, image: '', link: '', prices: [], done: false }, old ? JSON.parse(JSON.stringify(old)) : {});
   if (!Array.isArray(w.prices)) w.prices = [];
   let more = !!(w.client || w.note || Number(w.qty) > 0), view = tab === 'prices' ? 'prices' : 'item';
-  let pf = { market: '', area: '', price: '', currency: (w.prices[w.prices.length - 1] || {}).currency || w.currency || '¥' }; // the "add a price" form
+  let pf = { market: '', area: '', contact: '', price: '', currency: (w.prices[w.prices.length - 1] || {}).currency || w.currency || '¥' }; // the "add a price" form
   const $ = k => document.getElementById(k);
   const keep = () => {
     if ($('weTitle')) { w.title = $('weTitle').value; w.client = $('weClient').value; w.note = $('weNote').value; w.qty = $('weQty').value; }
-    if ($('pfMarket')) pf = { market: $('pfMarket').value, area: $('pfArea').value, price: $('pfPrice').value, currency: $('pfCur').value };
+    if ($('pfMarket')) pf = { market: $('pfMarket').value, area: $('pfArea').value, contact: $('pfContact').value, price: $('pfPrice').value, currency: $('pfCur').value };
   };
   // Prices are kept at once on a wish that already exists, so none is lost if the sheet is closed without Save
   const keepPrices = async () => { if (old) { const cur = wishes.get(old.id); if (cur) await wishes.save(Object.assign({}, cur, { prices: w.prices })); } };
@@ -5228,12 +5251,15 @@ function editWish(id, tab) {
         <datalist id="pfMarkets">${seenM.map(m => `<option value="${esc(m)}">`).join('')}</datalist>
         <input class="input" id="pfArea" list="pfAreas" placeholder="${esc(t('Region / area'))}" value="${esc(pf.area)}" maxlength="80" autocomplete="off">
         <datalist id="pfAreas">${seenA.map(a => `<option value="${esc(a)}">`).join('')}</datalist>
+        <div class="pf-ct">${ic('phone', '#94A3B8', 16, 2.2)}<input class="input" id="pfContact" placeholder="${esc(t('Phone / WeChat number (optional)'))}" value="${esc(pf.contact || '')}" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
         <div class="pf-row"><div class="joined" style="flex:1"><select class="addon" id="pfCur">${CURRENCIES.map(c => `<option ${c === pf.currency ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="pfPrice" inputmode="decimal" placeholder="${esc(t('Price they give'))}" value="${esc(pf.price)}"></div>
           <button class="btn primary pf-go" id="pfAdd" type="button">${ic('check', '#fff', 16, 3)}${esc(t('Add'))}</button></div>
       </div>
       ${list.length ? `<div class="pf-list">${list.map((p, i) => `<div class="pf-it ${i === 0 && list.length > 1 ? 'best' : ''}">
           <div class="pf-ic">${ic('market', i === 0 && list.length > 1 ? '#16A34A' : B(), 17)}</div>
-          <div class="pf-tx"><b data-notr>${esc(p.market || '—')}</b><span>${p.area ? `${ic('pin', '#94A3B8', 11, 2.4)}<em data-notr>${esc(p.area)}</em> · ` : ''}${esc(p.at ? ago(p.at) : '')}</span></div>
+          <div class="pf-tx"><b data-notr>${esc(p.market || '—')}</b><span>${p.area ? `${ic('pin', '#94A3B8', 11, 2.4)}<em data-notr>${esc(p.area)}</em> · ` : ''}${esc(p.at ? ago(p.at) : '')}</span>
+            ${p.contact ? `<span class="pf-num tap" data-num="${esc(p.id)}" data-notr>${ic(isPhoneNo(p.contact) ? 'phone' : 'copy', B(), 12, 2.4)}${esc(p.contact)}</span>`
+              : `<span class="pf-num add tap" data-num="${esc(p.id)}">${ic('plus', '#94A3B8', 11, 2.8)}${esc(t('Phone / WeChat'))}</span>`}</div>
           <div class="pf-pr">${money(p)}${i === 0 && list.length > 1 ? `<small>${esc(t('Cheapest'))}</small>` : ''}</div>
           <span class="pf-x" data-del="${p.id}">${ic('x', '#94A3B8', 13, 2.6)}</span></div>`).join('')}</div>`
       : `<div class="pf-empty">${ic('chart', '#94A3B8', 30, 1.8)}<div>${esc(t('No prices yet. Each time a market tells you a price for this item, add it here.'))}</div></div>`}`;
@@ -5279,8 +5305,9 @@ function editWish(id, tab) {
         if (!market) { $('pfMarket').focus(); return toast(t('Write the market name')); }
         if (!(price > 0)) { $('pfPrice').focus(); return toast(t('Write the price they give')); }
         const e = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), market, area: norm(pf.area), price: String(price), currency: pf.currency || '¥', at: Date.now() };
+        const ct = norm(pf.contact || ''); if (ct) e.contact = ct;
         w.prices.push(e);
-        pf = { market: '', area: pf.area, price: '', currency: pf.currency };
+        pf = { market: '', area: pf.area, contact: '', price: '', currency: pf.currency };
         await keepPrices();
         draw(); toast(t('Price added ✓'));
         const it = [...document.querySelectorAll('.pf-it')].find(x => x.querySelector(`[data-del="${e.id}"]`)); if (it) it.classList.add('new');
@@ -5292,6 +5319,26 @@ function editWish(id, tab) {
         const it = x.closest('.pf-it'); it.classList.add('bye');
         await wait(260);
         w.prices = w.prices.filter(p => p.id !== x.dataset.del); await keepPrices(); draw();
+      });
+      // Phone / WeChat number of a price: tap a number to call it (WeChat ID: copied); long-press or empty → change it
+      document.querySelectorAll('[data-num]').forEach(x => {
+        const p = w.prices.find(q => q.id === x.dataset.num); if (!p) return;
+        const edit = async () => {
+          keep();
+          const v = prompt(t('Phone / WeChat number for {m}', { m: p.market || '' }), p.contact || ''); if (v == null) return;
+          const val = norm(v).slice(0, 60);
+          if (val) p.contact = val; else delete p.contact;
+          await keepPrices(); draw(); toast(t('Saved ✓'));
+        };
+        let lp = null;
+        x.onpointerdown = () => { lp = setTimeout(() => { lp = 'done'; edit(); }, 550); };
+        x.onpointerup = x.onpointerleave = x.onpointercancel = () => { if (lp && lp !== 'done') clearTimeout(lp); };
+        x.onclick = () => {
+          if (lp === 'done') { lp = null; return; }
+          if (!p.contact) return edit();
+          if (isPhoneNo(p.contact)) location.href = 'tel:' + p.contact.replace(/[^\d+]/g, '');
+          else (navigator.clipboard ? navigator.clipboard.writeText(p.contact) : Promise.reject()).then(() => toast(t('WeChat ID copied — paste it in WeChat → Add contacts')), () => prompt('WeChat', p.contact));
+        };
       });
       return;
     }
