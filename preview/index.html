@@ -846,6 +846,27 @@
   .wl2-add .go { width:42px; height:42px; border-radius:14px; background:linear-gradient(140deg,#FB7185,#E11D48); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .2s cubic-bezier(.22,1.4,.36,1); box-shadow:0 6px 16px rgba(225,29,72,.35); }
   .wl2-add .go:active { transform:scale(.9); } .wl2-add .cam { width:42px; height:42px; border-radius:14px; background:var(--soft); display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .wl2-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:4px 16px calc(110px + var(--safe-bottom, 0px)); }
+  /* "Got it" as a table: one row per item */
+  .wl2-grid.wl-tbl-on { display:block; }
+  .wl-tbl { background:var(--card); border-radius:20px; box-shadow:var(--shadow); overflow:hidden; }
+  .wl-tbl .wt-h, .wl-tbl .wt-r { display:grid; grid-template-columns:minmax(0,1fr) auto 28px; align-items:center; gap:10px; padding:0 12px 0 8px; }
+  .wl-tbl .wt-h { height:34px; background:var(--mint); font-size:11px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; color:var(--brand); }
+  .wl-tbl .wt-h span:nth-child(1) { padding-left:30px; } .wl-tbl .wt-h span:nth-child(2) { text-align:right; }
+  .wl-tbl .wt-r.wi { position:static; margin:0; border-radius:0; box-shadow:none; overflow:visible; min-height:64px; padding-top:9px; padding-bottom:9px; box-sizing:border-box; border-top:.5px solid var(--line); background:none; }
+  .wl-tbl .wt-r:nth-child(odd) { background:var(--soft); }
+  .wl-tbl .wt-r.wi:active { transform:none; background:var(--mint); }
+  .wt-it { display:flex; align-items:center; gap:8px; min-width:0; }
+  .wt-n { width:22px; flex-shrink:0; text-align:center; font-size:11px; font-weight:800; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+  .wt-it img, .wt-it .ph { width:42px; height:42px; border-radius:11px; object-fit:cover; flex-shrink:0; }
+  .wt-it .ph { display:flex; align-items:center; justify-content:center; font-weight:900; font-size:18px; color:#fff; background:linear-gradient(145deg,hsl(var(--h) 85% 72%),hsl(calc(var(--h) + 50) 75% 55%)); }
+  .wt-tx { min-width:0; } .wt-tx b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:13.5px; line-height:1.3; font-weight:800; color:var(--ink); word-break:break-word; }
+  .wt-tx small { display:block; font-size:11px; color:var(--ink-3); font-weight:600; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wt-pr { text-align:right; } .wt-pr b { display:block; font-size:13px; font-weight:800; color:var(--price, #E11D48); font-variant-numeric:tabular-nums; } .wt-pr b.none { color:var(--ink-3); }
+  .wt-pr small { display:block; font-size:10.5px; color:var(--ink-3); font-weight:700; }
+  .wl-tbl .wt-ck.ck { position:static; width:26px; height:26px; box-shadow:none; background:#22C55E; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .wl-tbl .wt-r.bye { opacity:0; transform:translateX(30%); }
+  .wt-tot { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-top:1px solid var(--line); background:var(--mint); font-size:12px; font-weight:800; color:var(--ink-2); }
+  .wt-tot b { color:var(--brand); font-size:14px; font-variant-numeric:tabular-nums; }
   .wi { position:relative; border-radius:22px; background:var(--card); box-shadow:var(--shadow); overflow:hidden; cursor:pointer; transition:transform .35s cubic-bezier(.22,1.28,.36,1), opacity .3s; }
   .wi:active { transform:scale(.97); }
   .wi .pic { aspect-ratio:1; width:100%; object-fit:cover; display:block; }
@@ -5247,6 +5268,23 @@ function drawWishes() {
       <div class="muted">${esc(t(wishTab === 'got' ? 'When you get something, tap its circle and it moves here.' : 'Type anything you like above, or tap the camera to add it with a photo.'))}</div></div>`;
     return;
   }
+  // "Got it": one row per item, like a table — photo, item (and client), cheapest price × pieces, when you got it
+  el.classList.toggle('wl-tbl-on', wishTab === 'got');
+  if (wishTab === 'got') {
+    list.sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    const priceOf = w => { const c = wishCheapest(w); return c ? { cur: c.currency || '¥', v: Number(c.price), mk: c.market } : Number(w.price) > 0 ? { cur: w.currency || '¥', v: Number(w.price) } : null; };
+    const tot = new Map();
+    list.forEach(w => { const p = priceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0; if (p && q) tot.set(p.cur, (tot.get(p.cur) || 0) + p.v * q); });
+    el.innerHTML = `<div class="wl-tbl">
+      <div class="wt-h"><span>${esc(t('Item'))}</span><span>${esc(t('Price'))}</span><span></span></div>
+      ${list.map((w, i) => { const p = priceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0; return `<div class="wt-r wi done" data-wid="${w.id}">
+        <div class="wt-it"><span class="wt-n">${i + 1}</span>${w.image ? `<img src="${w.image}" loading="lazy">` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+          <div class="wt-tx"><b data-notr>${esc(w.title)}</b><small data-notr>${[w.doneAt ? '✓ ' + TradeReport.dateLabel(w.doneAt) : '', w.client ? '👤 ' + w.client : '', p && p.mk ? p.mk : ''].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div></div>
+        <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : '<b class="none">—</b>'}${q ? `<small>× ${esc(q)} ${esc(t('pcs'))}</small>` : ''}</div>
+        <span class="ck wt-ck" data-tick="${w.id}" title="${esc(t('Still want'))}">${ic('check', '#fff', 14, 3)}</span></div>`; }).join('')}
+      ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
+    </div>`;
+  } else
   el.innerHTML = list.map(w => `<div class="wi ${w.done ? 'done' : ''}" data-wid="${w.id}">
       ${w.image ? `<img class="pic" src="${w.image}" loading="lazy">` : `<div class="pic ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
       <span class="ck" data-tick="${w.id}">${ic('check', w.done ? '#fff' : '#94A3B8', 16, 3)}</span>
