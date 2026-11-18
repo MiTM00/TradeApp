@@ -811,7 +811,6 @@
     ['Group name', 'Magaca kooxda', '分组名称'],
     ['No group', 'Koox la’aan', '未分组'],
     ['e.g. Phones', 'tusaale: Taleefanno', '例如：手机'],
-    ['List', 'Liis', '列表'],
     ['Put in a group', 'Koox geli', '放入分组'],
     ['Put items that belong together in one group, e.g. Phones, Clothes, Shoes.', 'Waxyaabaha isku midka ah hal koox geli, tusaale: Taleefanno, Dhar, Kabo.', '把同类的东西放进一个分组，例如：手机、衣服、鞋子。'],
     ['Group made — now tap the items that go in it', 'Kooxda waa la sameeyay — hadda taabo waxyaabaha gelaya', '分组已建好——现在点选要放进去的物品'],

@@ -943,9 +943,8 @@
   .wl2-bar { display:flex; align-items:center; gap:8px; margin:0 16px 12px; } .wl2-bar .wl2-seg { flex:1; margin:0; }
   .wl-vw { width:38px; height:38px; border-radius:12px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
   .wl-vw.on { background:linear-gradient(140deg,var(--brand-2),var(--brand)); }
-  .wl-sec, .wt-g { display:flex; align-items:center; gap:7px; font-size:14px; font-weight:900; color:var(--ink); }
-  .wl-sec { grid-column:1/-1; margin:6px 2px -4px; } .wl-sec:first-child { margin-top:0; }
-  .wl-sec small, .wt-g small { font-size:11px; font-weight:800; color:var(--ink-3); background:var(--soft); border-radius:999px; padding:1px 7px; }
+  .wt-g { display:flex; align-items:center; gap:7px; font-size:14px; font-weight:900; color:var(--ink); }
+  .wt-g small { font-size:11px; font-weight:800; color:var(--ink-3); background:var(--soft); border-radius:999px; padding:1px 7px; }
   .wt-g { padding:11px 12px 9px; }
   .wl-tbl + .wl-tbl { margin-top:14px; }
   .wi.sel { box-shadow:0 0 0 3px var(--brand), var(--shadow); } .wi.sel .ck { background:var(--brand); }
@@ -5240,7 +5239,6 @@ let wishTab = 'want', wlDraft = '', wlPic = ''; // the add bar keeps its text an
 // Groups: the person makes them and chooses which items go in each (a wish keeps its group's name in w.group).
 // wishGroup = the group shown ('' = all); wlNewGroups = groups just made that have no item yet.
 let wishGroup = '', wlNewGroups = [], wlSel = null; // wlSel: Set of chosen ids while choosing items for a group
-let wishView = (() => { try { return localStorage.getItem('trade_wl_view') || 'grid'; } catch (e) { return 'grid'; } })();
 const newWishId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const wishGroupOf = w => norm(w.group || '');
 const wishGroups = () => [...new Set([...DB.wishes.map(wishGroupOf), ...wlNewGroups].filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -5266,7 +5264,6 @@ function renderWishlist() {
     </div>
     <div class="wl2-bar">
       <div class="seg wl2-seg" id="wlTabs">${[['want', 'Still want', want.length], ['got', 'Got it', got.length]].map(x => `<span data-w="${x[0]}" class="${wishTab === x[0] ? 'on' : ''}">${esc(t(x[1]))} · ${x[2]}</span>`).join('')}</div>
-      ${wishTab === 'want' ? `<span class="wl-vw tap" id="wlView" title="${esc(t(wishView === 'list' ? 'Photos' : 'List'))}">${ic(wishView === 'list' ? 'grid' : 'list', B(), 17, 2.4)}</span>` : ''}
       <span class="wl-vw tap ${wlSel ? 'on' : ''}" id="wlSelB" title="${esc(t('Put in a group'))}">${ic('folder', wlSel ? '#fff' : B(), 17, 2.4)}</span>
     </div>
     <div class="wl2-grid" id="wlList"></div>
@@ -5309,11 +5306,6 @@ function renderWishlist() {
     if (!wishGroups().includes(name)) wlNewGroups.push(name);
     wishGroup = ''; wlSel = new Set(); wlSel.target = name; renderWishlist();
     toast(t('Group made — now tap the items that go in it'));
-  };
-  const vw = document.getElementById('wlView'); if (vw) vw.onclick = () => {
-    wishView = wishView === 'list' ? 'grid' : 'list';
-    try { localStorage.setItem('trade_wl_view', wishView); } catch (e) {}
-    renderWishlist();
   };
   document.getElementById('wlSelB').onclick = () => { wlSel = wlSel ? null : new Set(); renderWishlist(); };
   drawWishes();
@@ -5392,13 +5384,6 @@ function wishTableHtml(list, title) {
     ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
   </div>`;
 }
-function wishCardHtml(w) {
-  const on = wlSel && wlSel.has(w.id);
-  return `<div class="wi ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
-    ${w.image ? `<img class="pic" src="${w.image}" loading="lazy">` : `<div class="pic ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
-    <span class="ck" data-tick="${w.id}">${ic('check', w.done || on ? '#fff' : '#94A3B8', 16, 3)}</span>
-    <div class="tx"><div class="tt" data-notr>${esc(w.title)}</div>${w.client ? `<div class="cl">${ic('user', '#94A3B8', 11, 2.4)}<span class="ellipsis" data-notr>${esc(w.client)}</span></div>` : ''}${wishCardPrice(w)}</div></div>`;
-}
 function drawWishes(still) { // still: redraw without the entrance animation (while choosing items)
   const el = document.getElementById('wlList'); if (!el) return;
   const got = wishTab === 'got';
@@ -5419,11 +5404,8 @@ function drawWishes(still) { // still: redraw without the entrance animation (wh
   const sections = groups.length
     ? [...groups.map(g => [g, list.filter(w => wishGroupOf(w) === g)]), ['', list.filter(w => !wishGroupOf(w))]].filter(s => s[1].length)
     : [[undefined, list]];
-  const table = got || wishView === 'list';
-  el.classList.toggle('wl-tbl-on', table);
-  el.innerHTML = (table
-    ? sections.map(([g, l]) => wishTableHtml(l, g)).join('')
-    : sections.map(([g, l]) => (g != null ? `<div class="wl-sec">${ic(g ? 'folder' : 'heart', B(), 15, 2.4)}<b data-notr>${esc(g || t('No group'))}</b><small>${l.length}</small></div>` : '') + l.map(wishCardHtml).join('')).join(''));
+  el.classList.add('wl-tbl-on');
+  el.innerHTML = sections.map(([g, l]) => wishTableHtml(l, g)).join('');
   if (!still) stagger(el); else el.classList.remove('stagger');
   const pickOne = c => { const id = c.dataset.wid; wlSel.has(id) ? wlSel.delete(id) : wlSel.add(id); drawWishes(true); };
   el.querySelectorAll('.wi').forEach(c => c.onclick = e => { if (wlSel) return pickOne(c); if (!e.target.closest('[data-tick]')) editWish(c.dataset.wid); });
