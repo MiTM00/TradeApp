@@ -837,6 +837,17 @@
   .we-top { display:flex; gap:12px; align-items:flex-start; margin-bottom:6px; }
   .we-photo { width:96px; height:96px; border-radius:16px; flex-shrink:0; border:1.5px dashed var(--brand-2); background:var(--mint); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:11px; font-weight:700; color:var(--brand); overflow:hidden; cursor:pointer; }
   .we-photo img { width:100%; height:100%; object-fit:cover; }
+  .we-photo { position:relative; } .we-pn { position:absolute; right:5px; bottom:5px; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:rgba(15,23,42,.7); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; }
+  /* several photos on a wish: a strip under the item, the first is the main one */
+  .we-pics { display:flex; gap:8px; overflow-x:auto; padding:12px 2px 2px; scrollbar-width:none; } .we-pics::-webkit-scrollbar { display:none; }
+  .we-pic { position:relative; flex:none; width:64px; height:64px; border-radius:13px; overflow:hidden; background:var(--soft); cursor:pointer; }
+  .we-pic img { width:100%; height:100%; object-fit:cover; display:block; }
+  .we-pic.first { box-shadow:0 0 0 2.5px var(--brand); }
+  .we-pic em { position:absolute; left:0; right:0; bottom:0; font-style:normal; font-size:9.5px; font-weight:800; text-align:center; color:#fff; background:linear-gradient(transparent,rgba(0,0,0,.6)); padding:6px 0 3px; }
+  .we-pic .x { position:absolute; top:4px; right:4px; width:20px; height:20px; border-radius:50%; background:rgba(15,23,42,.65); display:flex; align-items:center; justify-content:center; }
+  .we-pic.add { border:1.5px dashed var(--brand-2); background:var(--mint); display:flex; align-items:center; justify-content:center; }
+  .wt-pic { position:relative; flex-shrink:0; display:flex; }
+  .wt-pic b { position:absolute; right:-4px; bottom:-4px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--brand); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px var(--card); }
   .we-pri { display:flex; align-items:center; gap:4px; font-size:12px; font-weight:700; color:var(--ink-2); } .we-pri span { margin-right:4px; }
   .we-pri i { cursor:pointer; display:flex; padding:3px; border-radius:8px; transition:transform .2s var(--ease); } .we-pri i:active { transform:scale(1.3); }
   .we-acts { display:flex; gap:8px; margin-top:-2px; }
@@ -3788,7 +3799,7 @@ function renderAdd(id) {
   // Opened from a wish ("Save as a product"): start with its name, photo, price and note
   if (!old && wishToProduct) {
     const w = wishToProduct; wishToProduct = null;
-    Object.assign(form, { name: w.title || '', images: w.image ? [w.image] : [], price: Number(w.price) > 0 ? String(w.price) : '', currency: CURRENCIES.includes(w.currency) ? w.currency : form.currency, marketName: w.market || form.marketName, minOrder: Number(w.qty) > 0 ? String(w.qty) : form.minOrder, shopNote: [w.client ? t('Client') + ': ' + w.client : '', w.note, w.link].filter(Boolean).join('\n') });
+    Object.assign(form, { name: w.title || '', images: wishPics(w).slice(0, MAX_IMAGES), price: Number(w.price) > 0 ? String(w.price) : '', currency: CURRENCIES.includes(w.currency) ? w.currency : form.currency, marketName: w.market || form.marketName, minOrder: Number(w.qty) > 0 ? String(w.qty) : form.minOrder, shopNote: [w.client ? t('Client') + ': ' + w.client : '', w.note, w.link].filter(Boolean).join('\n') });
   }
   simpleNav(old ? 'Edit Product' : 'Add Product'); tabbar(null);
   const opt = (arr, v) => arr.map(x => `<option value="${x}" ${x === v ? 'selected' : ''}>${esc(t(x))}</option>`).join('');
@@ -5254,6 +5265,8 @@ let wishTab = 'want', wlDraft = '', wlPic = ''; // the add bar keeps its text an
 // Groups: the person makes them and chooses which items go in each (a wish keeps its group's name in w.group).
 // wishGroup = the group shown ('' = all); wlNewGroups = groups just made that have no item yet.
 let wishGroup = '', wlNewGroups = [], wlSel = null; // wlSel: Set of chosen ids while choosing items for a group
+// A wish's photos: w.images (several); w.image stays the first one, for older data and places that show one photo
+const wishPics = w => Array.isArray(w.images) && w.images.filter(Boolean).length ? w.images.filter(Boolean) : w.image ? [w.image] : [];
 const newWishId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const wishGroupOf = w => norm(w.group || '');
 const wishGroups = () => [...new Set([...DB.wishes.map(wishGroupOf), ...wlNewGroups].filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -5290,7 +5303,7 @@ function renderWishlist() {
   const add = async () => {
     const image = wlPic, title = norm(inp.value) || (image ? t('Something I like') : '');
     if (!title) { inp.focus(); return toast(t('Write the item you want first')); }
-    const w = { id: newWishId(), title, client: '', note: '', price: '', currency: '¥', priority: 2, image: image || '', link: '', done: false, createdAt: Date.now() };
+    const w = { id: newWishId(), title, client: '', note: '', price: '', currency: '¥', priority: 2, image: image || '', images: image ? [image] : [], link: '', done: false, createdAt: Date.now() };
     if (wishGroup) w.group = wishGroup;
     await wishes.save(w); wlDraft = ''; wlPic = ''; wishTab = 'want';
     wlNewGroups = wlNewGroups.filter(x => x !== wishGroup);
@@ -5395,7 +5408,7 @@ function wishTableHtml(list, title) {
     ${list.map((w, i) => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, on = wlSel && wlSel.has(w.id); return `<div class="wt-sw">
       <div class="wt-acts">${wishGroupOf(w) ? `<span class="wt-a wt-out" data-out="${w.id}">${ic('folder', '#fff', 17, 2.4)}<small>${esc(t('Out of group'))}</small></span>` : ''}<span class="wt-a wt-del" data-del="${w.id}">${ic('trash', '#fff', 17, 2.4)}<small>${esc(t('Delete'))}</small></span></div>
       <div class="wt-r wi ${i % 2 ? '' : 'odd'} ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
-      <div class="wt-it"><span class="wt-n">${i + 1}</span>${w.image ? `<img src="${w.image}" loading="lazy">` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+      <div class="wt-it"><span class="wt-n">${i + 1}</span>${wishPics(w).length ? `<span class="wt-pic"><img src="${wishPics(w)[0]}" loading="lazy">${wishPics(w).length > 1 ? `<b>${wishPics(w).length}</b>` : ''}</span>` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
         <div class="wt-tx"><b data-notr>${esc(w.title)}</b><small data-notr>${[got && w.doneAt ? '✓ ' + TradeReport.dateLabel(w.doneAt) : '', w.client ? '👤 ' + w.client : '', p && p.mk ? p.mk : ''].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div></div>
       <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : '<b class="none">—</b>'}${q ? `<small>× ${esc(q)} ${esc(t('pcs'))}</small>` : ''}</div>
       <span class="ck wt-ck" data-tick="${w.id}" title="${esc(t(got ? 'Still want' : 'Got it'))}">${ic('check', got || on ? '#fff' : '#94A3B8', 14, 3)}</span></div></div>`; }).join('')}
@@ -5522,6 +5535,7 @@ const wishCheapest = w => (w.prices || []).filter(p => Number(p.price) > 0).sort
 function editWish(id, tab) {
   const old = id ? wishes.get(id) : null;
   const w = Object.assign({ title: '', client: '', qty: '', note: '', price: '', currency: '¥', priority: 2, image: '', link: '', prices: [], done: false }, old ? JSON.parse(JSON.stringify(old)) : {});
+  w.images = wishPics(w).slice(0, MAX_IMAGES);
   if (!Array.isArray(w.prices)) w.prices = [];
   if (!old && wishGroup) w.group = wishGroup;
   let more = !!(w.client || w.note || Number(w.qty) > 0 || w.group), view = tab === 'prices' ? 'prices' : 'item';
@@ -5567,9 +5581,10 @@ function editWish(id, tab) {
       <div class="seg we-tabs" id="weTabs"><span data-v="item" class="${view === 'item' ? 'on' : ''}">${ic('heart', view === 'item' ? '#E11D48' : '#94A3B8', 14, 2.6)}${esc(t('Item'))}</span><span data-v="prices" class="${view === 'prices' ? 'on' : ''}">${ic('coins', view === 'prices' ? B() : '#94A3B8', 14, 2.4)}${esc(t('Prices'))}${w.prices.length ? ` <b class="we-n">${w.prices.length}</b>` : ''}</span></div>
       ${view === 'item' ? `
       <div class="we-main">
-        <div class="we-photo tap" id="wePhoto">${w.image ? `<img src="${w.image}">` : `${ic('camera', B(), 24)}<span>${esc(t('Photo'))}</span>`}</div>
+        <div class="we-photo tap" id="wePhoto">${w.images[0] ? `<img src="${w.images[0]}">${w.images.length > 1 ? `<b class="we-pn">${w.images.length}</b>` : ''}` : `${ic('camera', B(), 24)}<span>${esc(t('Photo'))}</span>`}</div>
         <div class="field"><div class="label">${esc(t('Item you want'))} <span class="req">*</span></div><input class="input" id="weTitle" value="${esc(w.title)}" maxlength="120" placeholder="${esc(t('e.g. Red handbag'))}"></div>
       </div>
+      ${w.images.length ? `<div class="we-pics">${w.images.map((src, i) => `<div class="we-pic tap ${i ? '' : 'first'}" data-pi="${i}"><img src="${src}"><span class="x" data-px="${i}">${ic('x', '#fff', 10, 3)}</span>${i ? '' : `<em>${esc(t('Main'))}</em>`}</div>`).join('')}${w.images.length < MAX_IMAGES ? `<div class="we-pic add tap" id="wePicAdd">${ic('plus', B(), 18, 2.6)}</div>` : ''}</div>` : ''}
       <button class="we-more" id="weMore" type="button">${esc(t(more ? 'Less' : 'More'))}${ic('down', B(), 15, 2.6)}</button>
       <div class="we-x"><div><div class="in">
         <div class="field"><div class="label">${esc(t('Group'))}</div><input class="input" id="weGroup" list="weGroups" value="${esc(w.group || '')}" maxlength="40" autocomplete="off" placeholder="${esc(t('e.g. Phones'))}">
@@ -5583,7 +5598,7 @@ function editWish(id, tab) {
         <button class="btn sm danger" id="weDel" style="width:44px;flex-shrink:0">${ic('trash', '#E11D48', 16)}</button></div>` : ''}`
       : `<div class="pf" id="pf">${pricesHtml()}</div>`}
       <div class="sheet-actions"><button class="btn" id="weNo">${esc(t('Cancel'))}</button><button class="btn primary" id="weOk">${ic('heart', '#fff', 16, 2.6)}${esc(t('Save'))}</button></div>
-      <input type="file" id="weFile" accept="image/*" hidden>
+      <input type="file" id="weFile" accept="image/*" multiple hidden>
     </div></div>`;
     $('wem').onclick = closeOverlay;
     $('weNo').onclick = closeOverlay;
@@ -5597,6 +5612,7 @@ function editWish(id, tab) {
         qty: Number(w.qty) > 0 ? String(Math.round(Number(w.qty))) : '', price: cheap ? String(Number(cheap.price)) : (old && !(old.prices || []).length ? old.price || '' : ''),
         currency: cheap ? cheap.currency || '¥' : w.currency, createdAt: old ? old.createdAt : Date.now() });
       rec.group = norm(w.group || '').slice(0, 40); if (!rec.group) delete rec.group; else wlNewGroups = wlNewGroups.filter(x => x !== rec.group);
+      rec.images = w.images.slice(); rec.image = w.images[0] || '';
       await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); renderWishlist();
     };
     if (view === 'prices') {
@@ -5650,13 +5666,26 @@ function editWish(id, tab) {
       $('weMore').innerHTML = esc(t(more ? 'Less' : 'More')) + ic('down', B(), 15, 2.6);
       if (more) setTimeout(() => { $('weClient').focus({ preventScroll: true }); sh.scrollTo({ top: sh.scrollHeight, behavior: 'smooth' }); }, 260);
     };
-    $('wePhoto').onclick = () => { keep(); $('weFile').click(); };
+    // Photos: tap the big photo or + to add (several at once, up to MAX_IMAGES); tap a small one to make it the main photo
+    const addPics = () => { keep(); if (w.images.length >= MAX_IMAGES) return toast(t('Maximum {n} photos', { n: MAX_IMAGES })); $('weFile').click(); };
+    $('wePhoto').onclick = addPics;
+    const pa = $('wePicAdd'); if (pa) pa.onclick = addPics;
     $('weFile').onchange = async e => {
-      const f = e.target.files[0]; if (!f) return;
+      const files = [...e.target.files].slice(0, MAX_IMAGES - w.images.length); e.target.value = ''; if (!files.length) return;
       const ph = $('wePhoto'); ph.innerHTML = '<div class="spinner" style="width:24px;height:24px;border-width:3px"></div>';
-      try { const r = DB.kv.noCrop ? await compress(f, 900, 0.8) : (await compress(f, 900, 0.8, true)).src; w.image = r; } catch (err) { toast(t('Could not read one photo')); }
+      let bad = 0;
+      for (const f of files) { try { w.images.push(DB.kv.noCrop ? await compress(f, 900, 0.8) : (await compress(f, 900, 0.8, true)).src); } catch (err) { bad++; } }
+      if (bad) toast(t('Could not read one photo'));
       draw();
     };
+    document.querySelectorAll('[data-pi]').forEach(x => x.onclick = async e => {
+      keep(); const i = Number(x.dataset.pi);
+      if (e.target.closest('[data-px]')) {
+        if (!await confirmDel({ title: t('Remove this photo?'), icon: 'image', ok: t('Remove') })) return;
+        w.images.splice(i, 1); return draw();
+      }
+      if (i) { w.images.unshift(w.images.splice(i, 1)[0]); draw(); }
+    });
     const del = $('weDel'); if (del) del.onclick = async () => {
       if (!await confirmDel({ title: t('Move to Trash?'), text: `"${old.title}" — ${t('you can put it back from the Trash')}` })) return;
       const sheet = del.closest('.we');

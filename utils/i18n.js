@@ -833,6 +833,8 @@
     ['Out of group', 'Ka saar kooxda', '移出分组'],
     ['Taken out of {g}', 'Waa laga saaray {g}', '已移出 {g}'],
     ['Add an item…', 'Ku dar shay…', '添加物品…'],
+    ['Main', 'Kan ugu horreeya', '主图'],
+    ['Remove this photo?', 'Sawirkan ma la saaraa?', '删除这张照片？'],
     ['What do you like? Type it here…', 'Maxaad jeceshahay? Halkan ku qor…', '你喜欢什么？在这里输入…'],
     ['Write what you like first', 'Marka hore qor waxa aad jeceshahay', '请先写下你喜欢的东西'],
     ['Added to your wishlist ♥', 'Waa lagu daray liiskaaga ♥', '已加入心愿单 ♥'],
