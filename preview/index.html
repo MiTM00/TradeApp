@@ -959,7 +959,8 @@
   .wt-g { display:flex; align-items:center; gap:7px; font-size:14px; font-weight:900; color:var(--ink); }
   .wt-g small { font-size:11px; font-weight:800; color:var(--ink-3); background:var(--soft); border-radius:999px; padding:1px 7px; }
   .wt-g { padding:11px 12px 9px; }
-  .wl-tbl + .wl-tbl { margin-top:14px; }
+  .wl-tbl + .wl-tbl, .wl-cards + .wl-tbl { margin-top:14px; }
+  .wl-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .wi.sel { box-shadow:0 0 0 3px var(--brand), var(--shadow); } .wi.sel .ck { background:var(--brand); }
   .wl-tbl .wt-r.sel { background:var(--mint); } .wl-tbl .wt-r.sel .wt-ck { background:var(--brand); }
   .wl-tbl .wt-r:not(.done):not(.sel) .wt-ck { background:var(--card); border:2px solid #CBD5E1; box-sizing:border-box; }
@@ -5400,6 +5401,14 @@ function wishTableHtml(list, title) {
     ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
   </div>`;
 }
+// A photo card (the usual look for a wish with no group)
+function wishCardHtml(w) {
+  const on = wlSel && wlSel.has(w.id);
+  return `<div class="wi ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
+    ${w.image ? `<img class="pic" src="${w.image}" loading="lazy">` : `<div class="pic ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+    <span class="ck" data-tick="${w.id}">${ic('check', w.done || on ? '#fff' : '#94A3B8', 16, 3)}</span>
+    <div class="tx"><div class="tt" data-notr>${esc(w.title)}</div>${w.client ? `<div class="cl">${ic('user', '#94A3B8', 11, 2.4)}<span class="ellipsis" data-notr>${esc(w.client)}</span></div>` : ''}${wishCardPrice(w)}</div></div>`;
+}
 function drawWishes(still) { // still: redraw without the entrance animation (while choosing items)
   const el = document.getElementById('wlList'); if (!el) return;
   const got = wishTab === 'got';
@@ -5417,11 +5426,13 @@ function drawWishes(still) { // still: redraw without the entrance animation (wh
   }
   // In "All" with groups made: one section per group (items with no group last)
   const groups = wishGroup ? [] : wishGroups();
-  const sections = groups.length
-    ? [...groups.map(g => [g, list.filter(w => wishGroupOf(w) === g)]), ['', list.filter(w => !wishGroupOf(w))]].filter(s => s[1].length)
-    : [[undefined, list]];
+  // Items with no group come first, on their own and as they always were: photo cards in "Still want",
+  // a plain table (no heading) in "Got it". Then one table per group.
+  const loose = wishGroup ? [] : list.filter(w => !wishGroupOf(w) || !groups.includes(wishGroupOf(w)));
+  const sections = wishGroup ? [[undefined, list]] : groups.map(g => [g, list.filter(w => wishGroupOf(w) === g)]).filter(s => s[1].length);
   el.classList.add('wl-tbl-on');
-  el.innerHTML = sections.map(([g, l]) => wishTableHtml(l, g)).join('');
+  el.innerHTML = (loose.length ? (got ? wishTableHtml(loose) : `<div class="wl-cards">${loose.map(wishCardHtml).join('')}</div>`) : '')
+    + sections.map(([g, l]) => wishTableHtml(l, g)).join('');
   if (!still) stagger(el); else el.classList.remove('stagger');
   const pickOne = c => { const id = c.dataset.wid; wlSel.has(id) ? wlSel.delete(id) : wlSel.add(id); drawWishes(true); };
   el.querySelectorAll('.wi').forEach(c => c.onclick = e => { if (wlSel) return pickOne(c); if (!e.target.closest('[data-tick]')) editWish(c.dataset.wid); });
