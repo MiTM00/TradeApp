@@ -854,8 +854,21 @@
   .wl-tbl .wt-h { height:34px; background:var(--mint); font-size:11px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; color:var(--brand); }
   .wl-tbl .wt-h span:nth-child(1) { padding-left:30px; } .wl-tbl .wt-h span:nth-child(2) { text-align:right; }
   .wl-tbl .wt-r.wi { position:static; margin:0; border-radius:0; box-shadow:none; overflow:visible; min-height:64px; padding-top:9px; padding-bottom:9px; box-sizing:border-box; border-top:.5px solid var(--line); background:none; }
-  .wl-tbl .wt-r:nth-child(odd) { background:var(--soft); }
-  .wl-tbl .wt-r.wi:active { transform:none; background:var(--mint); }
+  .wl-tbl .wt-r.wi { background:var(--card); position:relative; z-index:1; touch-action:pan-y; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; transition:transform .28s cubic-bezier(.22,1,.36,1), background .2s; }
+  .wl-tbl .wt-r.odd { background:var(--soft); } .wl-tbl .wt-r.drag { transition:none; }
+  /* swipe a row left: its buttons sit behind it */
+  .wt-sw { position:relative; overflow:hidden; transition:opacity .26s, max-height .26s; max-height:200px; }
+  .wt-sw.bye { opacity:0; max-height:0; } .wt-sw.new { animation:wiNew .6s cubic-bezier(.22,1.28,.36,1) both; }
+  .wt-acts { position:absolute; top:0; right:0; bottom:0; display:flex; width:max-content; }
+  .wt-a { flex:none; width:76px; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; color:#fff; cursor:pointer; }
+  .wt-a small { font-size:10.5px; font-weight:800; text-align:center; line-height:1.15; padding:0 4px; }
+  .wt-a.wt-out { background:#64748B; } .wt-a.wt-del { background:#E11D48; }
+  /* a new row straight in the table */
+  .wt-add { display:flex; align-items:center; gap:8px; padding:7px 8px 7px 8px; border-top:.5px solid var(--line); }
+  .wt-add input { flex:1; min-width:0; height:36px; border:0; outline:0; background:none; font:600 14px inherit; color:var(--ink); }
+  .wt-add .go { width:32px; height:32px; border-radius:10px; flex-shrink:0; background:linear-gradient(140deg,var(--brand-2),var(--brand)); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .wt-add:focus-within { background:var(--mint); }
+  .wl-tbl .wt-r.wi:active:not(.drag):not(.open) { background:var(--mint); }
   .wt-it { display:flex; align-items:center; gap:8px; min-width:0; }
   .wt-n { width:22px; flex-shrink:0; text-align:center; font-size:11px; font-weight:800; color:var(--ink-3); font-variant-numeric:tabular-nums; }
   .wt-it img, .wt-it .ph { width:42px; height:42px; border-radius:11px; object-fit:cover; flex-shrink:0; }
@@ -865,7 +878,7 @@
   .wt-pr { text-align:right; } .wt-pr b { display:block; font-size:13px; font-weight:800; color:var(--price, #E11D48); font-variant-numeric:tabular-nums; } .wt-pr b.none { color:var(--ink-3); }
   .wt-pr small { display:block; font-size:10.5px; color:var(--ink-3); font-weight:700; }
   .wl-tbl .wt-ck.ck { position:static; width:26px; height:26px; box-shadow:none; background:#22C55E; backdrop-filter:none; -webkit-backdrop-filter:none; }
-  .wl-tbl .wt-r.bye { opacity:0; transform:translateX(30%); }
+  .wl-tbl .wt-r.bye { opacity:0; transform:translateX(30%); } .wl-tbl .wt-r.odd.sel, .wl-tbl .wt-r.wi.sel { background:var(--mint); }
   .wt-tot { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-top:1px solid var(--line); background:var(--mint); font-size:12px; font-weight:800; color:var(--ink-2); }
   .wt-tot b { color:var(--brand); font-size:14px; font-variant-numeric:tabular-nums; }
   .wi { position:relative; border-radius:22px; background:var(--card); box-shadow:var(--shadow); overflow:hidden; cursor:pointer; transition:transform .35s cubic-bezier(.22,1.28,.36,1), opacity .3s; }
@@ -5376,11 +5389,14 @@ function wishTableHtml(list, title) {
   return `<div class="wl-tbl">
     ${title != null ? `<div class="wt-g">${ic(title ? 'folder' : 'heart', B(), 15, 2.4)}<b data-notr>${esc(title || t('No group'))}</b><small>${list.length}</small></div>` : ''}
     <div class="wt-h"><span>${esc(t('Item'))}</span><span>${esc(t('Price'))}</span><span></span></div>
-    ${list.map((w, i) => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, on = wlSel && wlSel.has(w.id); return `<div class="wt-r wi ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
+    ${list.map((w, i) => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, on = wlSel && wlSel.has(w.id); return `<div class="wt-sw">
+      <div class="wt-acts">${wishGroupOf(w) ? `<span class="wt-a wt-out" data-out="${w.id}">${ic('folder', '#fff', 17, 2.4)}<small>${esc(t('Out of group'))}</small></span>` : ''}<span class="wt-a wt-del" data-del="${w.id}">${ic('trash', '#fff', 17, 2.4)}<small>${esc(t('Delete'))}</small></span></div>
+      <div class="wt-r wi ${i % 2 ? '' : 'odd'} ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
       <div class="wt-it"><span class="wt-n">${i + 1}</span>${w.image ? `<img src="${w.image}" loading="lazy">` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
         <div class="wt-tx"><b data-notr>${esc(w.title)}</b><small data-notr>${[got && w.doneAt ? '✓ ' + TradeReport.dateLabel(w.doneAt) : '', w.client ? '👤 ' + w.client : '', p && p.mk ? p.mk : ''].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div></div>
       <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : '<b class="none">—</b>'}${q ? `<small>× ${esc(q)} ${esc(t('pcs'))}</small>` : ''}</div>
-      <span class="ck wt-ck" data-tick="${w.id}" title="${esc(t(got ? 'Still want' : 'Got it'))}">${ic('check', got || on ? '#fff' : '#94A3B8', 14, 3)}</span></div>`; }).join('')}
+      <span class="ck wt-ck" data-tick="${w.id}" title="${esc(t(got ? 'Still want' : 'Got it'))}">${ic('check', got || on ? '#fff' : '#94A3B8', 14, 3)}</span></div></div>`; }).join('')}
+    ${got || wlSel ? '' : `<div class="wt-add"><span class="wt-n">${ic('plus', B(), 14, 2.8)}</span><input data-addg="${esc(title == null ? wishGroup : title)}" maxlength="120" enterkeyhint="done" placeholder="${esc(title ? t('Add to {g}…', { g: title }) : t('Add an item…'))}"><span class="go tap">${ic('plus', '#fff', 16, 2.8)}</span></div>`}
     ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
   </div>`;
 }
@@ -5420,7 +5436,70 @@ function drawWishes(still) { // still: redraw without the entrance animation (wh
     setTimeout(() => card.classList.add('bye'), 380);
     setTimeout(() => renderWishlist(), 700);
   });
+  // A new row straight in a table (into that table's group): type it and tap + or Enter
+  el.querySelectorAll('.wt-add').forEach(r => {
+    const inp = r.querySelector('input'), g = inp.dataset.addg;
+    const add = async () => {
+      const title = norm(inp.value); if (!title) { inp.focus(); return toast(t('Write the item you want first')); }
+      const w = { id: newWishId(), title, client: '', note: '', price: '', currency: '¥', priority: 2, image: '', link: '', done: false, createdAt: Date.now() };
+      if (g) w.group = g;
+      await wishes.save(w);
+      const y = $body.scrollTop; renderWishlist(); $body.scrollTop = y;
+      const row = document.querySelector(`.wt-r[data-wid="${w.id}"]`); if (row) row.closest('.wt-sw').classList.add('new');
+      const again = [...document.querySelectorAll('.wt-add input')].find(x => x.dataset.addg === g); if (again) again.focus({ preventScroll: true });
+    };
+    inp.onkeydown = e => { if (e.key === 'Enter') add(); };
+    r.querySelector('.go').onclick = add;
+  });
+  // Swipe a row to the left: "Out of group" and "Delete" (to the Trash)
+  wishSwipe(el);
+  el.querySelectorAll('[data-out]').forEach(b => b.onclick = async () => {
+    const w = wishes.get(b.dataset.out); if (!w) return;
+    const g = wishGroupOf(w), x = Object.assign({}, w); delete x.group;
+    const sw = b.closest('.wt-sw'); sw.classList.add('bye'); await wait(260);
+    await wishes.save(x); const y = $body.scrollTop; renderWishlist(); $body.scrollTop = y; toast(t('Taken out of {g}', { g }));
+  });
+  el.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    const w = wishes.get(b.dataset.del); if (!w) return;
+    if (!await confirmDel({ title: t('Move to Trash?'), text: `"${w.title}" — ${t('you can put it back from the Trash')}` })) return wishSwipeClose();
+    const sw = b.closest('.wt-sw'); sw.classList.add('bye'); await wait(260);
+    await wishes.remove(w.id); const y = $body.scrollTop; renderWishlist(); $body.scrollTop = y; toast(t('Moved to Trash'));
+  });
   bindSelBar(bar);
+}
+// Swiping rows: drag a row left to show its buttons; one row open at a time; a tap anywhere else closes it
+let wishSwOpen = null;
+function wishSwipeClose() { if (wishSwOpen) { wishSwOpen.style.transform = ''; wishSwOpen.classList.remove('open'); wishSwOpen = null; } }
+function wishSwipe(el) {
+  wishSwOpen = null;
+  el.querySelectorAll('.wt-sw').forEach(sw => {
+    const row = sw.querySelector('.wt-r'), acts = sw.querySelector('.wt-acts');
+    let x0 = 0, y0 = 0, dx = 0, mode = '', base = 0;
+    row.addEventListener('pointerdown', e => {
+      if (wlSel || e.button > 0) return;
+      x0 = e.clientX; y0 = e.clientY; dx = 0; mode = 'wait'; base = row === wishSwOpen ? -acts.offsetWidth : 0;
+      if (wishSwOpen && wishSwOpen !== row) wishSwipeClose();
+    });
+    row.addEventListener('pointermove', e => {
+      if (!mode) return;
+      const mx = e.clientX - x0, my = e.clientY - y0;
+      if (mode === 'wait') { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; mode = Math.abs(mx) > Math.abs(my) ? 'swipe' : ''; if (mode) { row.setPointerCapture(e.pointerId); row.classList.add('drag'); } return; }
+      dx = mx; row.style.transform = `translateX(${Math.min(0, Math.max(-acts.offsetWidth - 30, base + dx))}px)`;
+    });
+    const end = () => {
+      if (mode === 'swipe') {
+        row.classList.remove('drag');
+        const open = base + dx < -acts.offsetWidth / 2;
+        row.style.transform = open ? `translateX(${-acts.offsetWidth}px)` : '';
+        row.classList.toggle('open', open); wishSwOpen = open ? row : null;
+        row.dataset.swiped = '1'; setTimeout(() => delete row.dataset.swiped, 50);
+      }
+      mode = '';
+    };
+    row.addEventListener('pointerup', end); row.addEventListener('pointercancel', end);
+    // after a swipe, or on an open row, a tap only closes it
+    row.addEventListener('click', e => { if (row.dataset.swiped || (row.classList.contains('open') && !e.target.closest('.wt-acts'))) { e.stopImmediatePropagation(); e.preventDefault(); if (!row.dataset.swiped) wishSwipeClose(); } }, true);
+  });
 }
 // The "choose items" bar sits above the tab bar (in #tabbar, so it stays in the phone frame and goes when the page changes)
 function bindSelBar(bar) {
