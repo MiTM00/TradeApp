@@ -8,7 +8,7 @@ const store = require('./datastore')
 
 const CFG = process.env.TRADE_GITHUB_CONFIG || path.join(__dirname, '..', 'github.config.json')
 const STATE = () => path.join(store.DIR, 'github.json') // sha of every file as last seen, so only changes are fetched
-const PATH_RE = /^(products|markets|wishes|trash)\/([\w-]{1,80})\.json$/
+const PATH_RE = /^(products|markets|wishes|clients|trash)\/([\w-]{1,80})\.json$/
 
 function config() { try { const c = JSON.parse(fs.readFileSync(CFG, 'utf8')); return c && c.owner && c.repo && c.token ? c : null } catch (e) { return null } }
 let state = null

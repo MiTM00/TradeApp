@@ -315,6 +315,20 @@
   .mk-act { width:34px; height:34px; border-radius:10px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
   .addmk { display:flex; gap:8px; }
   .addmk .btn { width:auto; padding:0 16px; flex-shrink:0; height:46px; }
+  /* clients */
+  .cl-av { color:#fff; font-weight:900; font-size:19px; background:linear-gradient(145deg,hsl(var(--h) 75% 62%),hsl(calc(var(--h) + 45) 70% 48%)); display:flex; align-items:center; justify-content:center; }
+  .cl-av.big { width:54px; height:54px; border-radius:17px; flex-shrink:0; font-size:23px; }
+  .cl-n { min-width:24px; height:24px; padding:0 7px; border-radius:999px; background:#FFE4E6; color:#E11D48; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .cl-top { display:flex; align-items:center; gap:12px; margin-bottom:14px; } .cl-nm { font-size:19px; font-weight:900; }
+  .cl-btn { width:42px; height:42px; border-radius:14px; background:linear-gradient(140deg,#4ADE80,#16A34A); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; } .cl-btn.wc { background:linear-gradient(140deg,#34D399,#059669); }
+  .cl-ws { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+  .cl-w { display:flex; align-items:center; gap:10px; padding:7px; border-radius:13px; background:var(--soft); cursor:pointer; }
+  .cl-w img, .cl-w .ph { width:38px; height:38px; border-radius:10px; object-fit:cover; flex-shrink:0; }
+  .cl-w .ph { display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; background:linear-gradient(145deg,hsl(var(--h) 85% 72%),hsl(calc(var(--h) + 50) 75% 55%)); }
+  .cl-w b { flex:1; min-width:0; font-size:13.5px; } .cl-w span { font-size:11px; font-weight:800; color:#E11D48; flex-shrink:0; } .cl-w.done span { color:#16A34A; }
+  .wl-cl { margin-left:auto; display:inline-flex; align-items:center; gap:5px; height:34px; padding:0 12px; border-radius:999px; background:var(--card); box-shadow:var(--shadow); font-size:13px; font-weight:800; letter-spacing:0; color:var(--ink); cursor:pointer; }
+  .wl-cl b { min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--soft); font-size:10.5px; display:inline-flex; align-items:center; justify-content:center; }
+  .wl-btn b.cl-b { background:rgba(255,255,255,.28); box-shadow:none; }
 
   /* ---------- settings ---------- */
   .th-btn { cursor:pointer; }
@@ -845,6 +859,21 @@
   .we-pic.first { box-shadow:0 0 0 2.5px var(--brand); }
   .we-pic em { position:absolute; left:0; right:0; bottom:0; font-style:normal; font-size:9.5px; font-weight:800; text-align:center; color:#fff; background:linear-gradient(transparent,rgba(0,0,0,.6)); padding:6px 0 3px; }
   .we-pic .x { position:absolute; top:4px; right:4px; width:20px; height:20px; border-radius:50%; background:rgba(15,23,42,.65); display:flex; align-items:center; justify-content:center; }
+  .we-pic .cr, .we-pic .mn { position:absolute; left:4px; width:20px; height:20px; border-radius:50%; background:rgba(15,23,42,.65); display:flex; align-items:center; justify-content:center; }
+  .we-pic .cr { top:4px; } .we-pic .cr.on { background:var(--brand); } .we-pic .mn { bottom:4px; }
+  .wt-pic { cursor:zoom-in; }
+  /* full-screen photo viewer */
+  .pv { position:absolute; inset:0; z-index:100000; background:#000; opacity:0; transition:opacity .2s; touch-action:pan-x; }
+  .pv.in { opacity:1; }
+  .pv-strip { position:absolute; inset:0; display:flex; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; overscroll-behavior:contain; }
+  .pv-strip::-webkit-scrollbar { display:none; }
+  .pv-p { flex:none; width:100%; height:100%; scroll-snap-align:center; scroll-snap-stop:always; display:flex; align-items:center; justify-content:center; }
+  .pv-p img { max-width:100%; max-height:100%; object-fit:contain; -webkit-user-select:none; user-select:none; -webkit-touch-callout:default; }
+  .pv-top { position:absolute; left:0; right:0; top:0; display:flex; align-items:center; justify-content:space-between; padding:calc(12px + var(--safe-top, 0px)) 14px 12px 18px; background:linear-gradient(rgba(0,0,0,.55),transparent); pointer-events:none; }
+  .pv-n { color:#fff; font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .pv-x { pointer-events:auto; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .pv-dots { position:absolute; left:0; right:0; bottom:calc(22px + var(--safe-bottom, 0px)); display:flex; justify-content:center; gap:6px; pointer-events:none; }
+  .pv-dots i { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.4); transition:all .2s; } .pv-dots i.on { width:20px; border-radius:4px; background:#fff; }
   .we-pic.add { border:1.5px dashed var(--brand-2); background:var(--mint); display:flex; align-items:center; justify-content:center; }
   .wt-pic { position:relative; flex-shrink:0; display:flex; }
   .wt-pic b { position:absolute; right:-4px; bottom:-4px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--brand); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px var(--card); }
@@ -889,6 +918,9 @@
   .wt-tx { min-width:0; } .wt-tx b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:13.5px; line-height:1.3; font-weight:800; color:var(--ink); word-break:break-word; }
   .wt-tx small { display:block; font-size:11px; color:var(--ink-3); font-weight:600; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .wt-pr { text-align:right; } .wt-pr b { display:block; font-size:13px; font-weight:800; color:var(--price, #E11D48); font-variant-numeric:tabular-nums; } .wt-pr b.none { color:var(--ink-3); }
+  /* no price given yet: a red mark */
+  .wt-pr .nop { display:inline-flex; align-items:center; gap:4px; padding:2px 8px 2px 6px; border-radius:999px; background:#FEE2E2; color:#DC2626; font-size:11px; font-weight:800; white-space:nowrap; }
+  .wt-pr .nop i { width:7px; height:7px; border-radius:50%; background:#EF4444; box-shadow:0 0 0 2px rgba(239,68,68,.25); }
   .wt-pr small { display:block; font-size:10.5px; color:var(--ink-3); font-weight:700; }
   .wl-tbl .wt-ck.ck { position:static; width:26px; height:26px; box-shadow:none; background:#22C55E; backdrop-filter:none; -webkit-backdrop-filter:none; }
   .wl-tbl .wt-r.bye { opacity:0; transform:translateX(30%); } .wl-tbl .wt-r.odd.sel, .wl-tbl .wt-r.wi.sel { background:var(--mint); }
@@ -1147,18 +1179,19 @@ const AMAP_TILES = 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size
 const OTHER = '__other__';
 
 // ---------- Storage: IndexedDB (falls back to localStorage) ----------
-const SYNC_KINDS = ['products', 'markets', 'wishes', 'trash']; // kept on the computer and shared with every paired device
+const SYNC_KINDS = ['products', 'markets', 'wishes', 'clients', 'trash']; // kept on the computer and shared with every paired device
 const DB = {
-  db: null, products: [], markets: [], wishes: [], trash: [], kv: {},
+  db: null, products: [], markets: [], wishes: [], clients: [], trash: [], kv: {},
   open() {
     return new Promise((res, rej) => {
       if (!window.indexedDB) return rej(new Error('no indexedDB'));
-      const r = indexedDB.open('trade', 3);
+      const r = indexedDB.open('trade', 4);
       r.onupgradeneeded = () => {
         const d = r.result, has = n => d.objectStoreNames.contains(n);
         if (!has('products')) d.createObjectStore('products', { keyPath: 'id' });
         if (!has('markets')) d.createObjectStore('markets', { keyPath: 'id' });
         if (!has('wishes')) d.createObjectStore('wishes', { keyPath: 'id' });
+        if (!has('clients')) d.createObjectStore('clients', { keyPath: 'id' });
         if (!has('trash')) d.createObjectStore('trash', { keyPath: 'id' });
         if (!has('kv')) d.createObjectStore('kv');
       };
@@ -1194,13 +1227,13 @@ const DB = {
       tx.onerror = tx.onabort = () => rej(tx.error || new Error('Write failed'));
     });
   },
-  saveLocal() { try { localStorage.setItem('trade_all', JSON.stringify({ products: this.products, markets: this.markets, wishes: this.wishes, trash: this.trash, kv: this.kv })); } catch (e) { throw new Error('Storage is full'); } },
+  saveLocal() { try { localStorage.setItem('trade_all', JSON.stringify({ products: this.products, markets: this.markets, wishes: this.wishes, clients: this.clients, trash: this.trash, kv: this.kv })); } catch (e) { throw new Error('Storage is full'); } },
   async init() {
     try { this.db = await this.open(); } catch (e) { this.db = null; }
     if (this.db) {
-      [this.products, this.markets, this.wishes, this.trash, this.kv] = await Promise.all([this.getAll('products'), this.getAll('markets'), this.getAll('wishes'), this.getAll('trash'), this.getAll('kv')]);
+      [this.products, this.markets, this.wishes, this.clients, this.trash, this.kv] = await Promise.all([this.getAll('products'), this.getAll('markets'), this.getAll('wishes'), this.getAll('clients'), this.getAll('trash'), this.getAll('kv')]);
     } else {
-      try { const d = JSON.parse(localStorage.getItem('trade_all')) || {}; this.products = d.products || []; this.markets = d.markets || []; this.wishes = d.wishes || []; this.trash = d.trash || []; this.kv = d.kv || {}; } catch (e) {}
+      try { const d = JSON.parse(localStorage.getItem('trade_all')) || {}; this.products = d.products || []; this.markets = d.markets || []; this.wishes = d.wishes || []; this.clients = d.clients || []; this.trash = d.trash || []; this.kv = d.kv || {}; } catch (e) {}
     }
     // Move data from the older preview (localStorage 'products') into the database once
     if (!this.kv.migrated) {
@@ -1214,6 +1247,11 @@ const DB = {
     if (!this.kv.marketsSeeded) {
       for (const p of this.products) if (p.marketName) await markets.ensure(p.marketName);
       await this.setKV('marketsSeeded', true);
+    }
+    // Register the clients already written on wishes (first run with Clients only)
+    if (!this.kv.clientsSeeded) {
+      for (const w of this.wishes) if (w.client) await clients.ensure(w.client);
+      await this.setKV('clientsSeeded', true);
     }
   },
   setKV(k, v) { this.kv[k] = v; return this.write('kv', 'put', v, k); }
@@ -1776,7 +1814,7 @@ const Cloud = {
     if (!r.ok) throw new Error('GitHub ' + r.status);
     const tree = await r.json(), shas = this.shas();
     let changed = 0, done = 0;
-    const RE = /^(products|markets|wishes|trash)\/([\w-]{1,80})\.json$/;
+    const RE = /^(products|markets|wishes|clients|trash)\/([\w-]{1,80})\.json$/;
     const todo = (tree.tree || []).filter(f => f.type === 'blob' && RE.test(f.path) && shas[f.path] !== f.sha);
     for (const f of todo) {
       SyncBar.set('gh', { label: t('Getting products from GitHub'), done: done++, total: todo.length, unit: '{n} of {total} files', now: true });
@@ -2086,6 +2124,7 @@ function route(quiet) {
   else if (page === 'markets') renderMarkets();
   else if (page === 'settings') renderSettings();
   else if (page === 'wishlist') renderWishlist();
+  else if (page === 'clients') renderClients();
   else if (page === 'trash') renderTrash();
   else if (page === 'backup') renderBackup();
   else if (page === 'data') renderData();
@@ -2139,7 +2178,7 @@ function renderIndex() {
         <div class="stat"><div class="stat-v" data-count="${all.length}">${all.length}</div><div class="stat-k">Products</div></div>
         <div class="stat"><div class="stat-v" data-count="${DB.markets.length}">${DB.markets.length}</div><div class="stat-k">Markets</div></div>
         <div class="stat"><div class="stat-v" data-count="${shops.size}">${shops.size}</div><div class="stat-k">Shops</div></div>
-      </div>`, 0, false, `<span class="wl-btn tap" onclick="location.hash='wishlist'">${ic('heart', '#fff', 16, 2.4)}<span>${esc(t('Wishlist'))}</span>${DB.wishes.filter(w => !w.done).length ? `<b>${DB.wishes.filter(w => !w.done).length}</b>` : ''}</span><span class="wl-btn tr-btn tap" id="trBtn" onclick="location.hash='trash'" aria-label="${esc(t('Trash'))}">${ic('trash', '#fff', 16, 2.4)}${trash.count() ? `<b>${trash.count()}</b>` : ''}</span>`)}
+      </div>`, 0, false, `<span class="wl-btn tap" onclick="location.hash='wishlist'">${ic('heart', '#fff', 16, 2.4)}<span>${esc(t('Wishlist'))}</span>${DB.wishes.filter(w => !w.done).length ? `<b>${DB.wishes.filter(w => !w.done).length}</b>` : ''}</span><span class="wl-btn tr-btn tap" onclick="location.hash='clients'" aria-label="${esc(t('Clients'))}">${ic('user', '#fff', 16, 2.4)}${DB.clients.length ? `<b class="cl-b">${DB.clients.length}</b>` : ''}</span><span class="wl-btn tr-btn tap" id="trBtn" onclick="location.hash='trash'" aria-label="${esc(t('Trash'))}">${ic('trash', '#fff', 16, 2.4)}${trash.count() ? `<b>${trash.count()}</b>` : ''}</span>`)}
     <div class="search-wrap"><div id="connBar"></div><div class="search">${ic('search', '#94A3B8', 18)}<input id="q" type="search" placeholder="Search product, market, shop..." value="${esc(q)}"><span id="clr"></span>${all.length ? '<span class="sortbtn" id="sortBtn" aria-label="Sort"></span>' : ''}</div></div>
     ${all.length ? `<div class="fchips" id="filters">
         <span class="fchip ${market === '' ? 'on' : ''}" data-m="">All<b>${all.length}</b></span>
@@ -2343,6 +2382,159 @@ function drawMarkets(used) {
     await markets.remove(m.id); toast('Deleted'); renderMarkets();
   });
 }
+
+// Full-screen photos: swipe left / right through all of them; × or Escape closes. Opens above whatever is on screen.
+function photoViewer(list, start) {
+  list = (list || []).filter(Boolean); if (!list.length) return;
+  const box = document.createElement('div');
+  box.className = 'pv';
+  box.innerHTML = `<div class="pv-strip" id="pvS">${list.map(src => `<div class="pv-p"><img src="${src}" draggable="false"></div>`).join('')}</div>
+    <div class="pv-top"><span class="pv-n" id="pvN">${(start || 0) + 1} / ${list.length}</span><span class="pv-x tap" id="pvX">${ic('x', '#fff', 22, 2.6)}</span></div>
+    ${list.length > 1 ? `<div class="pv-dots" id="pvD">${list.map((x, i) => `<i class="${i === (start || 0) ? 'on' : ''}"></i>`).join('')}</div>` : ''}`;
+  (document.querySelector('.phone') || document.body).appendChild(box);
+  const strip = box.querySelector('#pvS');
+  requestAnimationFrame(() => { strip.scrollLeft = (start || 0) * strip.clientWidth; box.classList.add('in'); });
+  strip.onscroll = () => {
+    const i = Math.round(strip.scrollLeft / Math.max(1, strip.clientWidth));
+    box.querySelector('#pvN').textContent = (i + 1) + ' / ' + list.length;
+    box.querySelectorAll('#pvD i').forEach((d, k) => d.classList.toggle('on', k === i));
+  };
+  const close = () => { box.classList.remove('in'); document.removeEventListener('keydown', key, true); setTimeout(() => box.remove(), 220); };
+  const key = e => {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); }
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') strip.scrollBy({ left: (e.key === 'ArrowRight' ? 1 : -1) * strip.clientWidth, behavior: 'smooth' });
+  };
+  document.addEventListener('keydown', key, true);
+  box.querySelector('#pvX').onclick = close;
+  box.onpointerdown = e => e.stopPropagation();
+}
+// ---------- pages/clients: the customers you buy for (kept on the iPhone, its GitHub repository and the computer) ----------
+// A client: { id, name, phone, wechat, place, note, createdAt }. Wishes keep the client's name in w.client.
+const clients = {
+  all() { return DB.clients.slice().sort((a, b) => a.name.localeCompare(b.name)); },
+  get(id) { return DB.clients.find(c => c.id === id); },
+  find(name) { const n = norm(name).toLowerCase(); return n ? DB.clients.find(c => c.name.toLowerCase() === n) : null; },
+  async ensure(name, extra) {
+    name = norm(name); if (!name) return null;
+    const ex = this.find(name); if (ex) return ex;
+    const c = Object.assign({ id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, phone: '', wechat: '', place: '', note: '', createdAt: Date.now() }, extra || {});
+    DB.clients.push(c); await DB.write('clients', 'put', c);
+    return c;
+  },
+  // Save a client; a new name is also written on every wish that had the old one
+  async save(c, oldName) {
+    const i = DB.clients.findIndex(x => x.id === c.id);
+    i >= 0 ? DB.clients[i] = c : DB.clients.push(c);
+    await DB.write('clients', 'put', c);
+    if (oldName && oldName !== c.name) for (const w of this.wishesOf(oldName)) await wishes.save(Object.assign({}, w, { client: c.name }));
+  },
+  async remove(id) { DB.clients = DB.clients.filter(c => c.id !== id); await DB.write('clients', 'delete', id); },
+  wishesOf(name) { const n = norm(name).toLowerCase(); return DB.wishes.filter(w => norm(w.client).toLowerCase() === n); }
+};
+const callNo = s => 'tel:' + String(s || '').replace(/[^\d+]/g, '');
+let cq = '';
+function renderClients() {
+  simpleNav(''); tabbar('clients');
+  const all = clients.all(), withW = all.filter(c => clients.wishesOf(c.name).length).length;
+  const open = DB.wishes.filter(w => !w.done && norm(w.client)).length;
+  $body.innerHTML = `
+    ${hero('user', t('Clients'), t('Register your customers — pick them on a wish'), `<div class="stats">
+      <div class="stat"><div class="stat-v" data-count="${all.length}">${all.length}</div><div class="stat-k">${esc(t('Clients'))}</div></div>
+      <div class="stat"><div class="stat-v" data-count="${withW}">${withW}</div><div class="stat-k">${esc(t('With wishes'))}</div></div>
+      <div class="stat"><div class="stat-v" data-count="${open}">${open}</div><div class="stat-k">${esc(t('Still want'))}</div></div>
+    </div>`)}
+    <div class="page r-body" style="margin-top:-28px">
+      <div class="card">
+        <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('plus', B(), 16, 2.4)}</div>${esc(t('Register a client'))}</div></div>
+        <div class="field"><input class="input" id="clName" maxlength="80" autocomplete="off" placeholder="${esc(t('Client name'))}"></div>
+        <div class="addmk"><input class="input" id="clPhone" maxlength="60" autocomplete="off" autocapitalize="off" placeholder="${esc(t('Phone / WeChat number (optional)'))}"><button class="btn primary" id="clAdd">${ic('plus', '#fff', 16, 2.6)}${esc(t('Add'))}</button></div>
+      </div>
+      ${all.length > 5 ? `<div class="search" style="margin-bottom:12px;box-shadow:var(--shadow)">${ic('search', '#94A3B8', 18)}<input id="cq" type="search" placeholder="${esc(t('Search clients…'))}" value="${esc(cq)}"></div>` : ''}
+      <div id="cllist"></div>
+    </div>`;
+  const add = async () => {
+    const name = norm(document.getElementById('clName').value), no = norm(document.getElementById('clPhone').value);
+    if (!name) { document.getElementById('clName').focus(); return toast(t('Write the client name')); }
+    if (clients.find(name)) return toast(t('This client is already registered'));
+    await clients.ensure(name, no ? (isPhoneNo(no) ? { phone: no } : { wechat: no }) : {});
+    toast(t('Client registered ✓')); renderClients();
+  };
+  document.getElementById('clAdd').onclick = add;
+  document.getElementById('clName').onkeydown = e => { if (e.key === 'Enter') document.getElementById('clPhone').focus(); };
+  document.getElementById('clPhone').onkeydown = e => { if (e.key === 'Enter') add(); };
+  const $cq = document.getElementById('cq'); if ($cq) $cq.oninput = () => { cq = $cq.value; drawClients(); };
+  drawClients();
+}
+function drawClients() {
+  const el = document.getElementById('cllist'); if (!el) return;
+  const k = cq.trim().toLowerCase();
+  const list = clients.all().filter(c => !k || [c.name, c.phone, c.wechat, c.place, c.note].join(' ').toLowerCase().includes(k));
+  el.innerHTML = !list.length
+    ? `<div class="card empty"><div class="empty-art">${ic('user', B(), 34, 1.6)}</div>
+        <div class="empty-title">${esc(t(k ? 'No client found' : 'No clients yet'))}</div>
+        <div class="muted">${esc(t(k ? 'Try another word.' : 'Register the people you buy for. On a wish you just pick one — or type a new name there.'))}</div></div>`
+    : list.map(c => {
+        const ws = clients.wishesOf(c.name), want = ws.filter(w => !w.done).length;
+        const sub = [c.place, c.phone || c.wechat, ws.length ? t('{a} want · {b} got', { a: want, b: ws.length - want }) : ''].filter(Boolean);
+        return `<div class="mk" data-id="${c.id}">
+          <div class="mk-icon cl-av" style="--h:${hueOf(c.name)}">${esc(c.name.trim().charAt(0).toUpperCase())}</div>
+          <div style="flex:1;min-width:0"><div class="mk-name ellipsis" data-notr>${esc(c.name)}</div>
+            <div class="mk-sub ellipsis" data-notr>${sub.map(esc).join(' · ') || '&nbsp;'}</div></div>
+          ${c.phone ? `<a class="mk-act" href="${callNo(c.phone)}" data-stop>${ic('phone', '#16A34A', 16, 2.2)}</a>` : ''}
+          ${want ? `<span class="cl-n">${want}</span>` : ''}
+        </div>`;
+      }).join('');
+  stagger(el);
+  el.querySelectorAll('[data-stop]').forEach(a => a.onclick = e => e.stopPropagation());
+  el.querySelectorAll('.mk').forEach(row => row.onclick = () => editClient(row.dataset.id));
+}
+// One client: details, call / copy WeChat, their wishes (tap one to open it)
+function editClient(id) {
+  const old = clients.get(id); if (!old) return;
+  const c = Object.assign({ phone: '', wechat: '', place: '', note: '' }, old);
+  const $ = k => document.getElementById(k);
+  const ws = clients.wishesOf(old.name).sort((a, b) => (a.done - b.done) || (b.createdAt || 0) - (a.createdAt || 0));
+  $overlay.innerHTML = `<div class="mask bottom" id="clm"><div class="sheet we" onclick="event.stopPropagation()"><div class="grip"></div>
+    <div class="cl-top"><div class="cl-av big" style="--h:${hueOf(c.name)}">${esc(c.name.trim().charAt(0).toUpperCase())}</div>
+      <div style="min-width:0;flex:1"><div class="cl-nm ellipsis" data-notr>${esc(c.name)}</div><div class="mk-sub">${esc(t('{n} wishes', { n: ws.length }))}</div></div>
+      ${c.phone ? `<a class="cl-btn" href="${callNo(c.phone)}">${ic('phone', '#fff', 17, 2.4)}</a>` : ''}
+      ${c.wechat ? `<span class="cl-btn wc tap" id="clWc">${ic('wechat', '#fff', 17, 2.2)}</span>` : ''}</div>
+    <div class="field"><div class="label">${esc(t('Client name'))} <span class="req">*</span></div><input class="input" id="ceName" value="${esc(c.name)}" maxlength="80" autocomplete="off"></div>
+    <div class="field"><div class="label">${esc(t('Phone'))}</div><input class="input" id="cePhone" type="tel" value="${esc(c.phone)}" maxlength="40" autocomplete="off" placeholder="+252 …"></div>
+    <div class="field"><div class="label">WeChat</div><input class="input" id="ceWc" value="${esc(c.wechat)}" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(t('WeChat ID'))}"></div>
+    <div class="field"><div class="label">${esc(t('City / country'))}</div><input class="input" id="cePlace" value="${esc(c.place)}" maxlength="80" autocomplete="off" placeholder="${esc(t('e.g. Mogadishu, Somalia'))}"></div>
+    <div class="field"><div class="label">${esc(t('Note'))}</div><textarea class="input textarea" id="ceNote" rows="3" maxlength="2000" placeholder="${esc(t('Anything to remember about this client'))}">${esc(c.note)}</textarea></div>
+    ${ws.length ? `<div class="label" style="margin:4px 0 8px">${esc(t('Wishlist'))}</div><div class="cl-ws">${ws.map(w => `<div class="cl-w tap ${w.done ? 'done' : ''}" data-w="${w.id}">
+        ${wishPics(w).length ? `<img src="${wishPics(w)[0]}" loading="lazy">` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+        <b class="ellipsis" data-notr>${esc(w.title)}</b><span>${esc(t(w.done ? 'Got it' : 'Still want'))}</span></div>`).join('')}</div>` : ''}
+    <div class="we-acts"><button class="btn sm soft" id="ceWish">${ic('heart', B(), 15)}${esc(t('Add a wish for this client'))}</button>
+      <button class="btn sm danger" id="ceDel" style="width:44px;flex-shrink:0">${ic('trash', '#E11D48', 16)}</button></div>
+    <div class="sheet-actions"><button class="btn" id="ceNo">${esc(t('Cancel'))}</button><button class="btn primary" id="ceOk">${ic('check', '#fff', 16, 3)}${esc(t('Save'))}</button></div>
+  </div></div>`;
+  $('clm').onclick = closeOverlay; $('ceNo').onclick = closeOverlay;
+  const wc = $('clWc'); if (wc) wc.onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(c.wechat) : Promise.reject()).then(() => toast(t('WeChat ID copied — paste it in WeChat → Add contacts')), () => prompt('WeChat', c.wechat));
+  const read = () => ({ name: norm($('ceName').value), phone: norm($('cePhone').value), wechat: norm($('ceWc').value), place: norm($('cePlace').value), note: String($('ceNote').value || '').trim() });
+  $('ceOk').onclick = async () => {
+    const v = read();
+    if (!v.name) { $('ceName').focus(); return toast(t('Write the client name')); }
+    const dup = clients.find(v.name); if (dup && dup.id !== old.id) return toast(t('Another client has this name'));
+    await clients.save(Object.assign({}, old, v), old.name);
+    closeOverlay(); toast(t('Saved ✓')); if (location.hash === '#clients') renderClients();
+  };
+  $('ceWish').onclick = () => {
+    closeOverlay(); wishClient = old.name;
+    if (location.hash === '#wishlist') return editWish(null);
+    window.addEventListener('hashchange', () => setTimeout(() => editWish(null), 60), { once: true }); // after the Wishlist is drawn
+    location.hash = 'wishlist';
+  };
+  document.querySelectorAll('[data-w]').forEach(x => x.onclick = () => { closeOverlay(); setTimeout(() => editWish(x.dataset.w), 60); });
+  $('ceDel').onclick = async () => {
+    const n = ws.length;
+    if (!await confirmDel({ title: t('Delete this client?'), text: n ? t('"{c}" is removed from your clients. Their {n} wishes stay, with the name on them.', { c: old.name, n }) : `"${old.name}"`, icon: 'user' })) return;
+    await clients.remove(old.id); closeOverlay(); toast(t('Deleted')); if (location.hash === '#clients') renderClients();
+  };
+}
+let wishClient = ''; // "Add a wish for this client": fills the client on the next new wish
 
 // ---------- pages/report ----------
 let rtab = 'overview', simMode = 'both';
@@ -3504,7 +3696,7 @@ async function drawAiCard() {
   };
 }
 
-const backupData = () => ({ app: 'trade', version: 3, exportedAt: Date.now(), products: DB.products, markets: DB.markets, wishes: DB.wishes, trash: DB.trash, settings: { theme: DB.kv.theme || 'cherry' } });
+const backupData = () => ({ app: 'trade', version: 3, exportedAt: Date.now(), products: DB.products, markets: DB.markets, wishes: DB.wishes, clients: DB.clients, trash: DB.trash, settings: { theme: DB.kv.theme || 'cherry' } });
 
 // ---------- Permanent storage ----------
 // 1. The browser is asked to never clear this app's database (granted for installed apps; on the first tap if a tap is needed).
@@ -3689,7 +3881,7 @@ async function restorePreview(data, source) {
       <div class="rp-head"><div class="bk-orb sm">${ic('upload', '#fff', 20, 2.4)}</div><div style="flex:1;min-width:0;text-align:left">
         <div class="sheet-title" style="margin:0">${esc(t('Restore backup'))}</div>
         <div class="hint ellipsis" data-notr>${esc(source)}${data.exportedAt ? ' · ' + esc(TradeReport.dateTimeLabel(data.exportedAt)) : ''}</div></div></div>
-      <div class="rp-rows">${row('box', 'Products', diff.products)}${row('market', 'Markets', diff.markets)}${row('heart', 'Wishlist', diff.wishes)}${diff.trash.list.length ? row('trash', 'Trash', diff.trash) : ''}</div>
+      <div class="rp-rows">${row('box', 'Products', diff.products)}${row('market', 'Markets', diff.markets)}${row('heart', 'Wishlist', diff.wishes)}${row('user', 'Clients', diff.clients)}${diff.trash.list.length ? row('trash', 'Trash', diff.trash) : ''}</div>
       <div class="rp-modes">
         <div class="rp-mode ${mode === 'merge' ? 'on' : ''}" data-m="merge"><span class="rp-radio"></span><div><b>${esc(t('Add to what I have'))}</b><span>${esc(t('New items are added, newer versions are kept. Nothing is removed.'))}</span></div></div>
         <div class="rp-mode ${mode === 'replace' ? 'on danger' : ''}" data-m="replace"><span class="rp-radio"></span><div><b>${esc(t('Make it exactly the backup'))}</b><span>${esc(extra ? t('{n} items that are not in the backup will be removed — also from the computer and other devices.', { n: extra }) : t('Every item is set back to the backup version.'))}</span></div></div>
@@ -4049,8 +4241,10 @@ function rotated(img, rot) {
   const x = c.getContext('2d'); x.translate(c.width / 2, c.height / 2); x.rotate(rot * Math.PI / 180); x.drawImage(img, -img.width / 2, -img.height / 2);
   return c;
 }
-async function cropEditor(i) {
-  const cur = form.images[i]; if (!cur) return;
+// opt: { list, done } to crop a photo of another list (a wish); done() is called when the editor closes
+async function cropEditor(i, opt) {
+  const L = opt ? opt.list : form.images;
+  const cur = L[i]; if (!cur) return;
   const orig = cropUndo.get(cur) || cur;
   const img = await loadImg(orig).catch(() => null); if (!img) return toast(t('Could not read one photo'));
   const meta = cropMeta.get(cur);
@@ -4155,16 +4349,16 @@ async function cropEditor(i) {
     clamp(); layout();
   };
   document.getElementById('ceFull').onclick = () => { rot = 0; src = img; box = { x: 0, y: 0, w: img.width, h: img.height }; ratio = 0; $overlay.querySelectorAll('.ce-r').forEach((r, k) => r.classList.toggle('on', k === 0)); layout(); };
-  document.getElementById('ceX').onclick = closeOverlay;
+  document.getElementById('ceX').onclick = () => opt ? opt.done() : closeOverlay();
   document.getElementById('ceOk').onclick = () => {
     const full = !rot && box.x < 1 && box.y < 1 && box.w > src.width - 2 && box.h > src.height - 2;
     cropUndo.delete(cur); cropRedo.delete(cur);
-    if (full) form.images[i] = orig;
+    if (full) L[i] = orig;
     else {
       const out = drawBox(src, { x: box.x, y: box.y, w: box.w, h: box.h }, 1000, 0.82);
-      form.images[i] = out; cropUndo.set(out, orig); cropMeta.set(out, { box: Object.assign({}, box), rot });
+      L[i] = out; cropUndo.set(out, orig); cropMeta.set(out, { box: Object.assign({}, box), rot });
     }
-    closeOverlay(); drawImages(); justCropped = form.images[i];
+    if (opt) opt.done(); else { closeOverlay(); drawImages(); justCropped = L[i]; }
     toast(full ? t('Original photo kept') : t('Photo cropped ✓'));
   };
   window.addEventListener('resize', layout, { once: true });
@@ -5261,7 +5455,7 @@ const wishes = {
     DB.wishes = DB.wishes.filter(w => w.id !== id); await DB.write('wishes', 'delete', id);
   }
 };
-let wishTab = 'want', wlDraft = '', wlPic = ''; // the add bar keeps its text and photo until + is tapped
+let wishTab = 'want', wlDraft = '', wlPic = '', wlPicOrig = ''; // the add bar keeps its text and photo until + is tapped
 // Groups: the person makes them and chooses which items go in each (a wish keeps its group's name in w.group).
 // wishGroup = the group shown ('' = all); wlNewGroups = groups just made that have no item yet.
 let wishGroup = '', wlNewGroups = [], wlSel = null; // wlSel: Set of chosen ids while choosing items for a group
@@ -5280,7 +5474,7 @@ function renderWishlist() {
   const want = inG.filter(w => !w.done), got = inG.filter(w => w.done);
   const cnt = g => all.filter(w => wishGroupOf(w) === g && (wishTab === 'got' ? w.done : !w.done)).length;
   $body.innerHTML = `<div class="wl2-top">
-      <div class="wl2-h"><span class="hb">${ic('heart', '#fff', 19, 2.6)}</span>${esc(t('Wishlist'))}</div>
+      <div class="wl2-h"><span class="hb">${ic('heart', '#fff', 19, 2.6)}</span>${esc(t('Wishlist'))}<span class="wl-cl tap" onclick="location.hash='clients'">${ic('user', B(), 15, 2.4)}${esc(t('Clients'))}${DB.clients.length ? `<b>${DB.clients.length}</b>` : ''}</span></div>
       <div class="wl2-s">${esc(t('{a} you want · {b} you got', { a: want.length, b: got.length }))}</div>
       <div class="wl2-add"><span class="cam" id="wlCam">${wlPic ? `<img src="${wlPic}"><i id="wlPicX">${ic('x', '#fff', 10, 3)}</i>` : ic('camera', B(), 19)}</span>
         <input id="wlNew" placeholder="${esc(wishGroup ? t('Add to {g}…', { g: wishGroup }) : t('Item you want…'))}" maxlength="120" enterkeyhint="done">
@@ -5304,8 +5498,9 @@ function renderWishlist() {
     const image = wlPic, title = norm(inp.value) || (image ? t('Something I like') : '');
     if (!title) { inp.focus(); return toast(t('Write the item you want first')); }
     const w = { id: newWishId(), title, client: '', note: '', price: '', currency: '¥', priority: 2, image: image || '', images: image ? [image] : [], link: '', done: false, createdAt: Date.now() };
+    if (image && wlPicOrig) w.origImages = [wlPicOrig];
     if (wishGroup) w.group = wishGroup;
-    await wishes.save(w); wlDraft = ''; wlPic = ''; wishTab = 'want';
+    await wishes.save(w); wlDraft = ''; wlPic = ''; wlPicOrig = ''; wishTab = 'want';
     wlNewGroups = wlNewGroups.filter(x => x !== wishGroup);
     renderWishlist();
     const card = document.querySelector(`[data-wid="${w.id}"]`); if (card) card.classList.add('new');
@@ -5320,7 +5515,7 @@ function renderWishlist() {
   document.getElementById('wlFile').onchange = async e => {
     const fl = e.target.files[0]; e.target.value = ''; if (!fl) return;
     wlDraft = inp.value;
-    try { wlPic = DB.kv.noCrop ? await compress(fl, 900, 0.8) : (await compress(fl, 900, 0.8, true)).src; } catch (err) { return toast(t('Could not read one photo')); }
+    try { wlPicOrig = ''; if (DB.kv.noCrop) wlPic = await compress(fl, 900, 0.8); else { const r = await compress(fl, 900, 0.8, true); wlPic = r.src; wlPicOrig = r.cropped ? r.original : ''; } } catch (err) { return toast(t('Could not read one photo')); }
     renderWishlist(); const i2 = document.getElementById('wlNew'); if (i2 && !i2.value) i2.focus();
   };
   document.querySelectorAll('#wlTabs span').forEach(el => el.onclick = () => { wishTab = el.dataset.w; renderWishlist(); });
@@ -5408,9 +5603,9 @@ function wishTableHtml(list, title) {
     ${list.map((w, i) => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, on = wlSel && wlSel.has(w.id); return `<div class="wt-sw">
       <div class="wt-acts">${wishGroupOf(w) ? `<span class="wt-a wt-out" data-out="${w.id}">${ic('folder', '#fff', 17, 2.4)}<small>${esc(t('Out of group'))}</small></span>` : ''}<span class="wt-a wt-del" data-del="${w.id}">${ic('trash', '#fff', 17, 2.4)}<small>${esc(t('Delete'))}</small></span></div>
       <div class="wt-r wi ${i % 2 ? '' : 'odd'} ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
-      <div class="wt-it"><span class="wt-n">${i + 1}</span>${wishPics(w).length ? `<span class="wt-pic"><img src="${wishPics(w)[0]}" loading="lazy">${wishPics(w).length > 1 ? `<b>${wishPics(w).length}</b>` : ''}</span>` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+      <div class="wt-it"><span class="wt-n">${i + 1}</span>${wishPics(w).length ? `<span class="wt-pic" data-view="${w.id}"><img src="${wishPics(w)[0]}" loading="lazy">${wishPics(w).length > 1 ? `<b>${wishPics(w).length}</b>` : ''}</span>` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
         <div class="wt-tx"><b data-notr>${esc(w.title)}</b><small data-notr>${[got && w.doneAt ? '✓ ' + TradeReport.dateLabel(w.doneAt) : '', w.client ? '👤 ' + w.client : '', p && p.mk ? p.mk : ''].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div></div>
-      <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : '<b class="none">—</b>'}${q ? `<small>× ${esc(q)} ${esc(t('pcs'))}</small>` : ''}</div>
+      <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : `<span class="nop" title="${esc(t('No price yet'))}"><i></i>${esc(t('No price'))}</span>`}${q ? `<small>× ${esc(q)} ${esc(t('pcs'))}</small>` : ''}</div>
       <span class="ck wt-ck" data-tick="${w.id}" title="${esc(t(got ? 'Still want' : 'Got it'))}">${ic('check', got || on ? '#fff' : '#94A3B8', 14, 3)}</span></div></div>`; }).join('')}
     ${got || wlSel ? '' : `<div class="wt-add"><span class="wt-n">${ic('plus', B(), 14, 2.8)}</span><input data-addg="${esc(title == null ? wishGroup : title)}" maxlength="120" enterkeyhint="done" placeholder="${esc(title ? t('Add to {g}…', { g: title }) : t('Add an item…'))}"><span class="go tap">${ic('plus', '#fff', 16, 2.8)}</span></div>`}
     ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
@@ -5453,6 +5648,8 @@ function drawWishes(still) { // still: redraw without the entrance animation (wh
     setTimeout(() => card.classList.add('bye'), 380);
     setTimeout(() => renderWishlist(), 700);
   });
+  // Tap a row's photo: all its photos full screen
+  el.querySelectorAll('[data-view]').forEach(p => p.onclick = e => { if (wlSel) return; e.stopPropagation(); const w = wishes.get(p.dataset.view); if (w) photoViewer(wishPics(w), 0); });
   // A new row straight in a table (into that table's group): type it and tap + or Enter
   el.querySelectorAll('.wt-add').forEach(r => {
     const inp = r.querySelector('input'), g = inp.dataset.addg;
@@ -5536,6 +5733,8 @@ function editWish(id, tab) {
   const old = id ? wishes.get(id) : null;
   const w = Object.assign({ title: '', client: '', qty: '', note: '', price: '', currency: '¥', priority: 2, image: '', link: '', prices: [], done: false }, old ? JSON.parse(JSON.stringify(old)) : {});
   w.images = wishPics(w).slice(0, MAX_IMAGES);
+  loadCropPairs({ images: w.images, origImages: w.origImages }); // "Original" in the crop editor gives back the uncropped photo
+  if (!old && wishClient) { w.client = wishClient; wishClient = ''; }
   if (!Array.isArray(w.prices)) w.prices = [];
   if (!old && wishGroup) w.group = wishGroup;
   let more = !!(w.client || w.note || Number(w.qty) > 0 || w.group), view = tab === 'prices' ? 'prices' : 'item';
@@ -5584,12 +5783,12 @@ function editWish(id, tab) {
         <div class="we-photo tap" id="wePhoto">${w.images[0] ? `<img src="${w.images[0]}">${w.images.length > 1 ? `<b class="we-pn">${w.images.length}</b>` : ''}` : `${ic('camera', B(), 24)}<span>${esc(t('Photo'))}</span>`}</div>
         <div class="field"><div class="label">${esc(t('Item you want'))} <span class="req">*</span></div><input class="input" id="weTitle" value="${esc(w.title)}" maxlength="120" placeholder="${esc(t('e.g. Red handbag'))}"></div>
       </div>
-      ${w.images.length ? `<div class="we-pics">${w.images.map((src, i) => `<div class="we-pic tap ${i ? '' : 'first'}" data-pi="${i}"><img src="${src}"><span class="x" data-px="${i}">${ic('x', '#fff', 10, 3)}</span>${i ? '' : `<em>${esc(t('Main'))}</em>`}</div>`).join('')}${w.images.length < MAX_IMAGES ? `<div class="we-pic add tap" id="wePicAdd">${ic('plus', B(), 18, 2.6)}</div>` : ''}</div>` : ''}
+      ${w.images.length ? `<div class="we-pics">${w.images.map((src, i) => `<div class="we-pic tap ${i ? '' : 'first'}" data-pi="${i}"><img src="${src}"><span class="x" data-px="${i}">${ic('x', '#fff', 10, 3)}</span><span class="cr ${cropUndo.has(src) ? 'on' : ''}" data-pc="${i}">${ic('crop', '#fff', 11, 2.6)}</span>${i ? `<span class="mn" data-pm="${i}">${ic('star', '#fff', 10, 2.6)}</span>` : `<em>${esc(t('Main'))}</em>`}</div>`).join('')}${w.images.length < MAX_IMAGES ? `<div class="we-pic add tap" id="wePicAdd">${ic('plus', B(), 18, 2.6)}</div>` : ''}</div>` : ''}
       <button class="we-more" id="weMore" type="button">${esc(t(more ? 'Less' : 'More'))}${ic('down', B(), 15, 2.6)}</button>
       <div class="we-x"><div><div class="in">
         <div class="field"><div class="label">${esc(t('Group'))}</div><input class="input" id="weGroup" list="weGroups" value="${esc(w.group || '')}" maxlength="40" autocomplete="off" placeholder="${esc(t('e.g. Phones'))}">
           <datalist id="weGroups">${wishGroups().map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>
-        <div class="field"><div class="label">${esc(t('Client name'))}</div><input class="input" id="weClient" value="${esc(w.client)}" maxlength="80" autocomplete="off" placeholder="${esc(t('Who is it for?'))}"></div>
+        <div class="field"><div class="label">${esc(t('Client name'))}</div><input class="input" id="weClient" list="weClients" value="${esc(w.client)}" maxlength="80" autocomplete="off" placeholder="${esc(t('Who is it for?'))}"><datalist id="weClients">${clients.all().map(c => `<option value="${esc(c.name)}">`).join('')}</datalist></div>
         <div class="field"><div class="label">${esc(t('Pieces needed'))}</div><div class="joined"><input class="input" id="weQty" inputmode="numeric" value="${esc(w.qty)}" placeholder="${esc(t('How many pieces?'))}"><span class="addon" style="display:flex;align-items:center;padding:0 14px">${esc(t('pcs'))}</span></div></div>
         <div class="field"><div class="label">${esc(t('Other information'))}</div><textarea class="input textarea big" id="weNote" rows="6" maxlength="3000" placeholder="${esc(t('Colour, size, when it is needed…'))}">${esc(w.note)}</textarea></div>
       </div></div></div>
@@ -5613,7 +5812,9 @@ function editWish(id, tab) {
         currency: cheap ? cheap.currency || '¥' : w.currency, createdAt: old ? old.createdAt : Date.now() });
       rec.group = norm(w.group || '').slice(0, 40); if (!rec.group) delete rec.group; else wlNewGroups = wlNewGroups.filter(x => x !== rec.group);
       rec.images = w.images.slice(); rec.image = w.images[0] || '';
-      await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); renderWishlist();
+      const origs = originalsOf(rec.images); if (origs.some(Boolean)) rec.origImages = origs; else delete rec.origImages;
+      if (rec.client) await clients.ensure(rec.client);
+      await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); wishRefresh();
     };
     if (view === 'prices') {
       const add = async () => {
@@ -5668,13 +5869,18 @@ function editWish(id, tab) {
     };
     // Photos: tap the big photo or + to add (several at once, up to MAX_IMAGES); tap a small one to make it the main photo
     const addPics = () => { keep(); if (w.images.length >= MAX_IMAGES) return toast(t('Maximum {n} photos', { n: MAX_IMAGES })); $('weFile').click(); };
-    $('wePhoto').onclick = addPics;
+    $('wePhoto').onclick = () => w.images.length ? photoViewer(w.images, 0) : addPics();
     const pa = $('wePicAdd'); if (pa) pa.onclick = addPics;
     $('weFile').onchange = async e => {
       const files = [...e.target.files].slice(0, MAX_IMAGES - w.images.length); e.target.value = ''; if (!files.length) return;
       const ph = $('wePhoto'); ph.innerHTML = '<div class="spinner" style="width:24px;height:24px;border-width:3px"></div>';
       let bad = 0;
-      for (const f of files) { try { w.images.push(DB.kv.noCrop ? await compress(f, 900, 0.8) : (await compress(f, 900, 0.8, true)).src); } catch (err) { bad++; } }
+      for (const f of files) {
+        try {
+          if (DB.kv.noCrop) w.images.push(await compress(f, 900, 0.8));
+          else { const r = await compress(f, 900, 0.8, true); w.images.push(r.src); if (r.cropped) cropUndo.set(r.src, r.original); }
+        } catch (err) { bad++; }
+      }
       if (bad) toast(t('Could not read one photo'));
       draw();
     };
@@ -5684,14 +5890,16 @@ function editWish(id, tab) {
         if (!await confirmDel({ title: t('Remove this photo?'), icon: 'image', ok: t('Remove') })) return;
         w.images.splice(i, 1); return draw();
       }
-      if (i) { w.images.unshift(w.images.splice(i, 1)[0]); draw(); }
+      if (e.target.closest('[data-pm]')) { w.images.unshift(w.images.splice(i, 1)[0]); return draw(); } // ★ makes it the main photo
+      if (e.target.closest('[data-pc]')) return cropEditor(i, { list: w.images, done: draw }); // crop / rotate / original
+      photoViewer(w.images, i);
     });
     const del = $('weDel'); if (del) del.onclick = async () => {
       if (!await confirmDel({ title: t('Move to Trash?'), text: `"${old.title}" — ${t('you can put it back from the Trash')}` })) return;
       const sheet = del.closest('.we');
       await wishes.remove(old.id);
       if (sheet) await genieToTrash(sheet, old.image);
-      closeOverlay(); toast(t('Moved to Trash')); renderWishlist();
+      closeOverlay(); toast(t('Moved to Trash')); wishRefresh();
     };
     const pr = $('weProd'); if (pr) pr.onclick = () => {
       keep(); const cheap = wishCheapest(w);
@@ -5700,6 +5908,8 @@ function editWish(id, tab) {
   };
   draw();
 }
+// After a wish is saved or deleted: redraw the page that is open (the Wishlist, or a client's page)
+const wishRefresh = () => location.hash === '#wishlist' ? renderWishlist() : location.hash === '#clients' ? renderClients() : null;
 let wishToProduct = null; // a wish opened as a new product: fills the Add form once
 
 // ---------- pages/detail ----------

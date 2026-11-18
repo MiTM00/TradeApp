@@ -10,7 +10,7 @@
 const fs = require('fs'), path = require('path'), crypto = require('crypto')
 
 const DIR = process.env.TRADE_DATA_DIR || path.join(__dirname, '..', 'data')
-const KINDS = ['products', 'markets', 'wishes', 'trash']
+const KINDS = ['products', 'markets', 'wishes', 'clients', 'trash']
 const META = () => path.join(DIR, 'sync.json')
 
 function ensureDirs() {
@@ -131,7 +131,7 @@ function allRecords() { const c = fresh(), out = []; KINDS.forEach(k => c[k].for
 function stats() {
   const c = fresh()
   const live = k => Array.from(c[k].values()).filter(r => !r.deleted).length
-  return { rev: meta.rev, products: live('products'), markets: live('markets'), wishes: live('wishes'), devices: Object.entries(meta.devices).map(([id, d]) => Object.assign({ id }, d)).sort((a, b) => b.lastSeen - a.lastSeen) }
+  return { rev: meta.rev, products: live('products'), markets: live('markets'), wishes: live('wishes'), clients: live('clients'), devices: Object.entries(meta.devices).map(([id, d]) => Object.assign({ id }, d)).sort((a, b) => b.lastSeen - a.lastSeen) }
 }
 
 // Daily full copy (one file per day); old days beyond 60 are removed

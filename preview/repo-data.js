@@ -41,8 +41,8 @@ function summary(st, shas) {
   const out = []
   out.push('Trade data from the iPhone repository ' + st.owner + '/' + st.repo + (st.last ? ' (fetched ' + when(st.last) + ' UTC)' : ''))
   if (st.error) out.push('Warning: ' + st.error + ' — showing the last copy fetched.')
-  out.push('In the repository: ' + ['products', 'markets', 'wishes', 'trash'].map(k => inRepo(k) + ' ' + k).join(', '))
-  out.push('Local copy in data/: ' + products.length + ' products, ' + live('markets').length + ' markets, ' + live('wishes').length + ' wishes, ' + live('trash').length + ' in Trash')
+  out.push('In the repository: ' + ['products', 'markets', 'wishes', 'clients', 'trash'].map(k => inRepo(k) + ' ' + k).join(', '))
+  out.push('Local copy in data/: ' + products.length + ' products, ' + live('markets').length + ' markets, ' + live('wishes').length + ' wishes, ' + live('clients').length + ' clients, ' + live('trash').length + ' in Trash')
   products.slice(0, 40).forEach(p => {
     const price = p.price != null && p.price !== '' ? ' · ' + (p.currency || '¥') + p.price + (p.minOrder ? ' (MOQ ' + p.minOrder + ' ' + (p.unit || '') + ')' : '') : ''
     out.push('- ' + (p.name || '(no name)') + price + (p.marketName ? ' · ' + p.marketName : '') + (p.shopName ? ' · shop ' + p.shopName : '') + ' · ' + when(p.updatedAt) + '  [data/products/' + p.id + '.json]')
@@ -59,7 +59,7 @@ function summary(st, shas) {
   const changed = JSON.stringify(shas) !== before
   const notYet = !st.configured
     ? 'NOT DONE YET (wali lama samayn): this computer is not connected to the iPhone\'s GitHub repository, so no iPhone data has been read. On the iPhone: Settings → Storage → GitHub → Link for the computer, then open that link on this computer (or link the iPhone by scanning the QR code).'
-    : !Object.keys(shas).some(p => /^(products|markets|wishes|trash)\//.test(p))
+    : !Object.keys(shas).some(p => /^(products|markets|wishes|clients|trash)\//.test(p))
       ? (st.error ? 'NOT DONE YET (wali lama samayn): could not read ' + st.owner + '/' + st.repo + ' — ' + st.error
         : 'NOT DONE YET (wali lama samayn): the repository ' + st.owner + '/' + st.repo + ' has nothing from the iPhone yet.')
       : ''
