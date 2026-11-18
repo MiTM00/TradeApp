@@ -98,6 +98,7 @@
   .logo { width:28px; height:28px; border-radius:9px; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; }
   .hero-title { font-size:30px; font-weight:800; margin-top:12px; letter-spacing:-.5px; position:relative; z-index:1; }
   .hero-sub { font-size:12.5px; opacity:.78; margin-top:2px; position:relative; z-index:1; }
+  .founder { position:absolute; z-index:1; left:0; right:0; top:calc(14px + var(--safe-top)); text-align:center; font-size:11.5px; font-weight:700; letter-spacing:.3px; opacity:.88; } .founder b { font-weight:900; }
   .stats { display:flex; gap:9px; margin-top:16px; position:relative; z-index:1; }
   .stat { flex:1; background:rgba(255,255,255,.13); border:.5px solid rgba(255,255,255,.2); border-radius:12px; padding:9px 11px; backdrop-filter:blur(4px); }
   .stat-v { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
@@ -933,6 +934,31 @@
   .tr-keep { display:flex; gap:8px; align-items:flex-start; margin-top:12px; padding:9px 11px; border-radius:12px; background:#F0FDF4; color:#166534; font-size:12px; font-weight:600; line-height:1.45; }
   .tr-keep .ic { margin-top:1px; }
   .wl2-seg { margin:0 16px 12px; }
+  /* wishlist groups: chips, sections, choosing items */
+  .wl-gr { display:flex; gap:7px; overflow-x:auto; padding:2px 16px 12px; scrollbar-width:none; -webkit-overflow-scrolling:touch; } .wl-gr::-webkit-scrollbar { display:none; }
+  .wg { flex-shrink:0; display:inline-flex; align-items:center; gap:5px; height:32px; padding:0 12px; border-radius:999px; background:var(--card); box-shadow:var(--shadow); font-size:12.5px; font-weight:800; color:var(--ink-2); cursor:pointer; white-space:nowrap; }
+  .wg b { min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--soft); color:var(--ink-2); font-size:10.5px; display:inline-flex; align-items:center; justify-content:center; }
+  .wg.on { background:linear-gradient(140deg,var(--brand-2),var(--brand)); color:#fff; } .wg.on b { background:rgba(255,255,255,.25); color:#fff; }
+  .wg.add { background:var(--mint); color:var(--brand); box-shadow:none; border:1.5px dashed var(--brand-2); }
+  .wl2-bar { display:flex; align-items:center; gap:8px; margin:0 16px 12px; } .wl2-bar .wl2-seg { flex:1; margin:0; }
+  .wl-vw { width:38px; height:38px; border-radius:12px; background:var(--soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; }
+  .wl-vw.on { background:linear-gradient(140deg,var(--brand-2),var(--brand)); }
+  .wl-sec, .wt-g { display:flex; align-items:center; gap:7px; font-size:14px; font-weight:900; color:var(--ink); }
+  .wl-sec { grid-column:1/-1; margin:6px 2px -4px; } .wl-sec:first-child { margin-top:0; }
+  .wl-sec small, .wt-g small { font-size:11px; font-weight:800; color:var(--ink-3); background:var(--soft); border-radius:999px; padding:1px 7px; }
+  .wt-g { padding:11px 12px 9px; }
+  .wl-tbl + .wl-tbl { margin-top:14px; }
+  .wi.sel { box-shadow:0 0 0 3px var(--brand), var(--shadow); } .wi.sel .ck { background:var(--brand); }
+  .wl-tbl .wt-r.sel { background:var(--mint); } .wl-tbl .wt-r.sel .wt-ck { background:var(--brand); }
+  .wl-tbl .wt-r:not(.done):not(.sel) .wt-ck { background:var(--card); border:2px solid #CBD5E1; box-sizing:border-box; }
+  .wl-selbar { position:absolute; z-index:101; left:12px; right:12px; bottom:calc(76px + var(--safe-bottom, 0px)); display:flex; align-items:center; gap:8px; padding:9px 9px 9px 14px; border-radius:18px; background:var(--card); box-shadow:0 10px 30px rgba(15,23,42,.22); animation:fade .25s; }
+  .wl2-grid.wl-selpad { padding-bottom:calc(180px + var(--safe-bottom, 0px)); }
+  .wl-selbar span { flex:1; min-width:0; font-size:13px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .wl-selbar .btn { width:auto; flex-shrink:0; padding:0 12px; gap:5px; }
+  .wg-pick { display:flex; flex-direction:column; gap:7px; margin:12px 0 4px; max-height:50vh; overflow-y:auto; }
+  .wg-it { display:flex; align-items:center; gap:10px; padding:12px; border-radius:14px; background:var(--soft); cursor:pointer; }
+  .wg-it b { flex:1; font-size:14.5px; } .wg-it small { font-size:12px; font-weight:800; color:var(--ink-3); }
+  .wg-it.new { background:var(--mint); color:var(--brand); }
   /* ---------- auto-fill (object recognition) ---------- */
   .af { display:flex; align-items:center; gap:10px; margin-top:10px; padding:10px 11px; border-radius:13px; background:var(--mint); color:var(--ink); animation:fade .25s; }
   .af .af-ic { width:32px; height:32px; border-radius:10px; background:linear-gradient(135deg,var(--brand-2),var(--brand)); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -2001,6 +2027,7 @@ const FLAG = { en: 'EN', so: 'SO', zh: '中' };
 // The language icon is shown only on the Settings page (withLang)
 function hero(icon, title, sub, extra, pb, withLang, right) {
   return `<div class="hero" ${pb ? `style="padding-bottom:${pb}px"` : ''}>
+    <div class="founder">${esc(t('Founder'))}: <b data-notr>Abdilahi Khadar</b></div>
     <div class="brandrow"><div class="logo">${ic(icon, '#fff', 15, 2.4)}</div>Trade<span class="sync-dot ${Sync.status}" id="syncDot" title="${esc(Sync.label())}"></span>
       ${right || ''}${withLang ? `<span class="globe" id="globe" onclick="langMenu(this)" aria-label="Language">${ic('globe', '#fff', 19)}<b data-notr>${FLAG[TradeI18n.getLang()]}</b></span>` : ''}</div>
     <div class="hero-title">${title}</div><div class="hero-sub">${sub}</div>${extra || ''}</div>`;
@@ -5210,19 +5237,38 @@ const wishes = {
   }
 };
 let wishTab = 'want', wlDraft = '', wlPic = ''; // the add bar keeps its text and photo until + is tapped
+// Groups: the person makes them and chooses which items go in each (a wish keeps its group's name in w.group).
+// wishGroup = the group shown ('' = all); wlNewGroups = groups just made that have no item yet.
+let wishGroup = '', wlNewGroups = [], wlSel = null; // wlSel: Set of chosen ids while choosing items for a group
+let wishView = (() => { try { return localStorage.getItem('trade_wl_view') || 'grid'; } catch (e) { return 'grid'; } })();
 const newWishId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-// Wishlist: one line to add, a photo grid, tap the circle when you got it
+const wishGroupOf = w => norm(w.group || '');
+const wishGroups = () => [...new Set([...DB.wishes.map(wishGroupOf), ...wlNewGroups].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+// Wishlist: one line to add, groups, a photo grid or a list (table); tap the circle when you got it
 function renderWishlist() {
   simpleNav(''); tabbar('wishlist');
-  const all = wishes.all(), want = all.filter(w => !w.done), got = all.filter(w => w.done);
+  const groups = wishGroups();
+  if (wishGroup && !groups.includes(wishGroup)) wishGroup = '';
+  const all = wishes.all(), inG = all.filter(w => !wishGroup || wishGroupOf(w) === wishGroup);
+  const want = inG.filter(w => !w.done), got = inG.filter(w => w.done);
+  const cnt = g => all.filter(w => wishGroupOf(w) === g && (wishTab === 'got' ? w.done : !w.done)).length;
   $body.innerHTML = `<div class="wl2-top">
       <div class="wl2-h"><span class="hb">${ic('heart', '#fff', 19, 2.6)}</span>${esc(t('Wishlist'))}</div>
       <div class="wl2-s">${esc(t('{a} you want · {b} you got', { a: want.length, b: got.length }))}</div>
       <div class="wl2-add"><span class="cam" id="wlCam">${wlPic ? `<img src="${wlPic}"><i id="wlPicX">${ic('x', '#fff', 10, 3)}</i>` : ic('camera', B(), 19)}</span>
-        <input id="wlNew" placeholder="${esc(t('Item you want…'))}" maxlength="120" enterkeyhint="done">
+        <input id="wlNew" placeholder="${esc(wishGroup ? t('Add to {g}…', { g: wishGroup }) : t('Item you want…'))}" maxlength="120" enterkeyhint="done">
         <span class="go" id="wlGo">${ic('plus', '#fff', 20, 2.8)}</span></div>
     </div>
-    <div class="seg wl2-seg" id="wlTabs">${[['want', 'Still want', want.length], ['got', 'Got it', got.length]].map(x => `<span data-w="${x[0]}" class="${wishTab === x[0] ? 'on' : ''}">${esc(t(x[1]))} · ${x[2]}</span>`).join('')}</div>
+    <div class="wl-gr" id="wlGroups">
+      <span class="wg ${wishGroup ? '' : 'on'}" data-g="">${esc(t('All'))}</span>
+      ${groups.map(g => `<span class="wg ${wishGroup === g ? 'on' : ''}" data-g="${esc(g)}" data-notr>${ic('folder', wishGroup === g ? '#fff' : B(), 13, 2.4)}${esc(g)}<b>${cnt(g)}</b>${wishGroup === g ? ic('edit', '#fff', 12, 2.4) : ''}</span>`).join('')}
+      <span class="wg add" id="wlGNew">${ic('plus', B(), 13, 2.8)}${esc(t('New group'))}</span>
+    </div>
+    <div class="wl2-bar">
+      <div class="seg wl2-seg" id="wlTabs">${[['want', 'Still want', want.length], ['got', 'Got it', got.length]].map(x => `<span data-w="${x[0]}" class="${wishTab === x[0] ? 'on' : ''}">${esc(t(x[1]))} · ${x[2]}</span>`).join('')}</div>
+      ${wishTab === 'want' ? `<span class="wl-vw tap" id="wlView" title="${esc(t(wishView === 'list' ? 'Photos' : 'List'))}">${ic(wishView === 'list' ? 'grid' : 'list', B(), 17, 2.4)}</span>` : ''}
+      <span class="wl-vw tap ${wlSel ? 'on' : ''}" id="wlSelB" title="${esc(t('Put in a group'))}">${ic('folder', wlSel ? '#fff' : B(), 17, 2.4)}</span>
+    </div>
     <div class="wl2-grid" id="wlList"></div>
     <input type="file" id="wlFile" accept="image/*" hidden>`;
   const inp = document.getElementById('wlNew');
@@ -5232,7 +5278,9 @@ function renderWishlist() {
     const image = wlPic, title = norm(inp.value) || (image ? t('Something I like') : '');
     if (!title) { inp.focus(); return toast(t('Write the item you want first')); }
     const w = { id: newWishId(), title, client: '', note: '', price: '', currency: '¥', priority: 2, image: image || '', link: '', done: false, createdAt: Date.now() };
+    if (wishGroup) w.group = wishGroup;
     await wishes.save(w); wlDraft = ''; wlPic = ''; wishTab = 'want';
+    wlNewGroups = wlNewGroups.filter(x => x !== wishGroup);
     renderWishlist();
     const card = document.querySelector(`[data-wid="${w.id}"]`); if (card) card.classList.add('new');
     toast(t('Added to your wishlist ♥'));
@@ -5250,7 +5298,74 @@ function renderWishlist() {
     renderWishlist(); const i2 = document.getElementById('wlNew'); if (i2 && !i2.value) i2.focus();
   };
   document.querySelectorAll('#wlTabs span').forEach(el => el.onclick = () => { wishTab = el.dataset.w; renderWishlist(); });
+  document.querySelectorAll('#wlGroups [data-g]').forEach(el => el.onclick = () => {
+    const g = el.dataset.g;
+    if (g && g === wishGroup) return editWishGroup(g); // tap the open group again: rename or remove it
+    wishGroup = g; renderWishlist();
+  });
+  document.getElementById('wlGNew').onclick = async () => {
+    const name = await askGroupName('');
+    if (!name) return;
+    if (!wishGroups().includes(name)) wlNewGroups.push(name);
+    wishGroup = ''; wlSel = new Set(); wlSel.target = name; renderWishlist();
+    toast(t('Group made — now tap the items that go in it'));
+  };
+  const vw = document.getElementById('wlView'); if (vw) vw.onclick = () => {
+    wishView = wishView === 'list' ? 'grid' : 'list';
+    try { localStorage.setItem('trade_wl_view', wishView); } catch (e) {}
+    renderWishlist();
+  };
+  document.getElementById('wlSelB').onclick = () => { wlSel = wlSel ? null : new Set(); renderWishlist(); };
   drawWishes();
+}
+// A group name from the person ('' when cancelled)
+async function askGroupName(value) {
+  const v = await dialog({ title: t('New group'), text: t('Put items that belong together in one group, e.g. Phones, Clothes, Shoes.'),
+    fields: [{ key: 'name', label: t('Group name'), value, placeholder: t('e.g. Phones') }], ok: t('Save'), cancel: t('Cancel') });
+  return v && !v.alt ? norm(v.name || '').slice(0, 40) : '';
+}
+// Rename a group (every item in it moves with it) or remove it (its items stay, with no group)
+async function editWishGroup(g) {
+  const items = DB.wishes.filter(w => wishGroupOf(w) === g);
+  const v = await dialog({ title: g, text: t('{n} items in this group', { n: items.length }), fields: [{ key: 'name', label: t('Group name'), value: g }],
+    ok: t('Save'), cancel: t('Cancel'), alt: `${ic('x', B(), 15, 2.6)} ${esc(t('Remove the group (items stay)'))}` });
+  if (!v) return;
+  if (v.alt) {
+    if (!await confirmDel({ title: t('Remove the group?'), text: t('The {n} items stay in your wishlist, with no group.', { n: items.length }), ok: t('Remove'), icon: 'folder' })) return;
+    for (const w of items) { const x = Object.assign({}, w); delete x.group; await wishes.save(x); }
+    wlNewGroups = wlNewGroups.filter(x => x !== g); wishGroup = ''; renderWishlist(); return toast(t('Group removed'));
+  }
+  const name = norm(v.name || '').slice(0, 40);
+  if (!name || name === g) return;
+  for (const w of items) await wishes.save(Object.assign({}, w, { group: name }));
+  wlNewGroups = wlNewGroups.map(x => x === g ? name : x); wishGroup = name; renderWishlist(); toast(t('Saved ✓'));
+}
+// Put the chosen items in a group: the one just made, or one picked from a sheet (existing, new, or none)
+async function moveWishesToGroup() {
+  const ids = [...(wlSel || [])]; if (!ids.length) return toast(t('Tap the items first'));
+  let pick = wlSel.target;
+  if (!pick) {
+    const groups = wishGroups();
+    pick = await new Promise(resolve => {
+      $overlay.innerHTML = `<div class="mask bottom" id="wgm"><div class="sheet" onclick="event.stopPropagation()"><div class="grip"></div>
+        <div class="dialog-title" style="text-align:left">${esc(t('Put {n} items in…', { n: ids.length }))}</div>
+        <div class="wg-pick">${groups.map(g => `<div class="wg-it tap" data-p="${esc(g)}">${ic('folder', B(), 18, 2.2)}<b data-notr>${esc(g)}</b><small>${DB.wishes.filter(w => wishGroupOf(w) === g).length}</small></div>`).join('')}
+          <div class="wg-it tap new" data-p="+">${ic('plus', B(), 18, 2.6)}<b>${esc(t('New group'))}</b></div>
+          <div class="wg-it tap" data-p="-">${ic('x', '#94A3B8', 18, 2.4)}<b>${esc(t('No group'))}</b></div></div>
+        <div class="sheet-actions"><button class="btn" id="wgNo">${esc(t('Cancel'))}</button></div></div></div>`;
+      const done = v => { closeOverlay(); resolve(v); };
+      document.getElementById('wgm').onclick = () => done(null);
+      document.getElementById('wgNo').onclick = () => done(null);
+      $overlay.querySelectorAll('[data-p]').forEach(x => x.onclick = () => done(x.dataset.p));
+    });
+    if (pick == null) return;
+    if (pick === '+') { pick = await askGroupName(''); if (!pick) return; }
+  }
+  const g = pick === '-' ? '' : pick;
+  for (const id of ids) { const w = wishes.get(id); if (!w) continue; const x = Object.assign({}, w); if (g) x.group = g; else delete x.group; await wishes.save(x); }
+  wlNewGroups = wlNewGroups.filter(x => x !== g);
+  wlSel = null; wishGroup = g;
+  renderWishlist(); toast(g ? t('Put in {g} ✓', { g }) : t('Saved ✓'));
 }
 // Card footer: pieces needed + the cheapest price seen (and in how many markets)
 function wishCardPrice(w) {
@@ -5259,40 +5374,62 @@ function wishCardPrice(w) {
   if (!pr && !q) return '';
   return `<div class="wi-f">${pr ? `<span class="pr">${pr}</span>` : ''}${q ? `<span class="qty">${esc(q)} ${esc(t('pcs'))}</span>` : ''}${n ? `<span class="mk">${ic('market', '#94A3B8', 10, 2.4)}${n}</span>` : ''}</div>`;
 }
-function drawWishes() {
+// Price of a wish: the cheapest market price seen, else the price written on it
+const wishPriceOf = w => { const c = wishCheapest(w); return c ? { cur: c.currency || '¥', v: Number(c.price), mk: c.market } : Number(w.price) > 0 ? { cur: w.currency || '¥', v: Number(w.price) } : null; };
+// One table (like "Got it"): photo, item (2 lines), date / client / market, price × pieces, the circle, a total per currency.
+// title: a group name, '' for items with no group, undefined for no heading
+function wishTableHtml(list, title) {
+  const got = wishTab === 'got', tot = new Map();
+  list.forEach(w => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0; if (p && q) tot.set(p.cur, (tot.get(p.cur) || 0) + p.v * q); });
+  return `<div class="wl-tbl">
+    ${title != null ? `<div class="wt-g">${ic(title ? 'folder' : 'heart', B(), 15, 2.4)}<b data-notr>${esc(title || t('No group'))}</b><small>${list.length}</small></div>` : ''}
+    <div class="wt-h"><span>${esc(t('Item'))}</span><span>${esc(t('Price'))}</span><span></span></div>
+    ${list.map((w, i) => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, on = wlSel && wlSel.has(w.id); return `<div class="wt-r wi ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
+      <div class="wt-it"><span class="wt-n">${i + 1}</span>${w.image ? `<img src="${w.image}" loading="lazy">` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+        <div class="wt-tx"><b data-notr>${esc(w.title)}</b><small data-notr>${[got && w.doneAt ? '✓ ' + TradeReport.dateLabel(w.doneAt) : '', w.client ? '👤 ' + w.client : '', p && p.mk ? p.mk : ''].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div></div>
+      <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : '<b class="none">—</b>'}${q ? `<small>× ${esc(q)} ${esc(t('pcs'))}</small>` : ''}</div>
+      <span class="ck wt-ck" data-tick="${w.id}" title="${esc(t(got ? 'Still want' : 'Got it'))}">${ic('check', got || on ? '#fff' : '#94A3B8', 14, 3)}</span></div>`; }).join('')}
+    ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
+  </div>`;
+}
+function wishCardHtml(w) {
+  const on = wlSel && wlSel.has(w.id);
+  return `<div class="wi ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
+    ${w.image ? `<img class="pic" src="${w.image}" loading="lazy">` : `<div class="pic ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+    <span class="ck" data-tick="${w.id}">${ic('check', w.done || on ? '#fff' : '#94A3B8', 16, 3)}</span>
+    <div class="tx"><div class="tt" data-notr>${esc(w.title)}</div>${w.client ? `<div class="cl">${ic('user', '#94A3B8', 11, 2.4)}<span class="ellipsis" data-notr>${esc(w.client)}</span></div>` : ''}${wishCardPrice(w)}</div></div>`;
+}
+function drawWishes(still) { // still: redraw without the entrance animation (while choosing items)
   const el = document.getElementById('wlList'); if (!el) return;
-  const list = wishes.all().filter(w => wishTab === 'got' ? w.done : !w.done).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const got = wishTab === 'got';
+  const list = wishes.all().filter(w => (got ? w.done : !w.done) && (!wishGroup || wishGroupOf(w) === wishGroup))
+    .sort(got ? (a, b) => (b.doneAt || 0) - (a.doneAt || 0) : (a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const bar = wlSel ? `<div class="wl-selbar"><span>${esc(wlSel.size ? t('{n} chosen', { n: wlSel.size }) : wlSel.target ? t('Tap the items for {g}', { g: wlSel.target }) : t('Tap the items for the group'))}</span>
+      <button class="btn sm" id="wsNo">${esc(t('Cancel'))}</button><button class="btn sm primary" id="wsGo" ${wlSel.size ? '' : 'disabled'}>${ic('folder', '#fff', 15, 2.4)}${esc(wlSel.target ? t('Done') : t('Put in a group'))}</button></div>` : '';
   if (!list.length) {
-    el.innerHTML = `<div class="wl2-empty"><div class="big">${ic('heart', '#fff', 38, 2)}</div>
-      <div class="empty-title">${esc(t(wishTab === 'got' ? 'Nothing ticked yet' : 'Your wishlist is empty'))}</div>
-      <div class="muted">${esc(t(wishTab === 'got' ? 'When you get something, tap its circle and it moves here.' : 'Type anything you like above, or tap the camera to add it with a photo.'))}</div></div>`;
+    el.classList.remove('wl-tbl-on');
+    el.innerHTML = `<div class="wl2-empty"><div class="big">${ic(wishGroup ? 'folder' : 'heart', '#fff', 38, 2)}</div>
+      <div class="empty-title">${esc(wishGroup ? t('No items in {g} yet', { g: wishGroup }) : t(got ? 'Nothing ticked yet' : 'Your wishlist is empty'))}</div>
+      <div class="muted">${esc(wishGroup ? t('Type an item above to add it to this group.') : t(got ? 'When you get something, tap its circle and it moves here.' : 'Type anything you like above, or tap the camera to add it with a photo.'))}</div></div>`;
+    bindSelBar(bar);
     return;
   }
-  // "Got it": one row per item, like a table — photo, item (and client), cheapest price × pieces, when you got it
-  el.classList.toggle('wl-tbl-on', wishTab === 'got');
-  if (wishTab === 'got') {
-    list.sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
-    const priceOf = w => { const c = wishCheapest(w); return c ? { cur: c.currency || '¥', v: Number(c.price), mk: c.market } : Number(w.price) > 0 ? { cur: w.currency || '¥', v: Number(w.price) } : null; };
-    const tot = new Map();
-    list.forEach(w => { const p = priceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0; if (p && q) tot.set(p.cur, (tot.get(p.cur) || 0) + p.v * q); });
-    el.innerHTML = `<div class="wl-tbl">
-      <div class="wt-h"><span>${esc(t('Item'))}</span><span>${esc(t('Price'))}</span><span></span></div>
-      ${list.map((w, i) => { const p = priceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0; return `<div class="wt-r wi done" data-wid="${w.id}">
-        <div class="wt-it"><span class="wt-n">${i + 1}</span>${w.image ? `<img src="${w.image}" loading="lazy">` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
-          <div class="wt-tx"><b data-notr>${esc(w.title)}</b><small data-notr>${[w.doneAt ? '✓ ' + TradeReport.dateLabel(w.doneAt) : '', w.client ? '👤 ' + w.client : '', p && p.mk ? p.mk : ''].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div></div>
-        <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : '<b class="none">—</b>'}${q ? `<small>× ${esc(q)} ${esc(t('pcs'))}</small>` : ''}</div>
-        <span class="ck wt-ck" data-tick="${w.id}" title="${esc(t('Still want'))}">${ic('check', '#fff', 14, 3)}</span></div>`; }).join('')}
-      ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
-    </div>`;
-  } else
-  el.innerHTML = list.map(w => `<div class="wi ${w.done ? 'done' : ''}" data-wid="${w.id}">
-      ${w.image ? `<img class="pic" src="${w.image}" loading="lazy">` : `<div class="pic ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
-      <span class="ck" data-tick="${w.id}">${ic('check', w.done ? '#fff' : '#94A3B8', 16, 3)}</span>
-      <div class="tx"><div class="tt" data-notr>${esc(w.title)}</div>${w.client ? `<div class="cl">${ic('user', '#94A3B8', 11, 2.4)}<span class="ellipsis" data-notr>${esc(w.client)}</span></div>` : ''}${wishCardPrice(w)}</div></div>`).join('');
-  stagger(el);
-  el.querySelectorAll('.wi').forEach(c => c.onclick = e => { if (!e.target.closest('[data-tick]')) editWish(c.dataset.wid); });
+  // In "All" with groups made: one section per group (items with no group last)
+  const groups = wishGroup ? [] : wishGroups();
+  const sections = groups.length
+    ? [...groups.map(g => [g, list.filter(w => wishGroupOf(w) === g)]), ['', list.filter(w => !wishGroupOf(w))]].filter(s => s[1].length)
+    : [[undefined, list]];
+  const table = got || wishView === 'list';
+  el.classList.toggle('wl-tbl-on', table);
+  el.innerHTML = (table
+    ? sections.map(([g, l]) => wishTableHtml(l, g)).join('')
+    : sections.map(([g, l]) => (g != null ? `<div class="wl-sec">${ic(g ? 'folder' : 'heart', B(), 15, 2.4)}<b data-notr>${esc(g || t('No group'))}</b><small>${l.length}</small></div>` : '') + l.map(wishCardHtml).join('')).join(''));
+  if (!still) stagger(el); else el.classList.remove('stagger');
+  const pickOne = c => { const id = c.dataset.wid; wlSel.has(id) ? wlSel.delete(id) : wlSel.add(id); drawWishes(true); };
+  el.querySelectorAll('.wi').forEach(c => c.onclick = e => { if (wlSel) return pickOne(c); if (!e.target.closest('[data-tick]')) editWish(c.dataset.wid); });
   el.querySelectorAll('[data-tick]').forEach(b => b.onclick = async e => {
     e.stopPropagation();
+    if (wlSel) return pickOne(b.closest('.wi'));
     const w = wishes.get(b.dataset.tick); if (!w) return;
     const card = b.closest('.wi'); card.classList.add('pop'); card.classList.toggle('done', !w.done);
     b.innerHTML = ic('check', !w.done ? '#fff' : '#94A3B8', 16, 3);
@@ -5301,6 +5438,15 @@ function drawWishes() {
     setTimeout(() => card.classList.add('bye'), 380);
     setTimeout(() => renderWishlist(), 700);
   });
+  bindSelBar(bar);
+}
+// The "choose items" bar sits above the tab bar (in #tabbar, so it stays in the phone frame and goes when the page changes)
+function bindSelBar(bar) {
+  const old = $tabbar.querySelector('.wl-selbar'); if (old) old.remove();
+  if (bar) $tabbar.insertAdjacentHTML('beforeend', bar);
+  const ls = document.getElementById('wlList'); if (ls) ls.classList.toggle('wl-selpad', !!bar);
+  const no = document.getElementById('wsNo'); if (no) no.onclick = () => { if (wlSel && wlSel.target) wlNewGroups = wlNewGroups.filter(x => x !== wlSel.target); wlSel = null; renderWishlist(); };
+  const go = document.getElementById('wsGo'); if (go) go.onclick = () => moveWishesToGroup();
 }
 // Editor with two tabs:
 //  Item   — the item and its photo; "More" opens the client's name, how many pieces are needed and a big box for anything else.
@@ -5312,11 +5458,12 @@ function editWish(id, tab) {
   const old = id ? wishes.get(id) : null;
   const w = Object.assign({ title: '', client: '', qty: '', note: '', price: '', currency: '¥', priority: 2, image: '', link: '', prices: [], done: false }, old ? JSON.parse(JSON.stringify(old)) : {});
   if (!Array.isArray(w.prices)) w.prices = [];
-  let more = !!(w.client || w.note || Number(w.qty) > 0), view = tab === 'prices' ? 'prices' : 'item';
+  if (!old && wishGroup) w.group = wishGroup;
+  let more = !!(w.client || w.note || Number(w.qty) > 0 || w.group), view = tab === 'prices' ? 'prices' : 'item';
   let pf = { market: '', area: '', contact: '', price: '', currency: (w.prices[w.prices.length - 1] || {}).currency || w.currency || '¥' }; // the "add a price" form
   const $ = k => document.getElementById(k);
   const keep = () => {
-    if ($('weTitle')) { w.title = $('weTitle').value; w.client = $('weClient').value; w.note = $('weNote').value; w.qty = $('weQty').value; }
+    if ($('weTitle')) { w.title = $('weTitle').value; w.group = $('weGroup').value; w.client = $('weClient').value; w.note = $('weNote').value; w.qty = $('weQty').value; }
     if ($('pfMarket')) pf = { market: $('pfMarket').value, area: $('pfArea').value, contact: $('pfContact').value, price: $('pfPrice').value, currency: $('pfCur').value };
   };
   // Prices are kept at once on a wish that already exists, so none is lost if the sheet is closed without Save
@@ -5360,6 +5507,8 @@ function editWish(id, tab) {
       </div>
       <button class="we-more" id="weMore" type="button">${esc(t(more ? 'Less' : 'More'))}${ic('down', B(), 15, 2.6)}</button>
       <div class="we-x"><div><div class="in">
+        <div class="field"><div class="label">${esc(t('Group'))}</div><input class="input" id="weGroup" list="weGroups" value="${esc(w.group || '')}" maxlength="40" autocomplete="off" placeholder="${esc(t('e.g. Phones'))}">
+          <datalist id="weGroups">${wishGroups().map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>
         <div class="field"><div class="label">${esc(t('Client name'))}</div><input class="input" id="weClient" value="${esc(w.client)}" maxlength="80" autocomplete="off" placeholder="${esc(t('Who is it for?'))}"></div>
         <div class="field"><div class="label">${esc(t('Pieces needed'))}</div><div class="joined"><input class="input" id="weQty" inputmode="numeric" value="${esc(w.qty)}" placeholder="${esc(t('How many pieces?'))}"><span class="addon" style="display:flex;align-items:center;padding:0 14px">${esc(t('pcs'))}</span></div></div>
         <div class="field"><div class="label">${esc(t('Other information'))}</div><textarea class="input textarea big" id="weNote" rows="6" maxlength="3000" placeholder="${esc(t('Colour, size, when it is needed…'))}">${esc(w.note)}</textarea></div>
@@ -5382,6 +5531,7 @@ function editWish(id, tab) {
       const rec = Object.assign({}, old || {}, w, { id: old ? old.id : newWishId(), title, client: norm(w.client || ''), note: String(w.note || '').trim(), link: String(w.link || '').trim(),
         qty: Number(w.qty) > 0 ? String(Math.round(Number(w.qty))) : '', price: cheap ? String(Number(cheap.price)) : (old && !(old.prices || []).length ? old.price || '' : ''),
         currency: cheap ? cheap.currency || '¥' : w.currency, createdAt: old ? old.createdAt : Date.now() });
+      rec.group = norm(w.group || '').slice(0, 40); if (!rec.group) delete rec.group; else wlNewGroups = wlNewGroups.filter(x => x !== rec.group);
       await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); renderWishlist();
     };
     if (view === 'prices') {
