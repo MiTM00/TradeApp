@@ -1004,7 +1004,14 @@
   .wt-g { display:flex; align-items:center; gap:7px; font-size:14px; font-weight:900; color:var(--ink); }
   .wt-g small { font-size:11px; font-weight:800; color:var(--ink-3); background:var(--soft); border-radius:999px; padding:1px 7px; }
   .wt-g { padding:11px 12px 9px; }
-  .wl-tbl + .wl-tbl { margin-top:14px; }
+  .wl-tbl + .wl-tbl, .wl-cards + .wl-tbl { margin-top:14px; }
+  .wl-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .wi-pn { position:absolute; left:9px; top:9px; display:flex; align-items:center; gap:3px; height:22px; padding:0 7px; border-radius:999px; background:rgba(15,23,42,.6); color:#fff; font-size:11px; }
+  /* one search box for the whole Wishlist */
+  .wl-q { display:flex; align-items:center; gap:8px; margin:0 16px 12px; padding:0 12px; height:42px; border-radius:14px; background:var(--card); box-shadow:var(--shadow); }
+  .wl-q input { flex:1; min-width:0; height:100%; border:0; outline:0; background:none; font-size:16px; font-family:inherit; color:var(--ink); }
+  .wl-q input::-webkit-search-cancel-button { display:none; }
+  .wl-q .qx { width:24px; height:24px; border-radius:50%; background:var(--soft); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; } .wl-q .qx[hidden] { display:none; }
   .wi.sel { box-shadow:0 0 0 3px var(--brand), var(--shadow); } .wi.sel .ck { background:var(--brand); }
   .wl-tbl .wt-r.sel { background:var(--mint); } .wl-tbl .wt-r.sel .wt-ck { background:var(--brand); }
   .wl-tbl .wt-r:not(.done):not(.sel) .wt-ck { background:var(--card); border:2px solid #CBD5E1; box-sizing:border-box; }
@@ -5480,6 +5487,7 @@ function renderWishlist() {
         <input id="wlNew" placeholder="${esc(wishGroup ? t('Add to {g}…', { g: wishGroup }) : t('Item you want…'))}" maxlength="120" enterkeyhint="done">
         <span class="go" id="wlGo">${ic('plus', '#fff', 20, 2.8)}</span></div>
     </div>
+    ${all.length ? `<div class="wl-q">${ic('search', '#94A3B8', 17, 2.4)}<input id="wlQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="${esc(t('Search the wishlist…'))}" value="${esc(wlQ)}"><span class="qx tap" id="wlQx" ${wlQ ? '' : 'hidden'}>${ic('x', '#64748B', 11, 3)}</span></div>` : ''}
     <div class="wl-gr" id="wlGroups">
       <span class="wg ${wishGroup ? '' : 'on'}" data-g="">${esc(t('All'))}</span>
       ${groups.map(g => `<span class="wg ${wishGroup === g ? 'on' : ''}" data-g="${esc(g)}" data-notr>${ic('folder', wishGroup === g ? '#fff' : B(), 13, 2.4)}${esc(g)}<b>${cnt(g)}</b>${wishGroup === g ? ic('edit', '#fff', 12, 2.4) : ''}</span>`).join('')}
@@ -5519,6 +5527,13 @@ function renderWishlist() {
     renderWishlist(); const i2 = document.getElementById('wlNew'); if (i2 && !i2.value) i2.focus();
   };
   document.querySelectorAll('#wlTabs span').forEach(el => el.onclick = () => { wishTab = el.dataset.w; renderWishlist(); });
+  const sq = document.getElementById('wlQ');
+  if (sq) {
+    const qx = document.getElementById('wlQx');
+    sq.oninput = () => { wlQ = sq.value; qx.hidden = !wlQ; drawWishes(true); }; // only the list redraws, so the keyboard stays open
+    sq.onkeydown = e => { if (e.key === 'Enter') sq.blur(); };
+    qx.onclick = () => { wlQ = ''; sq.value = ''; qx.hidden = true; drawWishes(true); sq.focus(); };
+  }
   document.querySelectorAll('#wlGroups [data-g]').forEach(el => el.onclick = () => {
     const g = el.dataset.g;
     if (g && g === wishGroup) return editWishGroup(g); // tap the open group again: rename or remove it
@@ -5611,13 +5626,35 @@ function wishTableHtml(list, title) {
     ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
   </div>`;
 }
+// A photo card: how a "Still want" wish with no group is shown
+function wishCardHtml(w) {
+  const on = wlSel && wlSel.has(w.id), pics = wishPics(w);
+  return `<div class="wi ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
+    ${pics.length ? `<img class="pic" src="${pics[0]}" loading="lazy">${pics.length > 1 ? `<b class="wi-pn">${ic('image', '#fff', 11, 2.4)}${pics.length}</b>` : ''}` : `<div class="pic ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
+    <span class="ck" data-tick="${w.id}">${ic('check', w.done || on ? '#fff' : '#94A3B8', 16, 3)}</span>
+    <div class="tx"><div class="tt" data-notr>${esc(w.title)}</div>${w.client ? `<div class="cl">${ic('user', '#94A3B8', 11, 2.4)}<span class="ellipsis" data-notr>${esc(w.client)}</span></div>` : ''}${wishCardPrice(w)}</div></div>`;
+}
+// Search: one box for the whole Wishlist — item, client, group, note, market, region, phone / WeChat
+let wlQ = '';
+const wishMatch = (w, q) => !q || [w.title, w.client, w.group, w.note, w.link, ...(w.prices || []).flatMap(p => [p.market, p.area, p.contact])]
+  .filter(Boolean).join(' ').toLowerCase().includes(q);
 function drawWishes(still) { // still: redraw without the entrance animation (while choosing items)
   const el = document.getElementById('wlList'); if (!el) return;
-  const got = wishTab === 'got';
-  const list = wishes.all().filter(w => (got ? w.done : !w.done) && (!wishGroup || wishGroupOf(w) === wishGroup))
+  const got = wishTab === 'got', q = norm(wlQ).toLowerCase();
+  const list = wishes.all().filter(w => (got ? w.done : !w.done) && (!wishGroup || wishGroupOf(w) === wishGroup) && wishMatch(w, q))
     .sort(got ? (a, b) => (b.doneAt || 0) - (a.doneAt || 0) : (a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const bar = wlSel ? `<div class="wl-selbar"><span>${esc(wlSel.size ? t('{n} chosen', { n: wlSel.size }) : wlSel.target ? t('Tap the items for {g}', { g: wlSel.target }) : t('Tap the items for the group'))}</span>
       <button class="btn sm" id="wsNo">${esc(t('Cancel'))}</button><button class="btn sm primary" id="wsGo" ${wlSel.size ? '' : 'disabled'}>${ic('folder', '#fff', 15, 2.4)}${esc(wlSel.target ? t('Done') : t('Put in a group'))}</button></div>` : '';
+  if (!list.length && q) {
+    // nothing found here: say where the matches are (the other tab / other groups)
+    const elsewhere = wishes.all().filter(w => wishMatch(w, q)).length;
+    el.classList.remove('wl-tbl-on');
+    el.innerHTML = `<div class="wl2-empty"><div class="big">${ic('search', '#fff', 36, 2.2)}</div>
+      <div class="empty-title">${esc(t('Nothing found for “{q}”', { q: wlQ.trim() }))}</div>
+      <div class="muted">${esc(elsewhere ? t('{n} found in the other tab or groups', { n: elsewhere }) : t('Try another word.'))}</div></div>`;
+    bindSelBar(bar);
+    return;
+  }
   if (!list.length) {
     el.classList.remove('wl-tbl-on');
     el.innerHTML = `<div class="wl2-empty"><div class="big">${ic(wishGroup ? 'folder' : 'heart', '#fff', 38, 2)}</div>
@@ -5628,11 +5665,12 @@ function drawWishes(still) { // still: redraw without the entrance animation (wh
   }
   // In "All" with groups made: one section per group (items with no group last)
   const groups = wishGroup ? [] : wishGroups();
-  // Items with no group come first, on their own: narrow rows like "Got it", with no heading. Then one table per group.
+  // Items with no group come first, on their own, with no heading: photo cards in "Still want" (as before),
+  // a plain table in "Got it". Then one table per group.
   const loose = wishGroup ? [] : list.filter(w => !wishGroupOf(w) || !groups.includes(wishGroupOf(w)));
   const sections = wishGroup ? [[undefined, list]] : groups.map(g => [g, list.filter(w => wishGroupOf(w) === g)]).filter(s => s[1].length);
   el.classList.add('wl-tbl-on');
-  el.innerHTML = (loose.length ? wishTableHtml(loose) : '')
+  el.innerHTML = (loose.length ? (got ? wishTableHtml(loose) : `<div class="wl-cards">${loose.map(wishCardHtml).join('')}</div>`) : '')
     + sections.map(([g, l]) => wishTableHtml(l, g)).join('');
   if (!still) stagger(el); else el.classList.remove('stagger');
   const pickOne = c => { const id = c.dataset.wid; wlSel.has(id) ? wlSel.delete(id) : wlSel.add(id); drawWishes(true); };
