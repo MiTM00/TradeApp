@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Trade</title>
 <meta name="theme-color" content="#DC2626">
 <meta name="description" content="Record the products you source: photos, price, MOQ, market and shop.">
@@ -37,7 +37,9 @@
     --ease:cubic-bezier(.2,.8,.2,1);
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { height:100%; }
+  html, body { height:100%; touch-action:manipulation; } /* taps respond at once: no double-tap zoom wait */
+  /* iPhone zooms in on any text box under 16px while typing — keep every one at 16px on touch screens */
+  @media (pointer:coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select { font-size:16px !important; } }
   body { margin:0; background:#D5DEDC; font-family:-apple-system,"SF Pro Text","PingFang SC","Helvetica Neue","Segoe UI",Roboto,sans-serif; color:var(--ink); display:flex; justify-content:center; align-items:flex-start; padding:16px; line-height:1.4; }
   .phone { width:390px; max-width:100%; height:820px; background:var(--bg); border-radius:36px; overflow:hidden; position:relative; box-shadow:0 24px 70px rgba(0,0,0,.25); display:flex; flex-direction:column; transition:background .4s; }
   /* Real phone / installed app: use the whole screen */
@@ -139,7 +141,7 @@
   /* The tray under the card: two round actions that grow with the finger (--p = 0…1), like iOS */
   .sw-acts { position:absolute; inset:0; display:flex; justify-content:flex-end; align-items:center; gap:14px; padding-right:18px; border-radius:var(--radius);
     background:linear-gradient(90deg,transparent 0%,var(--soft) 45%,var(--soft) 100%); opacity:calc(var(--p,0) * 1.4); }
-  .sw-btn { width:60px; padding:0; border:0; background:none; color:var(--ink-2); font:700 11.5px/1.1 inherit; letter-spacing:.1px; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer;
+  .sw-btn { width:60px; padding:0; border:0; background:none; color:var(--ink-2); font-weight:700; font-size:11.5px; line-height:1.1; font-family:inherit; letter-spacing:.1px; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer;
     opacity:var(--p,0); transform:scale(calc(.45 + var(--p,0) * .55)); transition:transform .45s cubic-bezier(.22,1.4,.36,1), opacity .25s; -webkit-tap-highlight-color:transparent; }
   .sw-btn i { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; transition:transform .2s; }
   .sw-btn i::after { content:''; position:absolute; inset:0; border-radius:50%; background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 55%); pointer-events:none; }
@@ -779,7 +781,7 @@
   .pin-k:active { background:rgba(255,255,255,.4); transform:scale(.94); }
   .pin-k.ghost { background:none; font-size:15px; font-weight:600; }
   .lk-acts { margin-top:auto; display:flex; gap:12px; justify-content:center; padding-top:18px; flex-wrap:wrap; }
-  .lk-b { height:44px; padding:0 18px; border-radius:999px; background:rgba(255,255,255,.14); border:.5px solid rgba(255,255,255,.25); color:#fff; font:700 14px inherit; display:inline-flex; align-items:center; gap:8px; cursor:pointer; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  .lk-b { height:44px; padding:0 18px; border-radius:999px; background:rgba(255,255,255,.14); border:.5px solid rgba(255,255,255,.25); color:#fff; font-weight:700; font-size:14px; font-family:inherit; display:inline-flex; align-items:center; gap:8px; cursor:pointer; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
   .lk-b:active { transform:scale(.96); }
   .lk-b.main { background:#fff; color:#0F172A; }
   .lk-steps { display:flex; gap:6px; margin-top:16px; } .lk-steps i { width:22px; height:4px; border-radius:4px; background:rgba(255,255,255,.25); transition:all .3s; } .lk-steps i.on { width:34px; background:#fff; }
@@ -843,7 +845,7 @@
   .wl2-h .hb { width:38px; height:38px; border-radius:13px; background:linear-gradient(140deg,#FB7185,#E11D48); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(225,29,72,.35); }
   .wl2-s { color:var(--ink-2); font-size:13px; margin:4px 0 0 2px; }
   .wl2-add { display:flex; align-items:center; gap:8px; margin:14px 0 12px; padding:6px 6px 6px 16px; border-radius:18px; background:var(--card); box-shadow:var(--shadow); }
-  .wl2-add input { flex:1; min-width:0; border:0; outline:0; background:none; font:600 15px inherit; color:var(--ink); height:40px; }
+  .wl2-add input { flex:1; min-width:0; border:0; outline:0; background:none; font-weight:600; font-size:15px; font-family:inherit; color:var(--ink); height:40px; }
   .wl2-add .go { width:42px; height:42px; border-radius:14px; background:linear-gradient(140deg,#FB7185,#E11D48); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .2s cubic-bezier(.22,1.4,.36,1); box-shadow:0 6px 16px rgba(225,29,72,.35); }
   .wl2-add .go:active { transform:scale(.9); } .wl2-add .cam { width:42px; height:42px; border-radius:14px; background:var(--soft); display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .wl2-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:4px 16px calc(110px + var(--safe-bottom, 0px)); }
@@ -865,7 +867,7 @@
   .wt-a.wt-out { background:#64748B; } .wt-a.wt-del { background:#E11D48; }
   /* a new row straight in the table */
   .wt-add { display:flex; align-items:center; gap:8px; padding:7px 8px 7px 8px; border-top:.5px solid var(--line); }
-  .wt-add input { flex:1; min-width:0; height:36px; border:0; outline:0; background:none; font:600 14px inherit; color:var(--ink); }
+  .wt-add input { flex:1; min-width:0; height:36px; border:0; outline:0; background:none; font-weight:600; font-size:14px; font-family:inherit; color:var(--ink); }
   .wt-add .go { width:32px; height:32px; border-radius:10px; flex-shrink:0; background:linear-gradient(140deg,var(--brand-2),var(--brand)); display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .wt-add:focus-within { background:var(--mint); }
   .wl-tbl .wt-r.wi:active:not(.drag):not(.open) { background:var(--mint); }
@@ -903,7 +905,7 @@
   .wi .cl { display:flex; align-items:center; gap:4px; margin-top:3px; font-size:11.5px; font-weight:600; color:var(--ink-2); min-width:0; }
   .we-main { display:flex; gap:12px; align-items:center; }
   .we-main .field { flex:1; min-width:0; margin:0; }
-  .we-more { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; margin:14px 0 4px; height:42px; border:0; border-radius:13px; background:var(--soft); color:var(--ink); font:700 13.5px inherit; cursor:pointer; }
+  .we-more { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; margin:14px 0 4px; height:42px; border:0; border-radius:13px; background:var(--soft); color:var(--ink); font-weight:700; font-size:13.5px; font-family:inherit; cursor:pointer; }
   .we-more .ic { transition:transform .35s cubic-bezier(.22,1.4,.36,1); } .we.open .we-more .ic { transform:rotate(180deg); }
   .we-x { display:grid; grid-template-rows:0fr; transition:grid-template-rows .4s cubic-bezier(.32,.72,0,1), opacity .3s; opacity:0; }
   .we.open .we-x { grid-template-rows:1fr; opacity:1; }
@@ -5258,6 +5260,7 @@ const wishGroupOf = w => norm(w.group || '');
 const wishGroups = () => [...new Set([...DB.wishes.map(wishGroupOf), ...wlNewGroups].filter(Boolean))].sort((a, b) => a.localeCompare(b));
 // Wishlist: one line to add, groups, a photo grid or a list (table); tap the circle when you got it
 function renderWishlist() {
+  const again = !!document.getElementById('wlList'), y = $body.scrollTop; // already on the page: redraw at once, no entrance animation, same scroll
   simpleNav(''); tabbar('wishlist');
   const groups = wishGroups();
   if (wishGroup && !groups.includes(wishGroup)) wishGroup = '';
@@ -5322,7 +5325,7 @@ function renderWishlist() {
     toast(t('Group made — now tap the items that go in it'));
   };
   document.getElementById('wlSelB').onclick = () => { wlSel = wlSel ? null : new Set(); renderWishlist(); };
-  drawWishes();
+  drawWishes(again); if (again) $body.scrollTop = y;
 }
 // A group name from the person ('' when cancelled)
 async function askGroupName(value) {
