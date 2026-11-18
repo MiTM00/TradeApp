@@ -1006,6 +1006,19 @@
   .wt-g { padding:11px 12px 9px; }
   .wl-tbl + .wl-tbl, .wl-cards + .wl-tbl { margin-top:14px; }
   .wl-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  /* client drop-down on a wish */
+  .cp-in { position:relative; } .cp-in .input { padding-left:40px; padding-right:42px; }
+  .cp-ic { position:absolute; left:13px; top:50%; transform:translateY(-50%); display:flex; pointer-events:none; }
+  .cp-dd { position:absolute; right:6px; top:50%; transform:translateY(-50%); width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .cp-dd .ic { transition:transform .25s; } .cp.open .cp-dd .ic { transform:rotate(180deg); }
+  .cp-list { margin-top:6px; max-height:240px; overflow-y:auto; border-radius:14px; background:var(--card); border:1px solid var(--line); box-shadow:0 10px 26px rgba(15,23,42,.14); padding:4px; animation:fade .18s; }
+  .cp-it { display:flex; align-items:center; gap:10px; padding:8px; border-radius:11px; cursor:pointer; min-height:44px; }
+  .cp-it:active, .cp-it.on { background:var(--mint); }
+  .cp-a { width:30px; height:30px; border-radius:10px; flex-shrink:0; color:#fff; font-weight:900; font-size:13px; display:flex; align-items:center; justify-content:center; background:linear-gradient(145deg,hsl(var(--h) 75% 62%),hsl(calc(var(--h) + 45) 70% 48%)); }
+  .cp-t { flex:1; min-width:0; } .cp-t b { display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .cp-t small { display:block; font-size:11.5px; color:var(--ink-3); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cp-it.new { color:var(--brand); } .cp-it.new b { font-size:13.5px; }
+  .cp-it.clr { color:var(--ink-3); font-size:13px; font-weight:700; border-top:.5px solid var(--line); border-radius:0 0 11px 11px; }
+  .cp-none { padding:12px; font-size:12.5px; color:var(--ink-3); text-align:center; }
   .wi-pn { position:absolute; left:9px; top:9px; display:flex; align-items:center; gap:3px; height:22px; padding:0 7px; border-radius:999px; background:rgba(15,23,42,.6); color:#fff; font-size:11px; }
   /* one search box for the whole Wishlist */
   .wl-q { display:flex; align-items:center; gap:8px; margin:0 16px 12px; padding:0 12px; height:42px; border-radius:14px; background:var(--card); box-shadow:var(--shadow); }
@@ -5826,7 +5839,9 @@ function editWish(id, tab) {
       <div class="we-x"><div><div class="in">
         <div class="field"><div class="label">${esc(t('Group'))}</div><input class="input" id="weGroup" list="weGroups" value="${esc(w.group || '')}" maxlength="40" autocomplete="off" placeholder="${esc(t('e.g. Phones'))}">
           <datalist id="weGroups">${wishGroups().map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>
-        <div class="field"><div class="label">${esc(t('Client name'))}</div><input class="input" id="weClient" list="weClients" value="${esc(w.client)}" maxlength="80" autocomplete="off" placeholder="${esc(t('Who is it for?'))}"><datalist id="weClients">${clients.all().map(c => `<option value="${esc(c.name)}">`).join('')}</datalist></div>
+        <div class="field"><div class="label">${esc(t('Client name'))}</div><div class="cp" id="cp">
+          <div class="cp-in"><span class="cp-ic">${ic('user', B(), 16, 2.4)}</span><input class="input" id="weClient" value="${esc(w.client)}" maxlength="80" autocomplete="off" placeholder="${esc(t('Choose or type a client'))}"><span class="cp-dd tap" id="cpDd">${ic('down', '#64748B', 16, 2.6)}</span></div>
+          <div class="cp-list" id="cpList" hidden></div></div></div>
         <div class="field"><div class="label">${esc(t('Pieces needed'))}</div><div class="joined"><input class="input" id="weQty" inputmode="numeric" value="${esc(w.qty)}" placeholder="${esc(t('How many pieces?'))}"><span class="addon" style="display:flex;align-items:center;padding:0 14px">${esc(t('pcs'))}</span></div></div>
         <div class="field"><div class="label">${esc(t('Other information'))}</div><textarea class="input textarea big" id="weNote" rows="6" maxlength="3000" placeholder="${esc(t('Colour, size, when it is needed…'))}">${esc(w.note)}</textarea></div>
       </div></div></div>
@@ -5903,8 +5918,31 @@ function editWish(id, tab) {
     $('weMore').onclick = () => {
       more = !more; const sh = $('weMore').closest('.we'); sh.classList.toggle('open', more);
       $('weMore').innerHTML = esc(t(more ? 'Less' : 'More')) + ic('down', B(), 15, 2.6);
-      if (more) setTimeout(() => { $('weClient').focus({ preventScroll: true }); sh.scrollTo({ top: sh.scrollHeight, behavior: 'smooth' }); }, 260);
+      if (more) setTimeout(() => sh.scrollTo({ top: sh.scrollHeight, behavior: 'smooth' }), 260);
     };
+    // Client: a drop-down of the registered clients; typing filters it, and a new name can be added as a client
+    const cIn = $('weClient'), cList = $('cpList');
+    const cpDraw = () => {
+      const v = norm(cIn.value), k = v.toLowerCase(), exact = clients.find(v), all = clients.all();
+      const shown = k && !exact ? all.filter(c => [c.name, c.phone, c.wechat, c.place].join(' ').toLowerCase().includes(k)) : all;
+      cList.innerHTML = shown.map(c => `<div class="cp-it ${exact && exact.id === c.id ? 'on' : ''}" data-cn="${esc(c.name)}">
+          <span class="cp-a" style="--h:${hueOf(c.name)}">${esc(c.name.trim().charAt(0).toUpperCase())}</span>
+          <div class="cp-t"><b data-notr>${esc(c.name)}</b>${c.phone || c.wechat || c.place ? `<small data-notr>${esc([c.phone || c.wechat, c.place].filter(Boolean).join(' · '))}</small>` : ''}</div>
+          ${exact && exact.id === c.id ? ic('check', B(), 16, 3) : ''}</div>`).join('')
+        + (v && !exact ? `<div class="cp-it new" data-cnew>${ic('plus', B(), 16, 2.8)}<b>${esc(t('Add “{c}” as a new client', { c: v }))}</b></div>` : '')
+        + (!all.length && !v ? `<div class="cp-none">${esc(t('No clients yet — type a name to add one'))}</div>` : '')
+        + (v ? `<div class="cp-it clr" data-cclr>${ic('x', '#94A3B8', 14, 2.6)}<span>${esc(t('No client'))}</span></div>` : '');
+      cList.querySelectorAll('[data-cn]').forEach(x => x.onpointerdown = e => { e.preventDefault(); cIn.value = x.dataset.cn; cpClose(); });
+      const nw = cList.querySelector('[data-cnew]'); if (nw) nw.onpointerdown = async e => { e.preventDefault(); const c = await clients.ensure(v); cIn.value = c.name; cpClose(); toast(t('Client registered ✓')); };
+      const cl = cList.querySelector('[data-cclr]'); if (cl) cl.onpointerdown = e => { e.preventDefault(); cIn.value = ''; cpDraw(); };
+    };
+    const cpOpen = () => { cpDraw(); cList.hidden = false; $('cp').classList.add('open'); };
+    const cpClose = () => { cList.hidden = true; $('cp').classList.remove('open'); cIn.blur(); w.client = cIn.value; };
+    cIn.onfocus = cpOpen;
+    cIn.oninput = () => { if (cList.hidden) cpOpen(); else cpDraw(); };
+    cIn.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); const first = cList.querySelector('[data-cn], [data-cnew]'); if (first) first.onpointerdown(new Event('pointerdown')); else cpClose(); } else if (e.key === 'Escape') cpClose(); };
+    $('cpDd').onpointerdown = e => { e.preventDefault(); if (cList.hidden) { cIn.focus({ preventScroll: true }); cpOpen(); } else cpClose(); };
+    $('wem').querySelector('.sheet').addEventListener('pointerdown', e => { if (!cList.hidden && !e.target.closest('#cp')) cpClose(); });
     // Photos: tap the big photo or + to add (several at once, up to MAX_IMAGES); tap a small one to make it the main photo
     const addPics = () => { keep(); if (w.images.length >= MAX_IMAGES) return toast(t('Maximum {n} photos', { n: MAX_IMAGES })); $('weFile').click(); };
     $('wePhoto').onclick = () => w.images.length ? photoViewer(w.images, 0) : addPics();
