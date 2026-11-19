@@ -112,7 +112,14 @@
     return x + '</worksheet>'
   }
 
-  function drawingXml(images) {
+  // Pixel size of columns and rows (Excel: width × 7 px at Calibri 11, height in points × 4/3), so every picture also
+  // gets its real x/y on the sheet — viewers like the iPhone's Quick Look place pictures by x/y, not by cell
+  const colPx = w => Math.floor((w == null ? 8.43 : w) * 7 + 0.5)
+  const rowPx = h => Math.round((h || 18) * 4 / 3)
+  function drawingXml(images, sh) {
+    const cols = (sh && sh.cols) || [], rows = (sh && sh.rows) || []
+    const xAt = c => { let x = 0; for (let i = 0; i < c; i++) x += colPx(cols[i]); return x }
+    const yAt = r => { let y = 0; for (let i = 0; i < r; i++) y += rowPx(rows[i] && rows[i].height); return y }
     let x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
       '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
     images.forEach((im, i) => {
@@ -121,13 +128,13 @@
         '<xdr:row>' + im.row + '</xdr:row><xdr:rowOff>' + Math.round((im.dy || 0) * EMU) + '</xdr:rowOff></xdr:from>'
       // inCell: the picture is held by its own cell on both corners (moves and sizes with the cell, sorts and filters with its row)
       x += im.inCell
-        ? '<xdr:twoCellAnchor editAs="twoCell">' + from + '<xdr:to><xdr:col>' + im.col + '</xdr:col><xdr:colOff>' + Math.round(((im.dx || 0) + im.w) * EMU) + '</xdr:colOff>' +
+        ? '<xdr:twoCellAnchor editAs="oneCell">' + from + '<xdr:to><xdr:col>' + im.col + '</xdr:col><xdr:colOff>' + Math.round(((im.dx || 0) + im.w) * EMU) + '</xdr:colOff>' +
           '<xdr:row>' + im.row + '</xdr:row><xdr:rowOff>' + Math.round(((im.dy || 0) + im.h) * EMU) + '</xdr:rowOff></xdr:to>'
         : '<xdr:oneCellAnchor>' + from + '<xdr:ext cx="' + cx + '" cy="' + cy + '"/>'
       x +=
         '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 2) + '" name="Picture ' + (i + 1) + '"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>' +
         '<xdr:blipFill><a:blip r:embed="rId' + (i + 1) + '"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
-        '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 8000"/></a:avLst></a:prstGeom>' +
+        '<xdr:spPr><a:xfrm><a:off x="' + Math.round((xAt(im.col) + (im.dx || 0)) * EMU) + '" y="' + Math.round((yAt(im.row) + (im.dy || 0)) * EMU) + '"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 8000"/></a:avLst></a:prstGeom>' +
         (im.border ? '<a:ln w="9525"><a:solidFill><a:srgbClr val="' + im.border + '"/></a:solidFill></a:ln>' : '') + '</xdr:spPr></xdr:pic>' +
         '<xdr:clientData/></xdr:' + (im.inCell ? 'twoCellAnchor' : 'oneCellAnchor') + '>'
     })
@@ -146,7 +153,8 @@
     const overrides = [
       '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
       '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>',
-      '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>'
+      '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>',
+      '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>'
     ]
     let media = 0, drawings = 0
     const wbRels = []
@@ -166,7 +174,7 @@
           files.push({ name: 'xl/media/image' + m + '.jpeg', data: im.data })
           return { id: 'rId' + (k + 1), type: 'image', target: '../media/image' + m + '.jpeg' }
         })
-        files.push({ name: 'xl/drawings/drawing' + d + '.xml', data: drawingXml(imgs) })
+        files.push({ name: 'xl/drawings/drawing' + d + '.xml', data: drawingXml(imgs, sh) })
         files.push({ name: 'xl/drawings/_rels/drawing' + d + '.xml.rels', data: rels(imgRels) })
       }
     })
@@ -181,7 +189,12 @@
     })
     files.push({ name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="' + REL_NS + '">' +
       '<Relationship Id="rId1" Type="' + DOC_NS + '/officeDocument" Target="xl/workbook.xml"/>' +
-      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>' })
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' +
+      '<Relationship Id="rId3" Type="' + DOC_NS + '/extended-properties" Target="docProps/app.xml"/></Relationships>' })
+    files.push({ name: 'docProps/app.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">' +
+      '<Application>Microsoft Excel</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop>' +
+      '<TitlesOfParts><vt:vector size="' + sheets.length + '" baseType="lpstr">' + sheets.map(sh => '<vt:lpstr>' + esc(sh.name.slice(0, 31)) + '</vt:lpstr>').join('') + '</vt:vector></TitlesOfParts>' +
+      '<AppVersion>16.0300</AppVersion></Properties>' })
     const iso = new Date().toISOString().replace(/\.\d+Z$/, 'Z')
     files.push({ name: 'docProps/core.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
       '<dc:title>' + esc((meta && meta.title) || 'Report') + '</dc:title><dc:creator>Trade</dc:creator>' +

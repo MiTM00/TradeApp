@@ -915,7 +915,7 @@
         if (c.t === 'photo') {
           const jpg = r.photo ? await thumbnail(env, load, r.photo) : null
           // centred inside its own cell: column width in px = width × 7 + 5, row height in px = points × 4/3
-          if (jpg) { const cw = Math.floor((c.w || 16) * 7 + 5), rh = Math.round(PHOTO_ROW * 4 / 3), S = Math.min(cw, rh) - 12
+          if (jpg) { const cw = Math.floor((c.w || 16) * 7 + 0.5), rh = Math.round(PHOTO_ROW * 4 / 3), S = Math.min(cw, rh) - 12
             images.push({ row: at, col: ci + 1, data: jpg, w: S, h: S, dx: Math.floor((cw - S) / 2), dy: Math.floor((rh - S) / 2), inCell: true }) }
           cells.push({ v: '', s: z(i) })
         } else if (c.t === 'money') {
