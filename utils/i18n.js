@@ -1042,7 +1042,14 @@
     ['{n} prices', '{n} qiime', '{n} 个价格'],
     ['Preparing the report', 'Warbixinta ayaa la diyaarinayaa', '正在准备报告'],
     ['Could not make the report: {e}', 'Warbixinta lama samayn karin: {e}', '无法生成报告：{e}'],
-    ['Printing is not available here — send it by email and print from there', 'Halkan lagama daabici karo — email ku dir oo halkaas ka daabac', '这里无法打印 — 请用邮件发送后再打印']
+    ['Printing is not available here — send it by email and print from there', 'Halkan lagama daabici karo — email ku dir oo halkaas ka daabac', '这里无法打印 — 请用邮件发送后再打印'],
+    ['Min qty', 'Tirada ugu yar', '起订量'],
+    ['Excel or PDF', 'Excel ama PDF', 'Excel 或 PDF'],
+    ['Excel, PDF or email', 'Excel, PDF ama email', 'Excel、PDF 或邮件'],
+    ['Every report can be saved as Excel or PDF, or sent by email.', 'Warbixin kasta waxaa loo kaydin karaa Excel ama PDF, ama email ayaa loo diri karaa.', '每个报告都可以保存为 Excel 或 PDF，或通过邮件发送。'],
+    ['Save it as Excel or PDF, or send it by email', 'U kaydi Excel ama PDF, ama email ku dir', '保存为 Excel 或 PDF，或通过邮件发送'],
+    ['Saved: {file}', 'Waa la kaydiyay: {file}', '已保存：{file}'],
+    ['Value', 'Qiimaha guud', '总价']
   ]
 
   const DICT = { so: {}, zh: {} }

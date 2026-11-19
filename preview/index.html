@@ -2704,8 +2704,8 @@ function drawOverview(el, s) {
   const maxP = Math.max(1, ...s.markets.map(m => m.products.length));
   el.innerHTML = `
     <div class="exone tap" id="exAll">
-      <span class="exo-ic">${ic('print', '#fff', 20, 2.2)}</span>
-      <div style="flex:1;min-width:0"><b>${esc(t('Product report'))}</b><span>${esc(t('Print or email'))}</span></div>
+      <span class="exo-ic">${ic('sheet', '#fff', 20, 2.2)}</span>
+      <div style="flex:1;min-width:0"><b>${esc(t('Product report'))}</b><span>${esc(t('Excel, PDF or email'))}</span></div>
       ${repFmt()}
     </div>
     <div class="card">
@@ -2757,7 +2757,7 @@ function drawPeriods(el, kind) {
             <div style="flex:1;min-width:0"><div class="mini-name ellipsis" data-notr>${esc(x.name)}</div><div class="mini-sub ellipsis" data-notr>${esc(whereOf(x))}</div></div>
             <div class="mini-price">${money(x.currency, x.price)}<div class="mini-sub">MOQ ${esc(x.minOrder)} ${esc(x.unit)}</div></div></div>`).join('')}
           <div class="row-btns">
-            <button class="btn sm soft" data-ex="1">${ic('print', B(), 15, 2.2)}${esc(t('Report'))}</button>
+            <button class="btn sm soft" data-ex="1">${ic('sheet', B(), 15, 2.2)}${esc(t('Report'))}</button>
           </div>
         </div></div></div>
       </div>`).join('')}</div>`;
@@ -2820,7 +2820,7 @@ async function drawDuplicates(el) {
   el.innerHTML = `<div class="card">
       <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('similar', B(), 16)}</div>${esc(t('Duplicates'))}</div><span class="hint">${plural(groups.length, 'group')}</span></div>
       <div class="hint" style="line-height:1.5;margin:-4px 0 6px">${esc(t('The same item registered more than once (same name and photo). Each group is compared side by side: green = the same, orange = different.'))}</div>
-      ${groups.length ? `<div class="row-btns"><button class="btn sm primary" id="dupEx">${ic('print', '#fff', 15, 2.2)}${esc(t('Comparison report'))}</button></div>` : ''}
+      ${groups.length ? `<div class="row-btns"><button class="btn sm primary" id="dupEx">${ic('sheet', '#fff', 15, 2.2)}${esc(t('Comparison report'))}</button></div>` : ''}
     </div>
     <div id="dlist">${groups.length ? groups.map((g, gi) => `<div class="card">
       <div class="card-head" style="margin-bottom:2px"><div style="min-width:0"><div class="p-title ellipsis" data-notr>${esc(g.name)}</div>
@@ -2849,7 +2849,7 @@ async function drawSimilar(el) {
       <div class="hint" style="line-height:1.5;margin:-4px 0 10px">Products that look the same — by name or by photo — from different shops, so you can compare prices. The cheapest is marked.</div>
       <div class="modes">${modeBtn('both', 'Name + photo')}${modeBtn('name', 'Same name')}${modeBtn('photo', 'Same look')}</div>
       ${groups.length ? `<div class="row-btns" style="margin-top:4px">
-        <button class="btn sm primary" id="simEx">${ic('print', '#fff', 15, 2.2)}${esc(t('Price comparison report'))}</button></div>` : ''}
+        <button class="btn sm primary" id="simEx">${ic('sheet', '#fff', 15, 2.2)}${esc(t('Price comparison report'))}</button></div>` : ''}
     </div>
     <div id="glist">${groups.length ? groups.map((g, gi) => {
       const best = new Set(g.prices.map(c => c.cheapest));
@@ -2900,6 +2900,12 @@ const PRODUCT_COLS = () => [{ k: 'name', h: t('Product'), w: 2.7 }, { k: 'photo'
   { k: 'price', h: t('Price'), w: 1.5, al: 'right' }, { k: 'moq', h: t('MOQ'), w: 1, al: 'right' }, { k: 'value', h: t('Value at MOQ'), w: 2, al: 'right' }];
 const WISH_COLS = () => [{ k: 'name', h: t('Item'), w: 3 }, { k: 'photo', h: t('Photo') }, { k: 'clients', h: t('Clients'), w: 2.2 },
   { k: 'qty', h: t('Pieces'), w: 1, al: 'right' }, { k: 'price', h: t('Best price'), w: 1.9, al: 'right' }, { k: 'status', h: t('Status'), w: 1.5 }];
+// Excel: one column per detail (numbers stay numbers)
+const PRODUCT_XCOLS = () => [{ h: t('Product'), w: 30, t: 'name' }, { h: t('Photo'), w: 14, t: 'photo' }, { h: t('Description'), w: 30, t: 'text' }, { h: t('Size'), w: 14, t: 'text' },
+  { h: t('Market'), w: 20, t: 'text' }, { h: t('Shop'), w: 20, t: 'text' }, { h: t('WeChat'), w: 14, t: 'text' }, { h: t('Min qty'), w: 11, t: 'int' }, { h: t('Unit'), w: 9, t: 'text' },
+  { h: t('Price'), w: 13, t: 'money' }, { h: t('Value at MOQ'), w: 15, t: 'money', strong: false }, { h: t('Date registered'), w: 15, t: 'date' }];
+const WISH_XCOLS = () => [{ h: t('Item'), w: 30, t: 'name' }, { h: t('Photo'), w: 14, t: 'photo' }, { h: t('Note'), w: 28, t: 'text' }, { h: t('Clients'), w: 22, t: 'text' },
+  { h: t('Pieces'), w: 10, t: 'int' }, { h: t('Best price'), w: 13, t: 'money' }, { h: t('Market'), w: 20, t: 'text' }, { h: t('Total'), w: 15, t: 'money', strong: false }, { h: t('Status'), w: 13, t: 'status' }];
 const curOf = c => c && c !== 'undefined' ? c : '';
 const curTotals = m => [...m].map(([c, v]) => curOf(c) + TradeReport.money(v));
 const totalsTxt = ts => ts.map(x => curOf(x.currency) + TradeReport.money(x.value)).join(' · ');
@@ -2907,6 +2913,9 @@ function productRow(p, best) {
   const reg = TradeReport.registeredAt(p), unit = t(p.unit || 'pcs');
   return { name: p.name || '—', sub: [String(p.description || '').replace(/\s+/g, ' ').trim(), p.size ? t('Size {x}', { x: p.size }) : ''].filter(Boolean).join(' · '),
     photo: (p.images || [])[0] || '', photos: (p.images || []).length, best: !!best,
+    x: [p.name || '—', '', String(p.description || '').replace(/\s+/g, ' ').trim(), p.size || '', p.marketName || '', p.shopName || '',
+      p.shopWechat === 'yes' ? (p.wechatId || t('Yes')) : '', Number(p.minOrder) || 0, unit,
+      { v: Number(p.price) || 0, cur: curOf(p.currency) }, { v: (Number(p.price) || 0) * (Number(p.minOrder) || 0), cur: curOf(p.currency) }, reg || 0],
     cells: {
       where: { main: p.marketName || t('No market'), muted: !p.marketName, sub: [p.shopName, p.shopWechat === 'yes' && p.wechatId ? 'WeChat ' + p.wechatId : ''].filter(Boolean).join(' · ') },
       price: { main: curOf(p.currency) + TradeReport.money(p.price), sub: t('per {unit}', { unit }), price: true },
@@ -2920,7 +2929,7 @@ function productSpec(list, opts, label) {
   const secs = opts.sections || s.markets.map(m => ({ name: m.name === TradeReport.NO_MARKET ? t('No market') : m.name, sub: plural(m.products.length, 'product') + ' · ' + plural(m.shops.length, 'shop'), total: totalsTxt(m.totals), products: m.products }));
   const totals = s.totals.map(x => curOf(x.currency) + TradeReport.money(x.value));
   const title = opts.title || label || t('Product report');
-  return { kind: 'products', title, kicker: opts.kicker || t('Product report'), date: TradeReport.stamp(Date.now()), cols: PRODUCT_COLS(),
+  return { kind: 'products', title, kicker: opts.kicker || t('Product report'), date: TradeReport.stamp(Date.now()), cols: PRODUCT_COLS(), xcols: PRODUCT_XCOLS(),
     kpis: [[t('Products'), s.count], [t('Markets'), s.marketCount], [t('Shops'), s.shopCount], [t('Photos'), s.photoCount]],
     totalsLabel: t('Total value at minimum order'), totals,
     sections: secs.map(g => ({ name: g.name, sub: g.sub, total: g.total, rows: g.products.map(p => productRow(p, g.best && g.best.indexOf(p) >= 0)) })),
@@ -2930,6 +2939,8 @@ function productSpec(list, opts, label) {
 function wishRow(w) {
   const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, n = (w.prices || []).filter(x => Number(x.price) > 0).length, cs = wishClients(w), pics = wishPics(w);
   return { name: w.title || '—', sub: String(w.note || '').replace(/\s+/g, ' ').trim(), photo: pics[0] || '', photos: pics.length,
+    x: [w.title || '—', '', String(w.note || '').replace(/\s+/g, ' ').trim(), cs.join(', '), q, p ? { v: p.v, cur: p.cur } : null, p && p.mk || '',
+      p && q ? { v: p.v * q, cur: p.cur } : null, { v: t(w.done ? 'Got it' : 'Still want'), ok: !!w.done }],
     cells: {
       clients: cs.length ? { main: cs.join(', ') } : { main: '—', muted: true },
       qty: q ? { main: TradeReport.int(q), sub: t('pcs') } : { main: '—', muted: true },
@@ -2944,7 +2955,7 @@ function wishSpec(list, label) {
   const groups = [...byG.keys()].sort((a, b) => (!a) - (!b) || a.localeCompare(b));
   const cl = new Set(); list.forEach(w => wishClients(w).forEach(c => cl.add(c.toLowerCase())));
   const want = list.filter(w => !w.done).length, totals = curTotals(tot);
-  return { kind: 'wishes', title: label || t('Wishlist report'), kicker: t('Wishlist report'), date: TradeReport.stamp(Date.now()), cols: WISH_COLS(),
+  return { kind: 'wishes', title: label || t('Wishlist report'), kicker: t('Wishlist report'), date: TradeReport.stamp(Date.now()), cols: WISH_COLS(), xcols: WISH_XCOLS(),
     kpis: [[t('Wishes'), list.length], [t('Still want'), want], [t('Got it'), list.length - want], [t('Clients'), cl.size]],
     totalsLabel: t('Total (price × pieces)'), totals,
     sections: groups.map(g => { const ws = byG.get(g), gt = new Map(); ws.forEach(w => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0; if (p && q) gt.set(p.cur, (gt.get(p.cur) || 0) + p.v * q); });
@@ -2989,22 +3000,40 @@ function reportPreview(spec) {
   $overlay.innerHTML = `<div class="rpv" id="rpv">
     <div class="rpv-top"><span class="rpv-x tap" id="rpvX">${ic('x', INK(), 20, 2.6)}</span><div class="rpv-tt"><b data-notr>${esc(spec.title)}</b><span>${esc(t('{n} items', { n: spec.count }))}</span></div></div>
     <div class="rpv-body"><div class="rpv-paper">${reportHtml(spec)}</div></div>
-    <div class="rpv-acts"><button class="btn soft" id="rpvPrint">${ic('print', B(), 18, 2.2)}${esc(t('Print'))}</button><button class="btn primary" id="rpvMail">${ic('mail', '#fff', 18, 2.2)}${esc(t('Send by email'))}</button></div>
+    <div class="rpv-acts"><button class="btn soft rpv-xl" id="rpvXlsx">${ic('sheet', '#16A34A', 18, 2.2)}Excel</button><button class="btn soft rpv-pdf" id="rpvPdf">${ic('pdf', '#E11D48', 18, 2.2)}PDF</button><button class="btn primary" id="rpvMail">${ic('mail', '#fff', 18, 2.2)}${esc(t('Email'))}</button></div>
   </div>`;
   document.getElementById('rpvX').onclick = closeOverlay;
-  document.getElementById('rpvPrint').onclick = () => printReport(spec);
+  document.getElementById('rpvXlsx').onclick = () => exportReport(spec, 'xlsx');
+  document.getElementById('rpvPdf').onclick = () => exportReport(spec, 'pdf');
   document.getElementById('rpvMail').onclick = () => mailReport(spec);
 }
-// Print: only the report goes to the printer (A4); everything else is hidden while printing
-async function printReport(spec) {
-  let root = document.getElementById('printRoot');
-  if (!root) { root = document.createElement('div'); root.id = 'printRoot'; document.body.appendChild(root); }
-  root.innerHTML = reportHtml(spec);
-  await Promise.all([...root.querySelectorAll('img')].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
-  const title = document.title; document.title = spec.fileBase;
-  const done = () => { document.title = title; root.innerHTML = ''; window.removeEventListener('afterprint', done); };
-  window.addEventListener('afterprint', done);
-  try { window.print(); } catch (e) { done(); toast(t('Printing is not available here — send it by email and print from there')); }
+// Export: the report as an Excel table (name, photo, min qty, price…) or a PDF (A4), saved or shared from the phone
+async function exportReport(spec, fmt) {
+  const host = document.createElement('div'); host.className = 'mask';
+  host.innerHTML = `<div class="busy"><div class="spinner"></div><div class="busy-title">${esc(t('Preparing the report'))} · ${fmt === 'xlsx' ? 'Excel' : 'PDF'}</div><div class="bar big"><div class="fill" id="prog" style="width:0%"></div></div><div class="hint" id="progt">0%</div></div>`;
+  $overlay.appendChild(host);
+  const prog = p => { const v = Math.round(p * 100), f = document.getElementById('prog'), x = document.getElementById('progt'); if (f) f.style.width = v + '%'; if (x) x.textContent = v + '%'; };
+  let out, type;
+  try {
+    const sp = Object.assign({ colors: { brand: T().brand, brandDark: T().brandDark } }, spec);
+    if (fmt === 'xlsx') { out = await TradeReport.buildTableExcel(sp, browserEnv(), prog); type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; }
+    else { out = await TradeReport.buildTablePdf(sp, browserEnv(), prog); type = 'application/pdf'; }
+  } catch (e) { console.error(e); host.remove(); return toast(t('Could not make the report: {e}', { e: e.message || e })); }
+  const blob = new Blob([out.bytes], { type }), file = new File([blob], out.fileName, { type });
+  window.__lastExport = { kind: fmt, bytes: out.bytes, name: out.fileName };
+  const share = navigator.canShare && navigator.canShare({ files: [file] }) && /android|iphone|ipad/i.test(navigator.userAgent);
+  if (!share) { host.remove(); saveFile(blob, out.fileName); return toast(t('Saved: {file}', { file: out.fileName })); }
+  // The phone's share sheet needs a fresh tap (Save to Files, WhatsApp, WeChat, AirDrop…)
+  host.innerHTML = `<div class="dialog" onclick="event.stopPropagation()" style="max-width:340px;text-align:center">
+    <div class="icon-tile" style="margin:0 auto 10px">${ic(fmt === 'xlsx' ? 'sheet' : 'pdf', B(), 18)}</div>
+    <div class="dialog-title" data-notr>${esc(out.fileName)}</div>
+    <div class="row-btns" style="justify-content:center;margin-top:14px"><button class="btn soft" id="exNo">${esc(t('Cancel'))}</button><button class="btn primary" id="exGo">${ic('send', '#fff', 16, 2.2)}${esc(t('Send'))}</button></div></div>`;
+  host.onclick = () => host.remove();
+  document.getElementById('exNo').onclick = () => host.remove();
+  document.getElementById('exGo').onclick = async () => {
+    try { await navigator.share({ files: [file], title: out.fileName }); host.remove(); }
+    catch (e) { if (e.name !== 'AbortError') { saveFile(blob, out.fileName); } host.remove(); }
+  };
 }
 // Email: the report is made into a PDF (same table, A4) and attached
 async function mailReport(spec) {
@@ -3039,7 +3068,7 @@ function renderReportChoice() {
         <div class="rk-t"><b>${esc(t('Product report'))}</b><span>${esc(plural(s.count, 'product'))} · ${esc(plural(s.marketCount, 'market'))} · ${esc(plural(s.shopCount, 'shop'))}</span></div>${ic('right', '#94A3B8', 18, 2.4)}</div>
       <div class="rk-c wl tap" data-go="wishes"><span class="rk-ic">${ic('heart', '#fff', 26, 2.2)}</span>
         <div class="rk-t"><b>${esc(t('Wishlist report'))}</b><span>${esc(t('{a} you want · {b} you got', { a: want, b: DB.wishes.length - want }))}</span></div>${ic('right', '#94A3B8', 18, 2.4)}</div>
-      <div class="rk-hint">${ic('print', '#94A3B8', 15, 2.2)}<span>${esc(t('Every report can be printed or sent by email.'))}</span></div>
+      <div class="rk-hint">${ic('sheet', '#94A3B8', 15, 2.2)}<span>${esc(t('Every report can be saved as Excel or PDF, or sent by email.'))}</span></div>
     </div>`;
   $body.querySelectorAll('[data-go]').forEach(c => c.onclick = () => location.hash = 'report/' + c.dataset.go);
 }
@@ -3051,7 +3080,7 @@ function renderWishReport() {
   const names = [...new Set(all.flatMap(wishClients))].sort((a, b) => a.localeCompare(b));
   if (wrClient && !names.some(c => c.toLowerCase() === wrClient.toLowerCase())) wrClient = '';
   $body.innerHTML = `
-    ${hero('heart', t('Wishlist report'), t('Print it or send it by email'), `<div class="rsum"><div class="rsum-row">
+    ${hero('heart', t('Wishlist report'), t('Save it as Excel or PDF, or send it by email'), `<div class="rsum"><div class="rsum-row">
         <span><b data-count="${all.length}">${all.length}</b>${esc(t('Wishes'))}</span>
         <span><b data-count="${want}">${want}</b>${esc(t('Still want'))}</span>
         <span><b data-count="${all.length - want}">${all.length - want}</b>${esc(t('Got it'))}</span>
@@ -3074,8 +3103,8 @@ function drawWishReport() {
   const label = [t('Wishlist report'), wrClient].filter(Boolean).join(' — ');
   const spec = wishSpec(list, label);
   el.innerHTML = `
-    <div class="exone tap" id="wrGo"><span class="exo-ic">${ic('print', '#fff', 20, 2.2)}</span>
-      <div style="flex:1;min-width:0"><b>${esc(t('Wishlist report'))}</b><span>${esc(t('{n} items', { n: list.length }))} · ${esc(t('Print or email'))}</span></div>${repFmt()}</div>
+    <div class="exone tap" id="wrGo"><span class="exo-ic">${ic('sheet', '#fff', 20, 2.2)}</span>
+      <div style="flex:1;min-width:0"><b>${esc(t('Wishlist report'))}</b><span>${esc(t('{n} items', { n: list.length }))} · ${esc(t('Excel, PDF or email'))}</span></div>${repFmt()}</div>
     ${spec.sections.length ? spec.sections.map(s => `<div class="card">
       ${s.name ? `<div class="card-head" style="margin-bottom:4px"><div class="card-title" data-notr>${ic('folder', B(), 16, 2.4)}${esc(s.name)}</div><span class="hint">${esc([s.sub, s.total].filter(Boolean).join(' · '))}</span></div>` : ''}
       ${s.rows.map((r, i) => `<div class="mini wr-mini">
@@ -3085,7 +3114,7 @@ function drawWishReport() {
     </div>`).join('') : `<div class="card empty"><div class="empty-art">${ic('heart', B(), 34, 1.6)}</div><div class="empty-title">${esc(t('Nothing to show'))}</div><div class="muted">${esc(t('No wish matches this choice.'))}</div></div>`}`;
   document.getElementById('wrGo').onclick = () => list.length ? reportPreview(spec) : toast(t('No wish matches this choice.'));
 }
-const repFmt = on => `<span class="exo-fmt ${on ? 'on' : ''}"><i class="p">${ic('print', on ? '#fff' : '#E11D48', 11, 2.6)}</i><i class="x">${ic('mail', on ? '#fff' : '#16A34A', 11, 2.6)}</i></span>`;
+const repFmt = on => `<span class="exo-fmt ${on ? 'on' : ''}"><i class="p">${ic('pdf', on ? '#fff' : '#E11D48', 11, 2.6)}</i><i class="x">${ic('sheet', on ? '#fff' : '#16A34A', 11, 2.6)}</i></span>`;
 
 // ---------- email ----------
 const EMAIL_RE = /^[^\s@<>(),;:"]+@[^\s@<>(),;:"]+\.[^\s@<>(),;:"]+$/;

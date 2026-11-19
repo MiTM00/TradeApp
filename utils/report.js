@@ -887,6 +887,80 @@
     const base = String(spec.fileBase || 'Report-' + ymd(Date.now())).replace(/[^\w.-]+/g, '-')
     return { bytes: Pdf.fromJpegs(jpegs, spec.title), pages: pages.length, fileName: base + '.pdf' }
   }
+  // ---------- Table report (Excel): the same spec, one sheet — #, name, photo, then one column per detail ----------
+  // spec.xcols: [{ h, w, t }] t = name | photo | text | int | money | date | status
+  // row.x: one value per xcol — name/text: string · int: number · money: { v, cur } · date: time · status: { v, ok } · photo: ignored (row.photo)
+  async function buildTableExcel(spec, env, onProgress) {
+    const load = makeLoader(env)
+    const col = spec.colors || {}
+    const K = {
+      brand: hex6(col.brand || C.brand), dark: hex6(col.brandDark || C.brandDark),
+      tint: tint(col.brand || C.brand, 0.93), tint2: tint(col.brand || C.brand, 0.82), soft: tint(col.brand || C.brand, 0.6),
+      ink: '0F172A', sub: '64748B', faint: '94A3B8', line: 'E2E8F0', zebra: 'F8FAFC', white: 'FFFFFF', price: 'E11D48', green: '16A34A', greenBg: 'DCFCE7'
+    }
+    const ST = Xlsx.Styles(), st = ST.style
+    const xc = [{ h: '#', w: 5, t: 'n' }].concat(spec.xcols)
+    const NC = xc.length, last = Xlsx.colName(NC - 1)
+    const rows = [], merges = [], images = []
+    const fullRow = (style, v, height) => {
+      const cells = [{ v, s: style }]
+      for (let i = 1; i < NC; i++) cells.push({ v: '', s: style })
+      rows.push({ height, cells }); merges.push('A' + rows.length + ':' + last + rows.length)
+    }
+    fullRow(st({ fill: K.dark, font: { b: true, sz: 20, color: K.white }, align: { indent: 1 } }), spec.title, 40)
+    fullRow(st({ fill: K.dark, font: { sz: 11, color: K.soft }, align: { indent: 1 } }), [spec.kicker, L('Generated {date}', { date: spec.date }), (spec.kpis || []).map(k => k[0] + ': ' + k[1]).join('   ')].filter(Boolean).join('   ·   '), 22)
+    if (spec.totalsLabel) fullRow(st({ fill: K.tint, font: { b: true, sz: 12, color: K.dark }, align: { indent: 1 } }), spec.totalsLabel + ':   ' + ((spec.totals || []).join('   ·   ') || '—'), 26)
+    rows.push({ height: 8, cells: [] })
+    const HEAD = rows.length
+    const hS = st({ fill: K.brand, font: { b: true, color: K.white }, align: { h: 'center', wrap: true }, border: { bottom: 'medium:' + K.dark } })
+    const hL = st({ fill: K.brand, font: { b: true, color: K.white }, align: { indent: 1, wrap: true }, border: { bottom: 'medium:' + K.dark } })
+    rows.push({ height: 30, cells: xc.map(c => ({ v: c.h, s: c.t === 'name' || c.t === 'text' ? hL : hS })) })
+    const z = (i, o) => st(Object.assign({ fill: i % 2 ? K.zebra : K.white, border: { bottom: 'thin:' + K.line } }, o))
+    const band = st({ fill: K.tint2, font: { b: true, sz: 12, color: K.dark }, align: { indent: 1 }, border: { top: 'thin:' + K.soft, bottom: 'thin:' + K.soft } })
+    const dateFmt = I18n.getLang() === 'zh' ? 'yyyy"年"m"月"d"日"' : I18n.getLang() === 'so' ? 'dd/mm/yyyy' : 'dd mmm yyyy'
+    const total = spec.sections.reduce((a, s) => a + s.rows.length, 0)
+    let n = 0
+    for (const sec of spec.sections) {
+      if (sec.name) {
+        const cells = [{ v: sec.name + ([sec.sub, sec.total].filter(Boolean).length ? '   ·   ' + [sec.sub, sec.total].filter(Boolean).join('   ·   ') : ''), s: band }]
+        for (let i = 1; i < NC; i++) cells.push({ v: '', s: band })
+        rows.push({ height: 26, cells }); merges.push('A' + rows.length + ':' + last + rows.length)
+      }
+      for (let ri = 0; ri < sec.rows.length; ri++) {
+        const r = sec.rows[ri], i = ri, rowAt = rows.length
+        const cells = [{ v: ++n, s: z(i, { font: { b: true, color: K.brand }, align: { h: 'center' } }) }]
+        for (let ci = 0; ci < spec.xcols.length; ci++) {
+          const c = spec.xcols[ci], v = (r.x || [])[ci]
+          if (c.t === 'photo') {
+            const jpg = r.photo ? await thumbnail(env, load, r.photo) : null
+            if (jpg) images.push({ row: rowAt, col: ci + 1, data: jpg, w: 78, h: 78, dx: 10, dy: 6, border: K.line })
+            cells.push({ v: jpg ? '' : L('No photo'), s: z(i, { font: { color: K.faint, i: true }, align: { h: 'center' } }) })
+          } else if (c.t === 'name') cells.push({ v: v || '—', s: z(i, { font: { b: true, sz: 12, color: r.best ? K.green : K.ink }, align: { indent: 1, wrap: true } }) })
+          else if (c.t === 'money') cells.push(v && isFinite(v.v) ? { v: Math.round(v.v * 100) / 100, s: z(i, { font: { b: true, sz: 12, color: c.strong === false ? K.ink : K.price }, align: { h: 'right', indent: 1 }, num: curFmt(v.cur || '') }) } : { v: '—', s: z(i, { font: { color: K.faint }, align: { h: 'center' } }) })
+          else if (c.t === 'int') cells.push(v ? { v, s: z(i, { font: { b: true, color: K.brand }, align: { h: 'center' }, num: '#,##0' }) } : { v: '—', s: z(i, { font: { color: K.faint }, align: { h: 'center' } }) })
+          else if (c.t === 'date') cells.push(v ? { v: excelDate(v), s: z(i, { font: { color: K.sub }, align: { h: 'center' }, num: dateFmt }) } : { v: '—', s: z(i, { font: { color: K.faint }, align: { h: 'center' } }) })
+          else if (c.t === 'status') cells.push({ v: v ? v.v : '—', s: z(i, { fill: v && v.ok ? K.greenBg : K.tint, font: { b: true, color: v && v.ok ? K.green : K.brand }, align: { h: 'center' } }) })
+          else cells.push({ v: v == null || v === '' ? '—' : String(v), s: z(i, { font: { color: v ? K.ink : K.faint }, align: { indent: 1, wrap: true } }) })
+        }
+        rows.push({ height: 68, cells })
+        if (onProgress) onProgress(n / Math.max(1, total))
+      }
+    }
+    if (!n) fullRow(st({ font: { i: true, color: K.faint }, align: { h: 'center' } }), L('Nothing to show'), 30)
+    const lastData = rows.length
+    rows.push({ height: 8, cells: [] })
+    fullRow(st({ font: { sz: 9, color: K.faint }, align: { indent: 1 } }), L('Generated {date} · Trade', { date: spec.date }), 18)
+    const sheet = {
+      name: String(spec.kind === 'wishes' ? L('Wishlist') : L('Products')).slice(0, 31), selected: true, tabColor: K.brand, gridLines: false,
+      cols: xc.map(c => c.w || 14), rows, merges, images,
+      freezeRow: HEAD + 1, printTitleRows: [HEAD + 1, HEAD + 1],
+      autoFilter: n && !spec.sections.some(s => s.name) ? 'A' + (HEAD + 1) + ':' + last + lastData : null,
+      footer: '&L&8Trade · ' + String(spec.title).replace(/&/g, '&&') + '&R&8' + L('Page {a} of {b}', { a: '&P', b: '&N' })
+    }
+    const base = String(spec.fileBase || 'Report-' + ymd(Date.now())).replace(/[^\w.-]+/g, '-')
+    return { bytes: Xlsx.build([sheet], { title: spec.title }, ST), fileName: base + '.xlsx' }
+  }
+
   function drawTableCover(ctx, spec) {
     const TM = 60
     const g = ctx.createLinearGradient(0, 0, W, 300)
@@ -915,5 +989,5 @@
     }
   }
 
-  return { summarize, buildPdf, buildExcel, buildTablePdf, money, int, ymd, stamp, totalsText, totalsOf, registeredAt, dateLabel, dateTimeLabel, monthShort, periodKey, periodLabel, byPeriod, NO_MARKET }
+  return { summarize, buildPdf, buildExcel, buildTablePdf, buildTableExcel, money, int, ymd, stamp, totalsText, totalsOf, registeredAt, dateLabel, dateTimeLabel, monthShort, periodKey, periodLabel, byPeriod, NO_MARKET }
 })
