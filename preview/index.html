@@ -2900,12 +2900,16 @@ const PRODUCT_COLS = () => [{ k: 'name', h: t('Product'), w: 2.7 }, { k: 'photo'
   { k: 'price', h: t('Price'), w: 1.5, al: 'right' }, { k: 'moq', h: t('MOQ'), w: 1, al: 'right' }, { k: 'value', h: t('Value at MOQ'), w: 2, al: 'right' }];
 const WISH_COLS = () => [{ k: 'name', h: t('Item'), w: 3 }, { k: 'photo', h: t('Photo') }, { k: 'clients', h: t('Clients'), w: 2.2 },
   { k: 'qty', h: t('Pieces'), w: 1, al: 'right' }, { k: 'price', h: t('Best price'), w: 1.9, al: 'right' }, { k: 'status', h: t('Status'), w: 1.5 }];
-// Excel: one column per detail (numbers stay numbers)
-const PRODUCT_XCOLS = () => [{ h: t('Product'), w: 30, t: 'name' }, { h: t('Photo'), w: 14, t: 'photo' }, { h: t('Description'), w: 30, t: 'text' }, { h: t('Size'), w: 14, t: 'text' },
-  { h: t('Market'), w: 20, t: 'text' }, { h: t('Shop'), w: 20, t: 'text' }, { h: t('WeChat'), w: 14, t: 'text' }, { h: t('Min qty'), w: 11, t: 'int' }, { h: t('Unit'), w: 9, t: 'text' },
-  { h: t('Price'), w: 13, t: 'money' }, { h: t('Value at MOQ'), w: 15, t: 'money', strong: false }, { h: t('Date registered'), w: 15, t: 'date' }];
-const WISH_XCOLS = () => [{ h: t('Item'), w: 30, t: 'name' }, { h: t('Photo'), w: 14, t: 'photo' }, { h: t('Note'), w: 28, t: 'text' }, { h: t('Clients'), w: 22, t: 'text' },
-  { h: t('Pieces'), w: 10, t: 'int' }, { h: t('Best price'), w: 13, t: 'money' }, { h: t('Market'), w: 20, t: 'text' }, { h: t('Total'), w: 15, t: 'money', strong: false }, { h: t('Status'), w: 13, t: 'status' }];
+// Excel: a plain table, one column per detail (numbers stay numbers). Column letters: A = No., then B, C… in this order.
+// Products: B name · C photo · D description · E size · F market · G shop · H shop note · I WeChat · J location · K min qty · L unit · M currency · N price · O value (= K × N) · P date · Q photos
+const PRODUCT_XCOLS = () => [{ h: t('Product'), w: 28, t: 'name' }, { h: t('Photo'), w: 13, t: 'photo' }, { h: t('Description'), w: 30, t: 'text' }, { h: t('Size'), w: 12, t: 'text' },
+  { h: t('Market'), w: 20, t: 'text' }, { h: t('Shop'), w: 18, t: 'text' }, { h: t('Shop note'), w: 22, t: 'text' }, { h: t('WeChat'), w: 16, t: 'text' }, { h: t('Location'), w: 24, t: 'text' },
+  { h: t('Min qty'), w: 11, t: 'int' }, { h: t('Unit'), w: 8, t: 'text' }, { h: t('Currency'), w: 9, t: 'cur' }, { h: t('Price'), w: 12, t: 'money', bold: true },
+  { h: t('Value at MOQ'), w: 15, t: 'money', f: 'K*N', total: true, bold: true }, { h: t('Date registered'), w: 14, t: 'date' }, { h: t('Photos'), w: 8, t: 'int' }];
+// Wishlist: B item · C photo · D note · E clients · F pieces · G currency · H best price · I market · J total (= F × H) · K status · L date added · M got on
+const WISH_XCOLS = () => [{ h: t('Item'), w: 28, t: 'name' }, { h: t('Photo'), w: 13, t: 'photo' }, { h: t('Note'), w: 28, t: 'text' }, { h: t('Clients'), w: 22, t: 'text' },
+  { h: t('Pieces'), w: 9, t: 'int' }, { h: t('Currency'), w: 9, t: 'cur' }, { h: t('Best price'), w: 12, t: 'money', bold: true }, { h: t('Market'), w: 20, t: 'text' },
+  { h: t('Total'), w: 14, t: 'money', f: 'F*H', total: true, bold: true }, { h: t('Status'), w: 12, t: 'status' }, { h: t('Date added'), w: 13, t: 'date' }, { h: t('Got on'), w: 13, t: 'date' }];
 const curOf = c => c && c !== 'undefined' ? c : '';
 const curTotals = m => [...m].map(([c, v]) => curOf(c) + TradeReport.money(v));
 const totalsTxt = ts => ts.map(x => curOf(x.currency) + TradeReport.money(x.value)).join(' · ');
@@ -2913,9 +2917,10 @@ function productRow(p, best) {
   const reg = TradeReport.registeredAt(p), unit = t(p.unit || 'pcs');
   return { name: p.name || '—', sub: [String(p.description || '').replace(/\s+/g, ' ').trim(), p.size ? t('Size {x}', { x: p.size }) : ''].filter(Boolean).join(' · '),
     photo: (p.images || [])[0] || '', photos: (p.images || []).length, best: !!best,
-    x: [p.name || '—', '', String(p.description || '').replace(/\s+/g, ' ').trim(), p.size || '', p.marketName || '', p.shopName || '',
-      p.shopWechat === 'yes' ? (p.wechatId || t('Yes')) : '', Number(p.minOrder) || 0, unit,
-      { v: Number(p.price) || 0, cur: curOf(p.currency) }, { v: (Number(p.price) || 0) * (Number(p.minOrder) || 0), cur: curOf(p.currency) }, reg || 0],
+    x: [p.name || '', '', String(p.description || '').replace(/\s+/g, ' ').trim(), p.size || '', p.marketName || t('No market'), p.shopName || '', String(p.shopNote || '').replace(/\s+/g, ' ').trim(),
+      p.shopWechat === 'yes' ? (p.wechatId || t('Yes')) : p.shopWechat === 'no' ? t('No WeChat') : '',
+      p.location ? [p.location.name, p.location.address].filter(Boolean).join(' — ') : '', Number(p.minOrder) || 0, unit, curOf(p.currency),
+      { v: Number(p.price) || 0, cur: curOf(p.currency) }, { v: (Number(p.price) || 0) * (Number(p.minOrder) || 0), cur: curOf(p.currency) }, reg || 0, (p.images || []).length],
     cells: {
       where: { main: p.marketName || t('No market'), muted: !p.marketName, sub: [p.shopName, p.shopWechat === 'yes' && p.wechatId ? 'WeChat ' + p.wechatId : ''].filter(Boolean).join(' · ') },
       price: { main: curOf(p.currency) + TradeReport.money(p.price), sub: t('per {unit}', { unit }), price: true },
@@ -2939,8 +2944,8 @@ function productSpec(list, opts, label) {
 function wishRow(w) {
   const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, n = (w.prices || []).filter(x => Number(x.price) > 0).length, cs = wishClients(w), pics = wishPics(w);
   return { name: w.title || '—', sub: String(w.note || '').replace(/\s+/g, ' ').trim(), photo: pics[0] || '', photos: pics.length,
-    x: [w.title || '—', '', String(w.note || '').replace(/\s+/g, ' ').trim(), cs.join(', '), q, p ? { v: p.v, cur: p.cur } : null, p && p.mk || '',
-      p && q ? { v: p.v * q, cur: p.cur } : null, { v: t(w.done ? 'Got it' : 'Still want'), ok: !!w.done }],
+    x: [w.title || '', '', String(w.note || '').replace(/\s+/g, ' ').trim(), cs.join(', '), q, p ? p.cur : '', p ? { v: p.v, cur: p.cur } : null, p && p.mk || '',
+      p && q ? { v: p.v * q, cur: p.cur } : null, { v: t(w.done ? 'Got it' : 'Still want'), ok: !!w.done }, w.createdAt || 0, w.done && w.doneAt || 0],
     cells: {
       clients: cs.length ? { main: cs.join(', ') } : { main: '—', muted: true },
       qty: q ? { main: TradeReport.int(q), sub: t('pcs') } : { main: '—', muted: true },

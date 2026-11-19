@@ -1049,7 +1049,11 @@
     ['Every report can be saved as Excel or PDF, or sent by email.', 'Warbixin kasta waxaa loo kaydin karaa Excel ama PDF, ama email ayaa loo diri karaa.', '每个报告都可以保存为 Excel 或 PDF，或通过邮件发送。'],
     ['Save it as Excel or PDF, or send it by email', 'U kaydi Excel ama PDF, ama email ku dir', '保存为 Excel 或 PDF，或通过邮件发送'],
     ['Saved: {file}', 'Waa la kaydiyay: {file}', '已保存：{file}'],
-    ['Value', 'Qiimaha guud', '总价']
+    ['Value', 'Qiimaha guud', '总价'],
+    ['No.', 'Lr.', '序号'],
+    ['Shop note', 'Qoraalka dukaanka', '店铺备注'],
+    ['Date added', 'Taariikhda la daray', '添加日期'],
+    ['Got on', 'La helay', '获得日期']
   ]
 
   const DICT = { so: {}, zh: {} }
