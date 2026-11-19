@@ -117,14 +117,19 @@
       '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
     images.forEach((im, i) => {
       const cx = im.w * EMU, cy = im.h * EMU
-      x += '<xdr:oneCellAnchor><xdr:from><xdr:col>' + im.col + '</xdr:col><xdr:colOff>' + ((im.dx || 0) * EMU) + '</xdr:colOff>' +
-        '<xdr:row>' + im.row + '</xdr:row><xdr:rowOff>' + ((im.dy || 0) * EMU) + '</xdr:rowOff></xdr:from>' +
-        '<xdr:ext cx="' + cx + '" cy="' + cy + '"/>' +
+      const from = '<xdr:from><xdr:col>' + im.col + '</xdr:col><xdr:colOff>' + Math.round((im.dx || 0) * EMU) + '</xdr:colOff>' +
+        '<xdr:row>' + im.row + '</xdr:row><xdr:rowOff>' + Math.round((im.dy || 0) * EMU) + '</xdr:rowOff></xdr:from>'
+      // inCell: the picture is held by its own cell on both corners (moves and sizes with the cell, sorts and filters with its row)
+      x += im.inCell
+        ? '<xdr:twoCellAnchor editAs="twoCell">' + from + '<xdr:to><xdr:col>' + im.col + '</xdr:col><xdr:colOff>' + Math.round(((im.dx || 0) + im.w) * EMU) + '</xdr:colOff>' +
+          '<xdr:row>' + im.row + '</xdr:row><xdr:rowOff>' + Math.round(((im.dy || 0) + im.h) * EMU) + '</xdr:rowOff></xdr:to>'
+        : '<xdr:oneCellAnchor>' + from + '<xdr:ext cx="' + cx + '" cy="' + cy + '"/>'
+      x +=
         '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' + (i + 2) + '" name="Picture ' + (i + 1) + '"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>' +
         '<xdr:blipFill><a:blip r:embed="rId' + (i + 1) + '"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
         '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 8000"/></a:avLst></a:prstGeom>' +
         (im.border ? '<a:ln w="9525"><a:solidFill><a:srgbClr val="' + im.border + '"/></a:solidFill></a:ln>' : '') + '</xdr:spPr></xdr:pic>' +
-        '<xdr:clientData/></xdr:oneCellAnchor>'
+        '<xdr:clientData/></xdr:' + (im.inCell ? 'twoCellAnchor' : 'oneCellAnchor') + '>'
     })
     return x + '</xdr:wsDr>'
   }

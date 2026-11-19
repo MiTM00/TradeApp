@@ -2902,12 +2902,12 @@ const WISH_COLS = () => [{ k: 'name', h: t('Item'), w: 3 }, { k: 'photo', h: t('
   { k: 'qty', h: t('Pieces'), w: 1, al: 'right' }, { k: 'price', h: t('Best price'), w: 1.9, al: 'right' }, { k: 'status', h: t('Status'), w: 1.5 }];
 // Excel: a plain table, one column per detail (numbers stay numbers). Column letters: A = No., then B, C… in this order.
 // Products: B name · C photo · D description · E size · F market · G shop · H shop note · I WeChat · J location · K min qty · L unit · M currency · N price · O value (= K × N) · P date · Q photos
-const PRODUCT_XCOLS = () => [{ h: t('Product'), w: 28, t: 'name' }, { h: t('Photo'), w: 13, t: 'photo' }, { h: t('Description'), w: 30, t: 'text' }, { h: t('Size'), w: 12, t: 'text' },
+const PRODUCT_XCOLS = () => [{ h: t('Product'), w: 28, t: 'name' }, { h: t('Photo'), w: 17, t: 'photo' }, { h: t('Description'), w: 30, t: 'text' }, { h: t('Size'), w: 12, t: 'text' },
   { h: t('Market'), w: 20, t: 'text' }, { h: t('Shop'), w: 18, t: 'text' }, { h: t('Shop note'), w: 22, t: 'text' }, { h: t('WeChat'), w: 16, t: 'text' }, { h: t('Location'), w: 24, t: 'text' },
   { h: t('Min qty'), w: 11, t: 'int' }, { h: t('Unit'), w: 8, t: 'text' }, { h: t('Currency'), w: 9, t: 'cur' }, { h: t('Price'), w: 12, t: 'money', bold: true },
   { h: t('Value at MOQ'), w: 15, t: 'money', f: 'K*N', total: true, bold: true }, { h: t('Date registered'), w: 14, t: 'date' }, { h: t('Photos'), w: 8, t: 'int' }];
 // Wishlist: B item · C photo · D note · E clients · F pieces · G currency · H best price · I market · J total (= F × H) · K status · L date added · M got on
-const WISH_XCOLS = () => [{ h: t('Item'), w: 28, t: 'name' }, { h: t('Photo'), w: 13, t: 'photo' }, { h: t('Note'), w: 28, t: 'text' }, { h: t('Clients'), w: 22, t: 'text' },
+const WISH_XCOLS = () => [{ h: t('Item'), w: 28, t: 'name' }, { h: t('Photo'), w: 17, t: 'photo' }, { h: t('Note'), w: 28, t: 'text' }, { h: t('Clients'), w: 22, t: 'text' },
   { h: t('Pieces'), w: 9, t: 'int' }, { h: t('Currency'), w: 9, t: 'cur' }, { h: t('Best price'), w: 12, t: 'money', bold: true }, { h: t('Market'), w: 20, t: 'text' },
   { h: t('Total'), w: 14, t: 'money', f: 'F*H', total: true, bold: true }, { h: t('Status'), w: 12, t: 'status' }, { h: t('Date added'), w: 13, t: 'date' }, { h: t('Got on'), w: 13, t: 'date' }];
 const curOf = c => c && c !== 'undefined' ? c : '';

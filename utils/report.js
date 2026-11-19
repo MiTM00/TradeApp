@@ -891,6 +891,7 @@
   // spec.xcols: [{ h, w, t }] t = name | photo | text | int | num | money | cur | date | status
   // row.x: one value per xcol — text: string · int/num: number · money: { v, cur } · cur: string · date: time · status: { v, ok } · photo: ignored (row.photo)
   // A money column with f: 'A*B' (letters of two xcols, 0-based index) is written as a formula, e.g. value = min qty × price
+  const PHOTO_ROW = 90 // points: rows that hold a photo
   async function buildTableExcel(spec, env, onProgress) {
     const load = makeLoader(env)
     const col = spec.colors || {}
@@ -913,7 +914,9 @@
         const c = spec.xcols[ci], v = (r.x || [])[ci], empty = v == null || v === ''
         if (c.t === 'photo') {
           const jpg = r.photo ? await thumbnail(env, load, r.photo) : null
-          if (jpg) images.push({ row: at, col: ci + 1, data: jpg, w: 80, h: 80, dx: 8, dy: 5 })
+          // centred inside its own cell: column width in px = width × 7 + 5, row height in px = points × 4/3
+          if (jpg) { const cw = Math.floor((c.w || 16) * 7 + 5), rh = Math.round(PHOTO_ROW * 4 / 3), S = Math.min(cw, rh) - 12
+            images.push({ row: at, col: ci + 1, data: jpg, w: S, h: S, dx: Math.floor((cw - S) / 2), dy: Math.floor((rh - S) / 2), inCell: true }) }
           cells.push({ v: '', s: z(i) })
         } else if (c.t === 'money') {
           const n = v && isFinite(v.v) ? Math.round(v.v * 100) / 100 : null
@@ -927,7 +930,7 @@
         else if (c.t === 'cur') cells.push({ v: empty ? '' : String(v), s: z(i, { align: { h: 'center' } }) })
         else cells.push({ v: empty ? '' : String(v), s: z(i, { font: { b: c.t === 'name', color: K.ink }, align: { h: 'left', wrap: true, indent: 1 } }) })
       }
-      rows.push({ height: hasPhoto ? 70 : 22, cells })
+      rows.push({ height: hasPhoto ? PHOTO_ROW : 22, cells })
       if (onProgress) onProgress((i + 1) / Math.max(1, all.length))
     }
     const lastData = rows.length
