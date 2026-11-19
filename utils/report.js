@@ -1,4 +1,4 @@
-// Report: summary numbers + PDF and Excel export.
+// Report: summary numbers + PDF and Excel export, and the table report (buildTablePdf).
 // Platform-specific parts are passed in as `env`:
 //   env.canvas            a Canvas 2D object (getContext('2d'), width/height settable)
 //   env.loadImage(src)    -> Promise<image drawable on env.canvas | null>
@@ -767,5 +767,153 @@
     }
   }
 
-  return { summarize, buildPdf, buildExcel, money, int, ymd, stamp, totalsText, totalsOf, registeredAt, dateLabel, dateTimeLabel, monthShort, periodKey, periodLabel, byPeriod, NO_MARKET }
+
+  // ---------- Table report (PDF): #, name, its photo in the next column, then the details ----------
+  // spec: { title, kicker, date, kpis: [[label, value]], totalsLabel, totals: [text], colors, fileBase,
+  //         cols: [{ k, h, w (share of the free width), al: 'right' }],
+  //         sections: [{ name, sub, total, rows: [{ name, sub, photo, photos, best, cells: { k: { main, sub, price, muted, tag } } }] }] }
+  function wrap(ctx, s, maxW, lines) {
+    const words = String(s == null ? '' : s).replace(/\s+/g, ' ').trim().match(/[　-鿿]|[^\s　-鿿]+\s*|\s+/g) || []
+    const out = []; let cur = ''
+    for (let i = 0; i < words.length; i++) {
+      const next = cur + words[i]
+      if (ctx.measureText(next.trim()).width <= maxW || !cur) { cur = next; continue }
+      out.push(cur.trim()); cur = words[i]
+      if (out.length === lines - 1) { cur = words.slice(i).join(''); break }
+    }
+    if (cur.trim()) out.push(cur.trim())
+    return out.slice(0, lines).map((l, i, a) => i === a.length - 1 ? fit(ctx, l, maxW) : l)
+  }
+  async function buildTablePdf(spec, env, onProgress) {
+    usePalette(spec.colors)
+    const load = makeLoader(env), canvas = env.canvas
+    canvas.width = W; canvas.height = H
+    const ctx = canvas.getContext('2d')
+    const TM = 60, TW = W - 2 * TM, NW = 54, PW = 168, RH = 184, HH = 58, SH = 70
+    const free = TW - NW - PW, wsum = spec.cols.filter(c => c.k !== 'photo').reduce((a, c) => a + (c.w || 1), 0)
+    // x of every column: #, name, photo, the rest
+    const xs = []; let x = TM + NW
+    spec.cols.forEach(c => { const w = c.k === 'photo' ? PW : free * (c.w || 1) / wsum; xs.push({ c, x, w }); x += w })
+    const PAD = 14
+
+    const drawHead = y => {
+      const g = ctx.createLinearGradient(TM, 0, W - TM, 0)
+      g.addColorStop(0, C.brand); g.addColorStop(1, C.brandDark)
+      ctx.fillStyle = g; rr(ctx, TM, y, TW, HH, 14); ctx.fill()
+      text(ctx, '#', TM + NW / 2, y + 37, { size: 20, weight: 'bold', color: C.white, align: 'center' })
+      xs.forEach(({ c, x, w }) => text(ctx, c.h.toUpperCase(), c.al === 'right' ? x + w - PAD : c.k === 'photo' ? x + w / 2 : x + PAD, y + 37,
+        { size: 18, weight: 'bold', color: C.white, align: c.al === 'right' ? 'right' : c.k === 'photo' ? 'center' : 'left', max: w - 2 * PAD }))
+    }
+    const drawSection = (s, y) => {
+      ctx.fillStyle = C.mint; rr(ctx, TM, y + 14, TW, SH - 22, 12); ctx.fill()
+      ctx.fillStyle = C.brand; rr(ctx, TM, y + 14, 8, SH - 22, 4); ctx.fill()
+      const right = [s.sub, s.total].filter(Boolean).join('   ·   ')
+      const rw = right ? text(ctx, right, W - TM - 20, y + 47, { size: 19, color: C.sub, weight: '600', align: 'right', max: TW * 0.55 }) : 0
+      text(ctx, s.name, TM + 26, y + 48, { size: 24, weight: 'bold', color: C.brandDark, max: TW - rw - 70 })
+    }
+    const drawRow = async (r, n, y, odd) => {
+      if (odd) { ctx.fillStyle = C.bg; ctx.fillRect(TM, y, TW, RH) }
+      ctx.fillStyle = C.line; ctx.fillRect(TM, y + RH - 1, TW, 1.2)
+      // number
+      ctx.fillStyle = C.mint2; ctx.beginPath(); ctx.arc(TM + NW / 2, y + RH / 2, 17, 0, Math.PI * 2); ctx.fill()
+      text(ctx, String(n), TM + NW / 2, y + RH / 2 + 7, { size: 18, weight: 'bold', color: C.brand, align: 'center' })
+      for (const { c, x, w } of xs) {
+        if (c.k === 'name') {
+          font(ctx, 26, 'bold')
+          const nl = wrap(ctx, r.name || '—', w - 2 * PAD, r.sub ? 2 : 3)
+          let ty = y + 50
+          nl.forEach(l => { text(ctx, l, x + PAD, ty, { size: 26, weight: 'bold' }); ty += 33 })
+          if (r.sub) { font(ctx, 19); wrap(ctx, r.sub, w - 2 * PAD, 2).forEach(l => { text(ctx, l, x + PAD, ty + 2, { size: 19, color: C.sub }); ty += 25 }) }
+          if (r.best) pill(ctx, '★ ' + L('Best price'), x + PAD, Math.min(ty + 4, y + RH - 46), { bg: '#DCFCE7', color: '#15803D', size: 16, weight: 'bold' })
+        } else if (c.k === 'photo') {
+          const S = RH - 32, px = x + (w - S) / 2, py = y + 16
+          ctx.save(); ctx.shadowColor = 'rgba(15,23,42,0.12)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3
+          ctx.fillStyle = C.white; rr(ctx, px, py, S, S, 16); ctx.fill(); ctx.restore()
+          cover(ctx, await load(r.photo), px, py, S, S, 16)
+          if (r.photos > 1) pill(ctx, '+' + (r.photos - 1), px + 8, py + S - 38, { bg: 'rgba(15,23,42,0.62)', color: C.white, size: 15, weight: 'bold' })
+        } else {
+          const v = (r.cells || {})[c.k] || {}, right = c.al === 'right', tx = right ? x + w - PAD : x + PAD
+          if (v.tag) {
+            font(ctx, 18, 'bold')
+            const ok = v.tag === 'ok', s = v.main || '', pw = Math.min(w - 2 * PAD, ctx.measureText(s).width + 28)
+            pill(ctx, fit(ctx, s, pw - 28), right ? tx - pw : tx, y + 52, { bg: ok ? '#DCFCE7' : C.mint2, color: ok ? '#15803D' : C.brand, size: 18, weight: 'bold' })
+            if (v.sub) text(ctx, v.sub, tx, y + 122, { size: 17, color: C.faint, align: right ? 'right' : 'left', max: w - 2 * PAD })
+            continue
+          }
+          font(ctx, v.price ? 28 : 22, 'bold')
+          const ml = wrap(ctx, v.main == null || v.main === '' ? '—' : v.main, w - 2 * PAD, v.price ? 1 : 3)
+          let ty = y + (v.price ? 68 : 60)
+          ml.forEach(l => { text(ctx, l, tx, ty, { size: v.price ? 28 : 22, weight: 'bold', color: v.muted ? C.faint : v.price ? C.price : C.ink, align: right ? 'right' : 'left' }); ty += v.price ? 34 : 29 })
+          if (v.sub) { font(ctx, 18); wrap(ctx, v.sub, w - 2 * PAD, 2).forEach(l => { text(ctx, l, tx, ty + 2, { size: 18, color: C.sub, align: right ? 'right' : 'left' }); ty += 24 }) }
+        }
+      }
+    }
+
+    // Blocks: section headings stay with their first row
+    const blocks = []
+    let n = 0
+    spec.sections.forEach(s => {
+      if (s.name) blocks.push({ h: SH, keep: true, draw: y => drawSection(s, y) })
+      s.rows.forEach((r, i) => { const k = ++n, odd = i % 2 === 1; blocks.push({ h: RH, draw: y => drawRow(r, k, y, odd) }) })
+    })
+    const top1 = 520, topN = 132, limit = H - FOOT
+    const pages = [[]]
+    let y = top1 + HH
+    blocks.forEach((b, i) => {
+      const need = b.h + (b.keep && blocks[i + 1] ? blocks[i + 1].h : 0)
+      if (y + need > limit && pages[pages.length - 1].length) { pages.push([]); y = topN + HH }
+      pages[pages.length - 1].push({ b, y }); y += b.h
+    })
+
+    const jpegs = []
+    for (let pi = 0; pi < pages.length; pi++) {
+      ctx.fillStyle = C.white; ctx.fillRect(0, 0, W, H)
+      if (pi === 0) drawTableCover(ctx, spec)
+      else {
+        ctx.fillStyle = C.brand; ctx.fillRect(0, 0, W, 10)
+        text(ctx, spec.title, TM, 78, { size: 26, weight: 'bold', color: C.brand, max: W - 2 * TM - 300 })
+        text(ctx, spec.date, W - TM, 78, { size: 21, color: C.faint, align: 'right' })
+      }
+      drawHead(pi === 0 ? top1 : topN)
+      for (const it of pages[pi]) await it.b.draw(it.y)
+      if (!blocks.length) text(ctx, L('Nothing to show'), W / 2, top1 + HH + 80, { size: 26, color: C.faint, align: 'center' })
+      ctx.fillStyle = C.line; ctx.fillRect(TM, H - 70, W - 2 * TM, 1.5)
+      ctx.fillStyle = C.brand; ctx.fillRect(TM, H - 71, 90, 3.5)
+      text(ctx, L('Generated {date} · Trade', { date: spec.date }), TM, H - 34, { size: 20, color: C.faint })
+      text(ctx, L('Page {a} of {b}', { a: pi + 1, b: pages.length }), W - TM, H - 34, { size: 20, color: C.faint, align: 'right' })
+      jpegs.push(await env.toJpeg(canvas, 0.86))
+      if (onProgress) onProgress((pi + 1) / pages.length)
+    }
+    const base = String(spec.fileBase || 'Report-' + ymd(Date.now())).replace(/[^\w.-]+/g, '-')
+    return { bytes: Pdf.fromJpegs(jpegs, spec.title), pages: pages.length, fileName: base + '.pdf' }
+  }
+  function drawTableCover(ctx, spec) {
+    const TM = 60
+    const g = ctx.createLinearGradient(0, 0, W, 300)
+    g.addColorStop(0, C.brand); g.addColorStop(1, C.brandDark)
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, 300)
+    ctx.fillStyle = 'rgba(255,255,255,0.07)'
+    ctx.beginPath(); ctx.arc(W - 110, 40, 200, 0, Math.PI * 2); ctx.fill()
+    ctx.beginPath(); ctx.arc(W - 320, 300, 110, 0, Math.PI * 2); ctx.fill()
+    text(ctx, String(spec.kicker || '').toUpperCase(), TM, 92, { size: 22, weight: 'bold', color: C.mint2 })
+    text(ctx, spec.title, TM, 160, { size: 58, weight: 'bold', color: C.white, max: W - 2 * TM })
+    text(ctx, L('Generated {date}', { date: spec.date }), TM, 204, { size: 24, color: 'rgba(255,255,255,0.82)' })
+    const k = (spec.kpis || []).slice(0, 4), gap = 20, cw = (W - 2 * TM - gap * (k.length - 1)) / Math.max(1, k.length), ky = 240
+    k.forEach((kv, i) => {
+      const x = TM + i * (cw + gap)
+      ctx.save(); ctx.shadowColor = 'rgba(15,23,42,0.13)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 8
+      ctx.fillStyle = C.white; rr(ctx, x, ky, cw, 128, 22); ctx.fill(); ctx.restore()
+      ctx.fillStyle = C.brand2; rr(ctx, x + 22, ky + 22, 36, 6, 3); ctx.fill()
+      text(ctx, kv[0], x + 22, ky + 62, { size: 21, color: C.sub, weight: '600', max: cw - 44 })
+      text(ctx, String(kv[1]), x + 22, ky + 108, { size: 40, weight: 'bold', max: cw - 44 })
+    })
+    if (spec.totalsLabel) {
+      text(ctx, spec.totalsLabel, TM, 418, { size: 21, color: C.sub, weight: '600' })
+      let x = TM
+      if (!(spec.totals || []).length) text(ctx, '—', x, 470, { size: 28, weight: 'bold' })
+      ;(spec.totals || []).forEach(s => { x += pill(ctx, s, x, 434, { bg: C.mint, color: C.brand, size: 26, weight: 'bold' }) + 12 })
+    }
+  }
+
+  return { summarize, buildPdf, buildExcel, buildTablePdf, money, int, ymd, stamp, totalsText, totalsOf, registeredAt, dateLabel, dateTimeLabel, monthShort, periodKey, periodLabel, byPeriod, NO_MARKET }
 })

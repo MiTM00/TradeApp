@@ -1017,7 +1017,32 @@
     ['Not now', 'Hadda maya', '以后再说'],
     ['{a} you want · {b} you got', '{a} aad rabto · {b} aad heshay', '想要 {a} 个 · 已得到 {b} 个'],
     ['Something I like', 'Wax aan jeclahay', '我喜欢的东西'],
-    ['Type anything you like above, or tap the camera to add it with a photo.', 'Kor ku qor wax kasta oo aad jeceshahay, ama taabo kamaradda si aad sawir ugu darto.', '在上方输入你喜欢的东西，或点击相机用照片添加。']
+    ['Type anything you like above, or tap the camera to add it with a photo.', 'Kor ku qor wax kasta oo aad jeceshahay, ama taabo kamaradda si aad sawir ugu darto.', '在上方输入你喜欢的东西，或点击相机用照片添加。'],
+    ['Product report', 'Warbixinta alaabta', '产品报告'],
+    ['Wishlist report', 'Warbixinta Wishlist-ka', '心愿单报告'],
+    ['Print', 'Daabac', '打印'],
+    ['Print or email', 'Daabac ama email ku dir', '打印或发邮件'],
+    ['Comparison report', 'Warbixinta isbarbardhigga', '对比报告'],
+    ['Price comparison report', 'Warbixinta isbarbardhigga qiimaha', '价格对比报告'],
+    ['Which report do you want?', 'Warbixintee baad rabtaa?', '你要哪个报告？'],
+    ['Every report can be printed or sent by email.', 'Warbixin kasta waa la daabici karaa ama email ahaan ayaa loo diri karaa.', '每个报告都可以打印或通过邮件发送。'],
+    ['Print it or send it by email', 'Daabac ama email ku dir', '打印或通过邮件发送'],
+    ['What goes in the report', 'Waxa warbixinta gelaya', '报告内容'],
+    ['All clients', 'Dhammaan macaamiisha', '所有客户'],
+    ['Client', 'Macmiil', '客户'],
+    ['one or more', 'hal ama ka badan', '一个或多个'],
+    ['Done · {n} chosen', 'Dhammaad · {n} la doortay', '完成 · 已选 {n} 个'],
+    ['Wishes', 'Rabitaanno', '心愿'],
+    ['Total (price × pieces)', 'Wadarta (qiime × xabbo)', '合计（价格 × 件数）'],
+    ['Status', 'Xaalad', '状态'],
+    ['Pieces', 'Xabbo', '件数'],
+    ['Market / Shop', 'Suuq / Dukaan', '市场 / 店铺'],
+    ['Nothing to show', 'Waxba ma jiraan', '暂无内容'],
+    ['No wish matches this choice.', 'Rabitaan ku habboon doorashadan ma jiro.', '没有符合此选择的心愿。'],
+    ['{n} prices', '{n} qiime', '{n} 个价格'],
+    ['Preparing the report', 'Warbixinta ayaa la diyaarinayaa', '正在准备报告'],
+    ['Could not make the report: {e}', 'Warbixinta lama samayn karin: {e}', '无法生成报告：{e}'],
+    ['Printing is not available here — send it by email and print from there', 'Halkan lagama daabici karo — email ku dir oo halkaas ka daabac', '这里无法打印 — 请用邮件发送后再打印']
   ]
 
   const DICT = { so: {}, zh: {} }

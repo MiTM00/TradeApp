@@ -255,6 +255,96 @@
   .exo-fmt.sm { margin-left:4px; } .exo-fmt.sm i { font-size:9px; padding:2px 5px; border-radius:5px; }
   .exo-fmt.on i { background:rgba(255,255,255,.22); color:#fff; }
   .as-item .exb-ic { width:40px; height:40px; }
+  .exo-fmt i .ic { display:block; } .exo-fmt i { display:flex; align-items:center; }
+  /* Reports: first the question — product report or Wishlist report? */
+  .rk-page { padding-top:4px; }
+  .rk-q { font-size:13px; font-weight:800; color:var(--ink-3); text-transform:uppercase; letter-spacing:.5px; margin:4px 2px 10px; }
+  .rk-c { display:flex; align-items:center; gap:14px; padding:16px; margin-bottom:12px; border-radius:20px; background:var(--card); box-shadow:var(--shadow); cursor:pointer; position:relative; overflow:hidden; animation:rise .35s var(--ease) both; }
+  .rk-c::after { content:''; position:absolute; right:-30px; top:-30px; width:110px; height:110px; border-radius:50%; background:rgba(var(--brand-rgb),.07); pointer-events:none; }
+  .rk-c.wl { animation-delay:.06s; } .rk-c.wl::after { background:rgba(236,72,153,.08); }
+  .rk-c:active { transform:scale(.98); }
+  .rk-ic { width:54px; height:54px; border-radius:17px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--brand-2),var(--brand)); box-shadow:0 7px 16px rgba(var(--brand-rgb),.32); }
+  .rk-c.wl .rk-ic { background:linear-gradient(135deg,#F472B6,#DB2777); box-shadow:0 7px 16px rgba(219,39,119,.3); }
+  .rk-t { flex:1; min-width:0; } .rk-t b { display:block; font-size:17px; font-weight:800; } .rk-t span { display:block; font-size:12px; color:var(--ink-3); font-weight:600; margin-top:3px; }
+  .rk-hint { display:flex; align-items:center; gap:7px; justify-content:center; font-size:12px; color:var(--ink-3); font-weight:600; margin-top:6px; }
+  .rk-sw { display:flex; gap:4px; padding:4px; margin-bottom:12px; border-radius:14px; background:var(--card); box-shadow:var(--shadow); }
+  .rk-sw span { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; height:38px; border-radius:11px; font-size:13px; font-weight:800; color:var(--ink-2); cursor:pointer; white-space:nowrap; }
+  .rk-sw span.on { background:linear-gradient(135deg,var(--brand-2),var(--brand)); color:#fff; box-shadow:0 4px 10px rgba(var(--brand-rgb),.28); }
+  .wr-mini { cursor:default; } .wr-mini .mu { color:var(--ink-3); font-size:12px; }
+  .wr-n { width:22px; height:22px; border-radius:7px; background:var(--mint); color:var(--brand); font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .wr-tx { flex:1; min-width:0; }
+  /* the report, full screen: Print / Send by email */
+  .rpv { position:absolute; inset:0; z-index:1000; background:#E9EDF2; display:flex; flex-direction:column; animation:fade .2s; }
+  .rpv-top { display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 12px 10px; background:var(--card); box-shadow:0 1px 0 var(--line); }
+  .rpv-x { width:38px; height:38px; border-radius:12px; background:var(--soft); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .rpv-tt { min-width:0; } .rpv-tt b { display:block; font-size:15px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .rpv-tt span { font-size:11.5px; color:var(--ink-3); font-weight:600; }
+  .rpv-body { flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding:14px 10px 20px; }
+  .rpv-paper { background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(15,23,42,.14); overflow:hidden; }
+  .rpv-acts { display:flex; gap:10px; padding:12px 12px calc(12px + env(safe-area-inset-bottom)); background:var(--card); box-shadow:0 -1px 0 var(--line); }
+  .rpv-acts .btn { flex:1; height:50px; font-size:15px; }
+  /* the report page itself (preview and print) */
+  .rp-doc { color:#0F172A; background:#fff; font-size:12px; }
+  .rp-cover { position:relative; overflow:hidden; padding:20px 18px 44px; color:#fff; background:linear-gradient(135deg,var(--brand),var(--brand-dark, var(--brand))); }
+  .rp-cover::after { content:''; position:absolute; right:-50px; top:-60px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,.08); }
+  .rp-k { font-size:10.5px; font-weight:800; letter-spacing:1px; text-transform:uppercase; opacity:.8; }
+  .rp-t { font-size:22px; font-weight:900; letter-spacing:-.4px; margin-top:4px; line-height:1.15; }
+  .rp-d { font-size:11px; opacity:.85; margin-top:4px; }
+  .rp-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:-30px 12px 0; position:relative; z-index:1; }
+  .rp-kpis div { background:#fff; border-radius:13px; padding:9px 10px; box-shadow:0 6px 16px rgba(15,23,42,.1); min-width:0; }
+  .rp-kpis span { display:block; font-size:9.5px; color:#64748B; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rp-kpis b { display:block; font-size:19px; font-weight:900; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .rp-tot { margin:12px 14px 4px; } .rp-tot > span { font-size:10.5px; color:#64748B; font-weight:700; }
+  .rp-tot div { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; } .rp-tot b { font-size:14px; font-weight:900; color:var(--brand); background:var(--mint); padding:4px 11px; border-radius:999px; }
+  .rp-tbl { width:calc(100% - 20px); margin:10px; border-collapse:separate; border-spacing:0; table-layout:auto; }
+  .rp-tbl th { background:var(--brand); color:#fff; font-size:9.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; padding:9px 8px; text-align:left; white-space:nowrap; }
+  .rp-tbl th:first-child { border-radius:10px 0 0 10px; } .rp-tbl th:last-child { border-radius:0 10px 10px 0; }
+  .rp-tbl th.r, .rp-tbl td.r { text-align:right; } .rp-tbl th.rp-ph { text-align:center; }
+  .rp-tbl td { padding:9px 8px; border-bottom:1px solid #E2E8F0; vertical-align:middle; }
+  .rp-r:nth-child(even of .rp-r) td { background:#F8FAFC; }
+  .rp-sec td { padding:12px 0 6px; border:0; }
+  .rp-sec div { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:8px 12px; border-radius:10px; background:var(--mint); border-left:4px solid var(--brand); }
+  .rp-sec b { font-size:13px; font-weight:900; color:var(--brand); } .rp-sec span { font-size:10.5px; color:#64748B; font-weight:700; text-align:right; }
+  .rp-n { width:26px; text-align:center; } .rp-n span { display:inline-flex; width:24px; height:24px; border-radius:50%; align-items:center; justify-content:center; background:var(--mint); color:var(--brand); font-size:10.5px; font-weight:900; }
+  .rp-name b { display:block; font-size:13px; font-weight:800; line-height:1.3; word-break:break-word; }
+  .rp-name small, .rp-c small { display:block; font-size:10.5px; color:#64748B; margin-top:2px; line-height:1.35; }
+  .rp-best { display:inline-block; margin-top:5px; font-size:9.5px; font-weight:800; color:#15803D; background:#DCFCE7; padding:2px 7px; border-radius:999px; }
+  .rp-ph { width:84px; text-align:center; }
+  .rp-ph span { position:relative; display:inline-block; width:76px; height:76px; border-radius:12px; overflow:hidden; background:#F1F5F9; box-shadow:0 3px 10px rgba(15,23,42,.12); vertical-align:middle; }
+  .rp-ph img { width:100%; height:100%; object-fit:cover; display:block; }
+  .rp-ph span.no { display:inline-flex; align-items:center; justify-content:center; box-shadow:none; }
+  .rp-ph b { position:absolute; left:5px; bottom:5px; font-size:9.5px; font-weight:800; color:#fff; background:rgba(15,23,42,.62); padding:1px 6px; border-radius:999px; }
+  .rp-c b { display:block; font-size:12px; font-weight:800; word-break:break-word; } .rp-c b.pr { color:var(--price, #E11D48); font-size:14px; white-space:nowrap; } .rp-c b.mu { color:#94A3B8; font-weight:700; }
+  .rp-tag { display:inline-block; font-size:10px; font-weight:800; padding:3px 9px; border-radius:999px; white-space:nowrap; } .rp-tag.want { background:var(--mint); color:var(--brand); } .rp-tag.ok { background:#DCFCE7; color:#15803D; }
+  .rp-mob { display:none; }
+  .rp-empty { text-align:center; color:#94A3B8; font-weight:700; padding:24px; }
+  .rp-foot { display:flex; justify-content:space-between; gap:10px; margin:6px 14px 0; padding:10px 0 14px; border-top:1.5px solid #E2E8F0; font-size:10px; color:#94A3B8; font-weight:600; }
+  /* on a phone screen: #, name (with the details under it), the photo — the other columns fold into the name */
+  @media screen and (max-width:620px) {
+    .rpv .rp-c { display:none; }
+    .rpv .rp-mob { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .rpv .rp-mob span { font-size:10.5px; font-weight:800; background:#F1F5F9; color:#334155; padding:3px 7px; border-radius:7px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .rpv .rp-mob span i { font-style:normal; font-weight:600; color:#94A3B8; margin-right:4px; }
+    .rpv .rp-mob span.pr { color:var(--price, #E11D48); background:#FFF1F2; } .rpv .rp-mob span.ok { color:#15803D; background:#DCFCE7; }
+    .rpv .rp-tbl th.rp-name { border-radius:0; } .rpv .rp-tbl th.rp-ph { border-radius:0 10px 10px 0; }
+  }
+  #printRoot { display:none; }
+  @media print {
+    @page { size:A4; margin:10mm; }
+    html, body { background:#fff !important; height:auto !important; overflow:visible !important; }
+    body > *:not(#printRoot) { display:none !important; }
+    #printRoot { display:block; }
+    #printRoot * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    #printRoot .rp-doc { font-size:11px; }
+    #printRoot .rp-cover { border-radius:14px; padding:22px 22px 48px; } #printRoot .rp-t { font-size:26px; }
+    #printRoot .rp-kpis { margin:-32px 16px 0; }
+    #printRoot .rp-tbl { width:100%; margin:12px 0 0; }
+    #printRoot thead { display:table-header-group; }
+    #printRoot tr { break-inside:avoid; page-break-inside:avoid; }
+    #printRoot .rp-sec { break-after:avoid; page-break-after:avoid; }
+    #printRoot .rp-ph { width:96px; } #printRoot .rp-ph span { width:88px; height:88px; }
+    #printRoot .rp-foot { margin:8px 0 0; }
+  }
+
   .mrow2 { display:flex; gap:11px; align-items:flex-start; padding:10px 0; border-top:.5px solid var(--line); }
   .mrow2:first-of-type { border-top:none; padding-top:2px; }
   .mr-n { width:24px; height:24px; border-radius:8px; background:var(--mint); color:var(--brand); font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -1018,6 +1108,14 @@
   .cp-t { flex:1; min-width:0; } .cp-t b { display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .cp-t small { display:block; font-size:11.5px; color:var(--ink-3); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .cp-it.new { color:var(--brand); } .cp-it.new b { font-size:13.5px; }
   .cp-it.clr { color:var(--ink-3); font-size:13px; font-weight:700; border-top:.5px solid var(--line); border-radius:0 0 11px 11px; }
+  .cp-hint { font-weight:600; color:var(--ink-3); font-size:11px; margin-left:4px; }
+  .cp-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; } .cp-chips[hidden] { display:none; }
+  .cp-chip { display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 4px; border-radius:999px; background:var(--mint); border:1px solid var(--line); max-width:100%; animation:fade .18s; }
+  .cp-chip i { width:24px; height:24px; border-radius:50%; font-style:normal; color:#fff; font-weight:900; font-size:11px; display:flex; align-items:center; justify-content:center; background:linear-gradient(145deg,hsl(var(--h) 75% 62%),hsl(calc(var(--h) + 45) 70% 48%)); flex-shrink:0; }
+  .cp-chip b { font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cp-x { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--card); cursor:pointer; flex-shrink:0; }
+  .cp-box { width:22px; height:22px; border-radius:7px; border:2px solid #CBD5E1; box-sizing:border-box; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .cp-it.on .cp-box { background:var(--brand); border-color:var(--brand); }
   .cp-none { padding:12px; font-size:12.5px; color:var(--ink-3); text-align:center; }
   .wi-pn { position:absolute; left:9px; top:9px; display:flex; align-items:center; gap:3px; height:22px; padding:0 7px; border-radius:999px; background:rgba(15,23,42,.6); color:#fff; font-size:11px; }
   /* one search box for the whole Wishlist */
@@ -1270,7 +1368,7 @@ const DB = {
     }
     // Register the clients already written on wishes (first run with Clients only)
     if (!this.kv.clientsSeeded) {
-      for (const w of this.wishes) if (w.client) await clients.ensure(w.client);
+      for (const w of this.wishes) for (const c of wishClients(w)) await clients.ensure(c);
       await this.setKV('clientsSeeded', true);
     }
   },
@@ -2140,7 +2238,7 @@ function route(quiet) {
   closeOverlay();
   if (page === 'add') renderAdd(id);
   else if (page === 'detail') renderDetail(id);
-  else if (page === 'report') renderReport();
+  else if (page === 'report') renderReport(id);
   else if (page === 'markets') renderMarkets();
   else if (page === 'settings') renderSettings();
   else if (page === 'wishlist') renderWishlist();
@@ -2429,7 +2527,7 @@ function photoViewer(list, start) {
   box.onpointerdown = e => e.stopPropagation();
 }
 // ---------- pages/clients: the customers you buy for (kept on the iPhone, its GitHub repository and the computer) ----------
-// A client: { id, name, phone, wechat, place, note, createdAt }. Wishes keep the client's name in w.client.
+// A client: { id, name, phone, wechat, place, note, createdAt }. Wishes keep their clients' names in w.clients (w.client: the same names joined, for display).
 const clients = {
   all() { return DB.clients.slice().sort((a, b) => a.name.localeCompare(b.name)); },
   get(id) { return DB.clients.find(c => c.id === id); },
@@ -2446,10 +2544,10 @@ const clients = {
     const i = DB.clients.findIndex(x => x.id === c.id);
     i >= 0 ? DB.clients[i] = c : DB.clients.push(c);
     await DB.write('clients', 'put', c);
-    if (oldName && oldName !== c.name) for (const w of this.wishesOf(oldName)) await wishes.save(Object.assign({}, w, { client: c.name }));
+    if (oldName && oldName !== c.name) for (const w of this.wishesOf(oldName)) { const cs = wishClients(w).map(x => x.toLowerCase() === norm(oldName).toLowerCase() ? c.name : x); await wishes.save(Object.assign({}, w, { clients: cs, client: cs.join(', ') })); }
   },
   async remove(id) { DB.clients = DB.clients.filter(c => c.id !== id); await DB.write('clients', 'delete', id); },
-  wishesOf(name) { const n = norm(name).toLowerCase(); return DB.wishes.filter(w => norm(w.client).toLowerCase() === n); }
+  wishesOf(name) { const n = norm(name).toLowerCase(); return DB.wishes.filter(w => wishClients(w).some(c => c.toLowerCase() === n)); }
 };
 const callNo = s => 'tel:' + String(s || '').replace(/[^\d+]/g, '');
 let cq = '';
@@ -2559,7 +2657,9 @@ let wishClient = ''; // "Add a wish for this client": fills the client on the ne
 // ---------- pages/report ----------
 let rtab = 'overview', simMode = 'both';
 const RTABS = [['overview', 'Overview'], ['day', 'Daily'], ['month', 'Monthly'], ['year', 'Yearly'], ['dups', 'Duplicates'], ['similar', 'Similar']];
-function renderReport() {
+function renderReport(kind) {
+  if (kind === 'wishes') return renderWishReport();
+  if (kind !== 'products') return renderReportChoice();
   simpleNav(''); tabbar('report');
   const s = TradeReport.summarize(store.all());
   $body.innerHTML = `
@@ -2573,6 +2673,7 @@ function renderReport() {
           <span><b data-count="${s.photoCount}">${s.photoCount}</b>Photos</span>
         </div></div>`, 52)}
     <div class="page r-body">
+      ${reportSwitch('products')}
       <div class="seg" id="seg"><div class="seg-pill" id="segPill"></div>${RTABS.map(t => `<div class="seg-i ${rtab === t[0] ? 'on' : ''}" data-t="${t[0]}">${t[1]}</div>`).join('')}</div>
       <div id="rview"></div>
     </div>`;
@@ -2603,9 +2704,9 @@ function drawOverview(el, s) {
   const maxP = Math.max(1, ...s.markets.map(m => m.products.length));
   el.innerHTML = `
     <div class="exone tap" id="exAll">
-      <span class="exo-ic">${ic('download', '#fff', 20, 2.4)}</span>
-      <div style="flex:1;min-width:0"><b>Export report</b><span>PDF or Excel</span></div>
-      <span class="exo-fmt"><i class="p">PDF</i><i class="x">XLS</i></span>
+      <span class="exo-ic">${ic('print', '#fff', 20, 2.2)}</span>
+      <div style="flex:1;min-width:0"><b>${esc(t('Product report'))}</b><span>${esc(t('Print or email'))}</span></div>
+      ${repFmt()}
     </div>
     <div class="card">
       <div class="card-head"><div class="card-title">By market</div><span class="hint">${plural(s.markets.length, 'group')}</span></div>
@@ -2656,7 +2757,7 @@ function drawPeriods(el, kind) {
             <div style="flex:1;min-width:0"><div class="mini-name ellipsis" data-notr>${esc(x.name)}</div><div class="mini-sub ellipsis" data-notr>${esc(whereOf(x))}</div></div>
             <div class="mini-price">${money(x.currency, x.price)}<div class="mini-sub">MOQ ${esc(x.minOrder)} ${esc(x.unit)}</div></div></div>`).join('')}
           <div class="row-btns">
-            <button class="btn sm soft" data-ex="1">${ic('download', B(), 15, 2.4)}Export<span class="exo-fmt sm"><i class="p">PDF</i><i class="x">XLS</i></span></button>
+            <button class="btn sm soft" data-ex="1">${ic('print', B(), 15, 2.2)}${esc(t('Report'))}</button>
           </div>
         </div></div></div>
       </div>`).join('')}</div>`;
@@ -2719,7 +2820,7 @@ async function drawDuplicates(el) {
   el.innerHTML = `<div class="card">
       <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('similar', B(), 16)}</div>${esc(t('Duplicates'))}</div><span class="hint">${plural(groups.length, 'group')}</span></div>
       <div class="hint" style="line-height:1.5;margin:-4px 0 6px">${esc(t('The same item registered more than once (same name and photo). Each group is compared side by side: green = the same, orange = different.'))}</div>
-      ${groups.length ? `<div class="row-btns"><button class="btn sm primary" id="dupEx">${ic('download', '#fff', 15, 2.4)}${esc(t('Export comparison'))}<span class="exo-fmt sm on"><i class="p">PDF</i><i class="x">XLS</i></span></button></div>` : ''}
+      ${groups.length ? `<div class="row-btns"><button class="btn sm primary" id="dupEx">${ic('print', '#fff', 15, 2.2)}${esc(t('Comparison report'))}</button></div>` : ''}
     </div>
     <div id="dlist">${groups.length ? groups.map((g, gi) => `<div class="card">
       <div class="card-head" style="margin-bottom:2px"><div style="min-width:0"><div class="p-title ellipsis" data-notr>${esc(g.name)}</div>
@@ -2748,7 +2849,7 @@ async function drawSimilar(el) {
       <div class="hint" style="line-height:1.5;margin:-4px 0 10px">Products that look the same — by name or by photo — from different shops, so you can compare prices. The cheapest is marked.</div>
       <div class="modes">${modeBtn('both', 'Name + photo')}${modeBtn('name', 'Same name')}${modeBtn('photo', 'Same look')}</div>
       ${groups.length ? `<div class="row-btns" style="margin-top:4px">
-        <button class="btn sm primary" id="simEx">${ic('download', '#fff', 15, 2.4)}Export price comparison<span class="exo-fmt sm on"><i class="p">PDF</i><i class="x">XLS</i></span></button></div>` : ''}
+        <button class="btn sm primary" id="simEx">${ic('print', '#fff', 15, 2.2)}${esc(t('Price comparison report'))}</button></div>` : ''}
     </div>
     <div id="glist">${groups.length ? groups.map((g, gi) => {
       const best = new Set(g.prices.map(c => c.cheapest));
@@ -2774,21 +2875,6 @@ async function drawSimilar(el) {
   if (se) se.onclick = () => exportMenu([].concat(...groups.map(g => g.products)), opts(), t('Price comparison'));
 }
 
-// One export button everywhere: tap → choose PDF or Excel
-function exportMenu(list, opts, label) {
-  if (!list.length) return toast(t('Add products first'));
-  const row = (k, icon, color, name, sub) => `<div class="as-item" data-k="${k}"><span class="exb-ic" style="background:${color}1A">${ic(icon, color, 20)}</span>
-    <div style="flex:1;min-width:0;text-align:left"><div>${name}</div><div class="sub">${esc(t(sub))}</div></div>${ic('right', '#94A3B8', 16, 2.4)}</div>`;
-  $overlay.innerHTML = `<div class="mask bottom" id="exm"><div class="as" onclick="event.stopPropagation()"><div class="as-group">
-      <div class="as-title"><span data-notr>${esc(label || (opts && opts.title) || t('Export'))}</span> · ${esc(plural(list.length, 'product'))}</div>
-      ${row('pdf', 'pdf', '#E11D48', 'PDF', 'With photos — to print or send')}
-      ${row('xlsx', 'sheet', '#16A34A', 'Excel', 'All data in a table, with photos')}
-    </div><div class="as-cancel" id="exNo">Cancel</div></div></div>`;
-  document.getElementById('exm').onclick = closeOverlay;
-  document.getElementById('exNo').onclick = closeOverlay;
-  $overlay.querySelectorAll('[data-k]').forEach(el => el.onclick = () => runExport(el.dataset.k, list, opts || undefined));
-}
-
 // Same env shape as the mini program report page, built on browser canvas
 function browserEnv() {
   const canvas = document.createElement('canvas');
@@ -2808,56 +2894,198 @@ function saveFile(blob, name) {
   a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
-let lastExport = null;
-async function runExport(kind, list, opts) {
-  if (!list.length) return toast('Add products first');
-  $overlay.innerHTML = `<div class="mask"><div class="busy"><div class="spinner"></div>
-    <div class="busy-title">${kind === 'pdf' ? 'Creating PDF report' : 'Creating Excel workbook'}</div>
-    <div class="bar big"><div class="fill" id="prog" style="width:0%"></div></div><div class="hint" id="progt">0%</div></div></div>`;
-  const prog = p => { const v = Math.round(p * 100), f = document.getElementById('prog'), t = document.getElementById('progt'); if (f) f.style.width = v + '%'; if (t) t.textContent = v + '%'; };
+// ---------- Report: a table to print or send by email — the name, then its photo in the next column, then the details ----------
+// The same "spec" draws the preview / print page (HTML) and the PDF sent by email (TradeReport.buildTablePdf).
+const PRODUCT_COLS = () => [{ k: 'name', h: t('Product'), w: 2.7 }, { k: 'photo', h: t('Photo') }, { k: 'where', h: t('Market / Shop'), w: 2.4 },
+  { k: 'price', h: t('Price'), w: 1.5, al: 'right' }, { k: 'moq', h: t('MOQ'), w: 1, al: 'right' }, { k: 'value', h: t('Value at MOQ'), w: 2, al: 'right' }];
+const WISH_COLS = () => [{ k: 'name', h: t('Item'), w: 3 }, { k: 'photo', h: t('Photo') }, { k: 'clients', h: t('Clients'), w: 2.2 },
+  { k: 'qty', h: t('Pieces'), w: 1, al: 'right' }, { k: 'price', h: t('Best price'), w: 1.9, al: 'right' }, { k: 'status', h: t('Status'), w: 1.5 }];
+const curOf = c => c && c !== 'undefined' ? c : '';
+const curTotals = m => [...m].map(([c, v]) => curOf(c) + TradeReport.money(v));
+const totalsTxt = ts => ts.map(x => curOf(x.currency) + TradeReport.money(x.value)).join(' · ');
+function productRow(p, best) {
+  const reg = TradeReport.registeredAt(p), unit = t(p.unit || 'pcs');
+  return { name: p.name || '—', sub: [String(p.description || '').replace(/\s+/g, ' ').trim(), p.size ? t('Size {x}', { x: p.size }) : ''].filter(Boolean).join(' · '),
+    photo: (p.images || [])[0] || '', photos: (p.images || []).length, best: !!best,
+    cells: {
+      where: { main: p.marketName || t('No market'), muted: !p.marketName, sub: [p.shopName, p.shopWechat === 'yes' && p.wechatId ? 'WeChat ' + p.wechatId : ''].filter(Boolean).join(' · ') },
+      price: { main: curOf(p.currency) + TradeReport.money(p.price), sub: t('per {unit}', { unit }), price: true },
+      moq: { main: TradeReport.int(Number(p.minOrder) || 0), sub: unit },
+      value: { main: curOf(p.currency) + TradeReport.money((Number(p.price) || 0) * (Number(p.minOrder) || 0)), sub: reg ? TradeReport.dateLabel(reg) : '' }
+    } };
+}
+function productSpec(list, opts, label) {
+  opts = opts || {};
+  const s = TradeReport.summarize(list);
+  const secs = opts.sections || s.markets.map(m => ({ name: m.name === TradeReport.NO_MARKET ? t('No market') : m.name, sub: plural(m.products.length, 'product') + ' · ' + plural(m.shops.length, 'shop'), total: totalsTxt(m.totals), products: m.products }));
+  const totals = s.totals.map(x => curOf(x.currency) + TradeReport.money(x.value));
+  const title = opts.title || label || t('Product report');
+  return { kind: 'products', title, kicker: opts.kicker || t('Product report'), date: TradeReport.stamp(Date.now()), cols: PRODUCT_COLS(),
+    kpis: [[t('Products'), s.count], [t('Markets'), s.marketCount], [t('Shops'), s.shopCount], [t('Photos'), s.photoCount]],
+    totalsLabel: t('Total value at minimum order'), totals,
+    sections: secs.map(g => ({ name: g.name, sub: g.sub, total: g.total, rows: g.products.map(p => productRow(p, g.best && g.best.indexOf(p) >= 0)) })),
+    fileBase: 'Products-' + (opts.fileTag || TradeReport.ymd(Date.now())), count: list.length,
+    stats: [[t('Products'), String(s.count)], [t('Markets'), String(s.marketCount)], [t('Shops'), String(s.shopCount)], [t('Total value at MOQ'), totals.join(' · ') || '—']] };
+}
+function wishRow(w) {
+  const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, n = (w.prices || []).filter(x => Number(x.price) > 0).length, cs = wishClients(w), pics = wishPics(w);
+  return { name: w.title || '—', sub: String(w.note || '').replace(/\s+/g, ' ').trim(), photo: pics[0] || '', photos: pics.length,
+    cells: {
+      clients: cs.length ? { main: cs.join(', ') } : { main: '—', muted: true },
+      qty: q ? { main: TradeReport.int(q), sub: t('pcs') } : { main: '—', muted: true },
+      price: p ? { main: p.cur + TradeReport.money(p.v), price: true, sub: [p.mk, q ? t('Total') + ' ' + p.cur + TradeReport.money(p.v * q) : '', n > 1 ? t('{n} prices', { n }) : ''].filter(Boolean).join(' · ') } : { main: t('No price'), muted: true },
+      status: { main: t(w.done ? 'Got it' : 'Still want'), tag: w.done ? 'ok' : 'want', sub: w.done && w.doneAt ? '✓ ' + TradeReport.dateLabel(w.doneAt) : w.createdAt ? TradeReport.dateLabel(w.createdAt) : '' }
+    } };
+}
+function wishSpec(list, label) {
+  const tot = new Map(), byG = new Map();
+  list.forEach(w => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0; if (p && q) tot.set(p.cur, (tot.get(p.cur) || 0) + p.v * q); });
+  list.slice().sort((a, b) => (a.done - b.done) || (b.createdAt || 0) - (a.createdAt || 0)).forEach(w => { const g = wishGroupOf(w); if (!byG.has(g)) byG.set(g, []); byG.get(g).push(w); });
+  const groups = [...byG.keys()].sort((a, b) => (!a) - (!b) || a.localeCompare(b));
+  const cl = new Set(); list.forEach(w => wishClients(w).forEach(c => cl.add(c.toLowerCase())));
+  const want = list.filter(w => !w.done).length, totals = curTotals(tot);
+  return { kind: 'wishes', title: label || t('Wishlist report'), kicker: t('Wishlist report'), date: TradeReport.stamp(Date.now()), cols: WISH_COLS(),
+    kpis: [[t('Wishes'), list.length], [t('Still want'), want], [t('Got it'), list.length - want], [t('Clients'), cl.size]],
+    totalsLabel: t('Total (price × pieces)'), totals,
+    sections: groups.map(g => { const ws = byG.get(g), gt = new Map(); ws.forEach(w => { const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0; if (p && q) gt.set(p.cur, (gt.get(p.cur) || 0) + p.v * q); });
+      return { name: groups.length === 1 && !g ? '' : g || t('No group'), sub: plural(ws.length, 'item'), total: curTotals(gt).join(' · '), rows: ws.map(wishRow) }; }),
+    fileBase: 'Wishlist-' + TradeReport.ymd(Date.now()), count: list.length,
+    stats: [[t('Wishes'), String(list.length)], [t('Still want'), String(want)], [t('Clients'), String(cl.size)], [t('Total'), totals.join(' · ') || '—']] };
+}
+// The report as a page: shown in the preview and printed (A4)
+function reportHtml(spec) {
+  const cell = (c, v) => {
+    v = v || {};
+    if (v.tag) return `<td class="rp-c ${c.al === 'right' ? 'r' : ''}"><span class="rp-tag ${v.tag}">${esc(v.main)}</span>${v.sub ? `<small>${esc(v.sub)}</small>` : ''}</td>`;
+    return `<td class="rp-c ${c.al === 'right' ? 'r' : ''}"><b class="${v.price ? 'pr' : ''} ${v.muted ? 'mu' : ''}" data-notr>${esc(v.main == null || v.main === '' ? '—' : v.main)}</b>${v.sub ? `<small data-notr>${esc(v.sub)}</small>` : ''}</td>`;
+  };
+  const small = spec.cols.filter(c => c.k !== 'name' && c.k !== 'photo');
+  let n = 0;
+  const rows = spec.sections.map(s => `<tbody>
+    ${s.name ? `<tr class="rp-sec"><td colspan="${spec.cols.length + 1}"><div><b data-notr>${esc(s.name)}</b><span>${esc([s.sub, s.total].filter(Boolean).join(' · '))}</span></div></td></tr>` : ''}
+    ${s.rows.map(r => `<tr class="rp-r">
+      <td class="rp-n"><span>${++n}</span></td>
+      ${spec.cols.map(c => c.k === 'name' ? `<td class="rp-name"><b data-notr>${esc(r.name)}</b>${r.sub ? `<small data-notr>${esc(r.sub)}</small>` : ''}${r.best ? `<span class="rp-best">★ ${esc(t('Best price'))}</span>` : ''}
+          <div class="rp-mob">${small.map(c2 => { const v = r.cells[c2.k] || {}; return v.main && !v.muted ? `<span class="${v.price ? 'pr' : ''} ${v.tag || ''}"><i>${esc(c2.h)}</i>${esc(v.main)}</span>` : ''; }).join('')}</div></td>`
+        : c.k === 'photo' ? `<td class="rp-ph">${r.photo ? `<span><img src="${r.photo}" alt="">${r.photos > 1 ? `<b>+${r.photos - 1}</b>` : ''}</span>` : `<span class="no">${ic('image', '#B6C0CD', 22)}</span>`}</td>`
+        : cell(c, r.cells[c.k])).join('')}</tr>`).join('')}
+  </tbody>`).join('');
+  return `<div class="rp-doc">
+    <div class="rp-cover"><div class="rp-k">${esc(spec.kicker)}</div><div class="rp-t" data-notr>${esc(spec.title)}</div><div class="rp-d">${esc(t('Generated {date}', { date: spec.date }))}</div></div>
+    <div class="rp-kpis">${spec.kpis.map(k => `<div><span>${esc(k[0])}</span><b>${esc(String(k[1]))}</b></div>`).join('')}</div>
+    ${spec.totalsLabel ? `<div class="rp-tot"><span>${esc(spec.totalsLabel)}</span><div>${spec.totals.length ? spec.totals.map(x => `<b>${esc(x)}</b>`).join('') : '<b>—</b>'}</div></div>` : ''}
+    <table class="rp-tbl"><thead><tr><th class="rp-n">#</th>${spec.cols.map(c => `<th class="${c.k === 'photo' ? 'rp-ph' : c.k === 'name' ? 'rp-name' : 'rp-c' + (c.al === 'right' ? ' r' : '')}">${esc(c.h)}</th>`).join('')}</tr></thead>
+      ${n || spec.count ? rows : ''}</table>
+    ${spec.count ? '' : `<div class="rp-empty">${esc(t('Nothing to show'))}</div>`}
+    <div class="rp-foot"><span>${esc(t('Generated {date} · Trade', { date: spec.date }))}</span><span>${esc(t('{n} items', { n: spec.count }))}</span></div>
+  </div>`;
+}
+// Tap "Report": the report opens full screen, with Print and Send by email
+function exportMenu(list, opts, label) {
+  if (!list.length) return toast(t('Add products first'));
+  reportPreview(productSpec(list, opts, label));
+}
+function reportPreview(spec) {
+  $overlay.innerHTML = `<div class="rpv" id="rpv">
+    <div class="rpv-top"><span class="rpv-x tap" id="rpvX">${ic('x', INK(), 20, 2.6)}</span><div class="rpv-tt"><b data-notr>${esc(spec.title)}</b><span>${esc(t('{n} items', { n: spec.count }))}</span></div></div>
+    <div class="rpv-body"><div class="rpv-paper">${reportHtml(spec)}</div></div>
+    <div class="rpv-acts"><button class="btn soft" id="rpvPrint">${ic('print', B(), 18, 2.2)}${esc(t('Print'))}</button><button class="btn primary" id="rpvMail">${ic('mail', '#fff', 18, 2.2)}${esc(t('Send by email'))}</button></div>
+  </div>`;
+  document.getElementById('rpvX').onclick = closeOverlay;
+  document.getElementById('rpvPrint').onclick = () => printReport(spec);
+  document.getElementById('rpvMail').onclick = () => mailReport(spec);
+}
+// Print: only the report goes to the printer (A4); everything else is hidden while printing
+async function printReport(spec) {
+  let root = document.getElementById('printRoot');
+  if (!root) { root = document.createElement('div'); root.id = 'printRoot'; document.body.appendChild(root); }
+  root.innerHTML = reportHtml(spec);
+  await Promise.all([...root.querySelectorAll('img')].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  const title = document.title; document.title = spec.fileBase;
+  const done = () => { document.title = title; root.innerHTML = ''; window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  try { window.print(); } catch (e) { done(); toast(t('Printing is not available here — send it by email and print from there')); }
+}
+// Email: the report is made into a PDF (same table, A4) and attached
+async function mailReport(spec) {
+  const back = $overlay.innerHTML;
+  const host = document.createElement('div'); host.className = 'mask';
+  host.innerHTML = `<div class="busy"><div class="spinner"></div><div class="busy-title">${esc(t('Preparing the report'))}</div><div class="bar big"><div class="fill" id="prog" style="width:0%"></div></div><div class="hint" id="progt">0%</div></div>`;
+  $overlay.appendChild(host);
+  const prog = p => { const v = Math.round(p * 100), f = document.getElementById('prog'), x = document.getElementById('progt'); if (f) f.style.width = v + '%'; if (x) x.textContent = v + '%'; };
   try {
-    const env = browserEnv();
-    opts = Object.assign({ colors: { brand: T().brand, brandDark: T().brandDark } }, opts || {});
-    if (kind !== 'pdf' && !opts.duplicates) { await ensureHashes(); opts.duplicates = TradeSimilar.duplicates(list); }
-    const out = kind === 'pdf' ? await TradeReport.buildPdf(list, env, prog, opts) : await TradeReport.buildExcel(list, env, prog, opts);
-    const type = kind === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    const blob = new Blob([out.bytes], { type });
-    if (lastExport) URL.revokeObjectURL(lastExport.url);
-    lastExport = { kind, name: out.fileName, url: URL.createObjectURL(blob), blob };
-    window.__lastExport = { kind, bytes: out.bytes, name: out.fileName };
-    const size = blob.size > 1048576 ? (blob.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(blob.size / 1024)) + ' KB';
-    const detail = kind === 'pdf' ? plural(out.pages, 'page') : t('{n} sheets · with photos', { n: out.sheets || 2 });
-    const file = new File([blob], out.fileName, { type });
-    const canShare = navigator.canShare && navigator.canShare({ files: [file] });
-    $overlay.innerHTML = `<div class="mask bottom" id="rmask"><div class="sheet" onclick="event.stopPropagation()">
-      <div class="grip"></div><div class="ok">${ic('check', '#fff', 24, 3)}</div>
-      <div class="sheet-title">Report ready</div>
-      <div class="file"><div class="ex-icon" style="background:${kind === 'pdf' ? 'rgba(225,29,72,.1)' : 'rgba(22,163,74,.1)'}">${ic(kind === 'pdf' ? 'pdf' : 'sheet', kind === 'pdf' ? '#E11D48' : '#16A34A', 20)}</div>
-        <div style="flex:1;min-width:0"><div class="file-name ellipsis">${esc(out.fileName)}</div><div class="hint">${size} · ${detail}</div></div></div>
-      <div class="sheet-actions">
-        <button class="btn primary" id="rMail">${ic('send', '#fff', 17)}Send by email</button>
-        <button class="btn soft" id="rSave">${ic('download', B(), 17)}Save on phone</button>
-      </div>
-      <div class="sheet-actions" style="margin-top:9px">
-        ${canShare ? `<button class="btn" id="rShare">${ic('send', INK(), 16)}Share (WeChat…)</button>` : ''}
-        <button class="btn" id="rOpen">${ic('open', INK(), 16)}Open</button>
-      </div>
-      <div class="done" id="rDone">Done</div></div></div>`;
-    document.getElementById('rmask').onclick = closeOverlay;
-    document.getElementById('rDone').onclick = closeOverlay;
-    const subject = out.fileName.replace(/\.(pdf|xlsx)$/, '').replace(/-/g, ' ');
-    const share = () => navigator.share({ files: [file], title: subject, text: subject }).catch(e => { if (e.name !== 'AbortError') toast('Could not share: ' + e.message); });
-    const title = (opts.title || t('Sourcing report')) + (opts.kicker && opts.title ? ' — ' + opts.kicker : '');
-    document.getElementById('rMail').onclick = () => emailReport({ kind, blob, file, name: out.fileName, type, list, title, canShare });
-    document.getElementById('rSave').onclick = () => { saveFile(blob, out.fileName); toast('Saved to Downloads ✓'); };
-    const sh = document.getElementById('rShare'); if (sh) sh.onclick = share;
-    document.getElementById('rOpen').onclick = () => window.open(lastExport.url, '_blank');
+    const out = await TradeReport.buildTablePdf(Object.assign({ colors: { brand: T().brand, brandDark: T().brandDark } }, spec), browserEnv(), prog);
+    const type = 'application/pdf', blob = new Blob([out.bytes], { type }), file = new File([blob], out.fileName, { type });
+    window.__lastExport = { kind: 'pdf', bytes: out.bytes, name: out.fileName, pages: out.pages };
+    const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+    host.remove();
+    await emailReport({ kind: 'pdf', blob, file, name: out.fileName, type, title: spec.title, canShare, stats: spec.stats, what: spec.kind === 'wishes' ? t('Wishlist report') : t('Product report'), back: () => { $overlay.innerHTML = back; reportPreview(spec); } });
   } catch (e) {
-    console.error(e);
-    closeOverlay();
-    toast('Export failed: ' + (e.message || e));
+    console.error(e); host.remove();
+    toast(t('Could not make the report: {e}', { e: e.message || e }));
   }
 }
+
+// ---------- the Reports tab: first it asks — a product report or a Wishlist report? ----------
+const reportSwitch = on => `<div class="rk-sw"><span class="tap ${on === 'products' ? 'on' : ''}" onclick="location.hash='report/products'">${ic('box', on === 'products' ? '#fff' : B(), 15, 2.4)}${esc(t('Products'))}</span><span class="tap ${on === 'wishes' ? 'on' : ''}" onclick="location.hash='report/wishes'">${ic('heart', on === 'wishes' ? '#fff' : B(), 15, 2.4)}${esc(t('Wishlist'))}</span></div>`;
+function renderReportChoice() {
+  simpleNav(''); tabbar('report');
+  const s = TradeReport.summarize(store.all()), want = DB.wishes.filter(w => !w.done).length;
+  $body.innerHTML = `
+    ${hero('chart', t('Reports'), t('Which report do you want?'), '', 34)}
+    <div class="page rk-page">
+      <div class="rk-q">${esc(t('Which report do you want?'))}</div>
+      <div class="rk-c tap" data-go="products"><span class="rk-ic">${ic('box', '#fff', 26, 2.2)}</span>
+        <div class="rk-t"><b>${esc(t('Product report'))}</b><span>${esc(plural(s.count, 'product'))} · ${esc(plural(s.marketCount, 'market'))} · ${esc(plural(s.shopCount, 'shop'))}</span></div>${ic('right', '#94A3B8', 18, 2.4)}</div>
+      <div class="rk-c wl tap" data-go="wishes"><span class="rk-ic">${ic('heart', '#fff', 26, 2.2)}</span>
+        <div class="rk-t"><b>${esc(t('Wishlist report'))}</b><span>${esc(t('{a} you want · {b} you got', { a: want, b: DB.wishes.length - want }))}</span></div>${ic('right', '#94A3B8', 18, 2.4)}</div>
+      <div class="rk-hint">${ic('print', '#94A3B8', 15, 2.2)}<span>${esc(t('Every report can be printed or sent by email.'))}</span></div>
+    </div>`;
+  $body.querySelectorAll('[data-go]').forEach(c => c.onclick = () => location.hash = 'report/' + c.dataset.go);
+}
+let wrStatus = 'want', wrClient = '';
+const wishReportList = () => DB.wishes.filter(w => (wrStatus === 'all' || (wrStatus === 'got') === !!w.done) && (!wrClient || wishClients(w).some(c => c.toLowerCase() === wrClient.toLowerCase())));
+function renderWishReport() {
+  simpleNav(''); tabbar('report');
+  const all = DB.wishes, want = all.filter(w => !w.done).length;
+  const names = [...new Set(all.flatMap(wishClients))].sort((a, b) => a.localeCompare(b));
+  if (wrClient && !names.some(c => c.toLowerCase() === wrClient.toLowerCase())) wrClient = '';
+  $body.innerHTML = `
+    ${hero('heart', t('Wishlist report'), t('Print it or send it by email'), `<div class="rsum"><div class="rsum-row">
+        <span><b data-count="${all.length}">${all.length}</b>${esc(t('Wishes'))}</span>
+        <span><b data-count="${want}">${want}</b>${esc(t('Still want'))}</span>
+        <span><b data-count="${all.length - want}">${all.length - want}</b>${esc(t('Got it'))}</span>
+        <span><b data-count="${names.length}">${names.length}</b>${esc(t('Clients'))}</span></div></div>`, 52)}
+    <div class="page r-body">
+      ${reportSwitch('wishes')}
+      <div class="card">
+        <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('filter', B(), 16)}</div>${esc(t('What goes in the report'))}</div></div>
+        <div class="modes">${[['want', 'Still want'], ['got', 'Got it'], ['all', 'All']].map(m => `<span class="qchip ${wrStatus === m[0] ? 'on' : ''}" data-st="${m[0]}">${esc(t(m[1]))}</span>`).join('')}</div>
+        ${names.length ? `<div class="field" style="margin:10px 0 0"><div class="label">${esc(t('Client'))}</div><select class="input" id="wrCl"><option value="">${esc(t('All clients'))}</option>${names.map(c => `<option value="${esc(c)}" ${c.toLowerCase() === wrClient.toLowerCase() ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>` : ''}
+      </div>
+      <div id="wrv"></div>
+    </div>`;
+  $body.querySelectorAll('[data-st]').forEach(c => c.onclick = () => { wrStatus = c.dataset.st; $body.querySelectorAll('[data-st]').forEach(x => x.classList.toggle('on', x === c)); drawWishReport(); });
+  const sel = document.getElementById('wrCl'); if (sel) sel.onchange = () => { wrClient = sel.value; drawWishReport(); };
+  drawWishReport(); countUp($body);
+}
+function drawWishReport() {
+  const el = document.getElementById('wrv'), list = wishReportList();
+  const label = [t('Wishlist report'), wrClient].filter(Boolean).join(' — ');
+  const spec = wishSpec(list, label);
+  el.innerHTML = `
+    <div class="exone tap" id="wrGo"><span class="exo-ic">${ic('print', '#fff', 20, 2.2)}</span>
+      <div style="flex:1;min-width:0"><b>${esc(t('Wishlist report'))}</b><span>${esc(t('{n} items', { n: list.length }))} · ${esc(t('Print or email'))}</span></div>${repFmt()}</div>
+    ${spec.sections.length ? spec.sections.map(s => `<div class="card">
+      ${s.name ? `<div class="card-head" style="margin-bottom:4px"><div class="card-title" data-notr>${ic('folder', B(), 16, 2.4)}${esc(s.name)}</div><span class="hint">${esc([s.sub, s.total].filter(Boolean).join(' · '))}</span></div>` : ''}
+      ${s.rows.map((r, i) => `<div class="mini wr-mini">
+        <span class="wr-n">${i + 1}</span><div class="wr-tx"><div class="mini-name ellipsis" data-notr>${esc(r.name)}</div><div class="mini-sub ellipsis" data-notr>${esc([r.cells.clients.muted ? '' : '👤 ' + r.cells.clients.main, r.cells.qty.muted ? '' : r.cells.qty.main + ' ' + t('pcs')].filter(Boolean).join(' · ') || '—')}</div></div>
+        ${r.photo ? `<img src="${r.photo}" loading="lazy">` : `<div class="ph">${ic('image', '#B6C0CD', 18)}</div>`}
+        <div class="mini-price">${r.cells.price.muted ? `<span class="mu">${esc(r.cells.price.main)}</span>` : esc(r.cells.price.main)}<div class="mini-sub">${esc(r.cells.status.main)}</div></div></div>`).join('')}
+    </div>`).join('') : `<div class="card empty"><div class="empty-art">${ic('heart', B(), 34, 1.6)}</div><div class="empty-title">${esc(t('Nothing to show'))}</div><div class="muted">${esc(t('No wish matches this choice.'))}</div></div>`}`;
+  document.getElementById('wrGo').onclick = () => list.length ? reportPreview(spec) : toast(t('No wish matches this choice.'));
+}
+const repFmt = on => `<span class="exo-fmt ${on ? 'on' : ''}"><i class="p">${ic('print', on ? '#fff' : '#E11D48', 11, 2.6)}</i><i class="x">${ic('mail', on ? '#fff' : '#16A34A', 11, 2.6)}</i></span>`;
 
 // ---------- email ----------
 const EMAIL_RE = /^[^\s@<>(),;:"]+@[^\s@<>(),;:"]+\.[^\s@<>(),;:"]+$/;
@@ -2880,12 +3108,11 @@ async function sendEmailDirect(msg) {
 async function emailReport(ex) {
   const st = await emailStatus(true);
   const direct = st.available && st.configured;
-  const s = TradeReport.summarize(ex.list);
-  const totals = s.totals.map(t => t.currency + TradeReport.money(t.value)).join(' · ') || '—';
-  const what = t(ex.kind === 'pdf' ? 'PDF report' : 'Excel report');
+  const stats = ex.stats || [];
+  const what = ex.what || t('PDF report');
   const subject = ex.title + ' — ' + TradeReport.dateLabel(Date.now());
   const text = t('Hello,') + '\n\n' + t('Please find attached the {what}: {title}.', { what, title: ex.title }) + '\n\n' +
-    t('Products: {n}', { n: s.count }) + '\n' + t('Markets: {n}', { n: s.marketCount }) + '\n' + t('Shops: {n}', { n: s.shopCount }) + '\n' + t('Total value at minimum order: {x}', { x: totals }) + '\n\n' + t('Best regards');
+    stats.map(x => x[0] + ': ' + x[1]).join('\n') + '\n\n' + t('Best regards');
   const recents = (DB.kv.recipients || []).slice(0, 6);
   const how = direct ? `${ic('check', B(), 14, 2.6)}<span>${esc(t('Sent straight from {email} with the file attached.', { email: st.from }))}</span>`
     : ex.canShare ? `${ic('send', B(), 14)}<span>Opens your email app (Gmail, Mail…) with the file attached. The address is copied — paste it in “To”.</span>`
@@ -2905,7 +3132,7 @@ async function emailReport(ex) {
   const $to = document.getElementById('emTo'), $err = document.getElementById('emErr'), $go = document.getElementById('emGo');
   const fail = m => { $err.textContent = m; $err.style.display = 'block'; };
   document.getElementById('em').onclick = closeOverlay;
-  document.getElementById('emNo').onclick = closeOverlay;
+  document.getElementById('emNo').onclick = ex.back || closeOverlay;
   $overlay.querySelectorAll('[data-r]').forEach(c => c.onclick = () => {
     const list = splitEmails($to.value);
     if (!list.includes(c.dataset.r)) list.push(c.dataset.r);
@@ -2922,7 +3149,7 @@ async function emailReport(ex) {
       $go.disabled = true; $go.style.opacity = .7; $go.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:3px;margin:0;border-color:rgba(255,255,255,.35);border-top-color:#fff"></div>Sending…';
       try {
         await sendEmailDirect({ to, subject: sub, text: body, title: ex.title, brand: T().brand, filename: ex.name, contentType: ex.type, data: await toBase64(ex.blob),
-          stats: [[t('Products'), String(s.count)], [t('Markets'), String(s.marketCount)], [t('Shops'), String(s.shopCount)], [t('Total value at MOQ'), totals]], attachedText: t('{file} is attached.', { file: ex.name }) });
+          stats, attachedText: t('{file} is attached.', { file: ex.name }) });
         $overlay.innerHTML = `<div class="mask bottom" id="sent"><div class="sheet" onclick="event.stopPropagation()"><div class="grip"></div><div class="ok">${ic('check', '#fff', 24, 3)}</div>
           <div class="sheet-title" style="margin-bottom:6px">Email sent</div><div class="muted" style="margin-bottom:16px">${esc(t('{file} was sent to', { file: ex.name }))}<br><b style="color:var(--ink)">${to.map(esc).join(', ')}</b></div>
           <button class="btn primary" id="sentOk">Done</button></div></div>`;
@@ -5480,6 +5707,8 @@ let wishTab = 'want', wlDraft = '', wlPic = '', wlPicOrig = ''; // the add bar k
 // wishGroup = the group shown ('' = all); wlNewGroups = groups just made that have no item yet.
 let wishGroup = '', wlNewGroups = [], wlSel = null; // wlSel: Set of chosen ids while choosing items for a group
 // A wish's photos: w.images (several); w.image stays the first one, for older data and places that show one photo
+// The clients of a wish (one or more): w.clients, or the single name of an older wish. w.client keeps them joined for display.
+const wishClients = w => Array.isArray(w.clients) && w.clients.length ? w.clients.map(norm).filter(Boolean) : norm(w.client || '') ? [norm(w.client)] : [];
 const wishPics = w => Array.isArray(w.images) && w.images.filter(Boolean).length ? w.images.filter(Boolean) : w.image ? [w.image] : [];
 const newWishId = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const wishGroupOf = w => norm(w.group || '');
@@ -5785,14 +6014,15 @@ function editWish(id, tab) {
   const w = Object.assign({ title: '', client: '', qty: '', note: '', price: '', currency: '¥', priority: 2, image: '', link: '', prices: [], done: false }, old ? JSON.parse(JSON.stringify(old)) : {});
   w.images = wishPics(w).slice(0, MAX_IMAGES);
   loadCropPairs({ images: w.images, origImages: w.origImages }); // "Original" in the crop editor gives back the uncropped photo
-  if (!old && wishClient) { w.client = wishClient; wishClient = ''; }
+  let csel = wishClients(w); // the clients chosen on this wish
+  if (!old && wishClient) { csel = [wishClient]; wishClient = ''; }
   if (!Array.isArray(w.prices)) w.prices = [];
   if (!old && wishGroup) w.group = wishGroup;
-  let more = !!(w.client || w.note || Number(w.qty) > 0 || w.group), view = tab === 'prices' ? 'prices' : 'item';
+  let more = !!(csel.length || w.note || Number(w.qty) > 0 || w.group), view = tab === 'prices' ? 'prices' : 'item';
   let pf = { market: '', area: '', contact: '', price: '', currency: (w.prices[w.prices.length - 1] || {}).currency || w.currency || '¥' }; // the "add a price" form
   const $ = k => document.getElementById(k);
   const keep = () => {
-    if ($('weTitle')) { w.title = $('weTitle').value; w.group = $('weGroup').value; w.client = $('weClient').value; w.note = $('weNote').value; w.qty = $('weQty').value; }
+    if ($('weTitle')) { w.title = $('weTitle').value; w.group = $('weGroup').value; w.note = $('weNote').value; w.qty = $('weQty').value; }
     if ($('pfMarket')) pf = { market: $('pfMarket').value, area: $('pfArea').value, contact: $('pfContact').value, price: $('pfPrice').value, currency: $('pfCur').value };
   };
   // Prices are kept at once on a wish that already exists, so none is lost if the sheet is closed without Save
@@ -5839,8 +6069,9 @@ function editWish(id, tab) {
       <div class="we-x"><div><div class="in">
         <div class="field"><div class="label">${esc(t('Group'))}</div><input class="input" id="weGroup" list="weGroups" value="${esc(w.group || '')}" maxlength="40" autocomplete="off" placeholder="${esc(t('e.g. Phones'))}">
           <datalist id="weGroups">${wishGroups().map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>
-        <div class="field"><div class="label">${esc(t('Client name'))}</div><div class="cp" id="cp">
-          <div class="cp-in"><span class="cp-ic">${ic('user', B(), 16, 2.4)}</span><input class="input" id="weClient" value="${esc(w.client)}" maxlength="80" autocomplete="off" placeholder="${esc(t('Choose or type a client'))}"><span class="cp-dd tap" id="cpDd">${ic('down', '#64748B', 16, 2.6)}</span></div>
+        <div class="field"><div class="label">${esc(t('Clients'))} <small class="cp-hint">${esc(t('one or more'))}</small></div><div class="cp" id="cp">
+          <div class="cp-chips" id="cpChips"></div>
+          <div class="cp-in"><span class="cp-ic">${ic('user', B(), 16, 2.4)}</span><input class="input" id="weClient" value="" maxlength="80" autocomplete="off" placeholder="${esc(t('Choose or type a client'))}"><span class="cp-dd tap" id="cpDd">${ic('down', '#64748B', 16, 2.6)}</span></div>
           <div class="cp-list" id="cpList" hidden></div></div></div>
         <div class="field"><div class="label">${esc(t('Pieces needed'))}</div><div class="joined"><input class="input" id="weQty" inputmode="numeric" value="${esc(w.qty)}" placeholder="${esc(t('How many pieces?'))}"><span class="addon" style="display:flex;align-items:center;padding:0 14px">${esc(t('pcs'))}</span></div></div>
         <div class="field"><div class="label">${esc(t('Other information'))}</div><textarea class="input textarea big" id="weNote" rows="6" maxlength="3000" placeholder="${esc(t('Colour, size, when it is needed…'))}">${esc(w.note)}</textarea></div>
@@ -5860,13 +6091,16 @@ function editWish(id, tab) {
       const title = norm(w.title);
       if (!title) { if (view !== 'item') { view = 'item'; draw(); } return toast(t('Write the item you want first')); }
       const cheap = wishCheapest(w);
-      const rec = Object.assign({}, old || {}, w, { id: old ? old.id : newWishId(), title, client: norm(w.client || ''), note: String(w.note || '').trim(), link: String(w.link || '').trim(),
+      const typed = norm(($('weClient') || {}).value || ''); // a name typed but not picked is added too
+      if (typed && !csel.some(c => c.toLowerCase() === typed.toLowerCase())) csel.push((clients.find(typed) || { name: typed }).name);
+      const rec = Object.assign({}, old || {}, w, { id: old ? old.id : newWishId(), title, clients: csel.slice(), client: csel.join(', '), note: String(w.note || '').trim(), link: String(w.link || '').trim(),
         qty: Number(w.qty) > 0 ? String(Math.round(Number(w.qty))) : '', price: cheap ? String(Number(cheap.price)) : (old && !(old.prices || []).length ? old.price || '' : ''),
         currency: cheap ? cheap.currency || '¥' : w.currency, createdAt: old ? old.createdAt : Date.now() });
       rec.group = norm(w.group || '').slice(0, 40); if (!rec.group) delete rec.group; else wlNewGroups = wlNewGroups.filter(x => x !== rec.group);
       rec.images = w.images.slice(); rec.image = w.images[0] || '';
       const origs = originalsOf(rec.images); if (origs.some(Boolean)) rec.origImages = origs; else delete rec.origImages;
-      if (rec.client) await clients.ensure(rec.client);
+      for (const c of rec.clients) await clients.ensure(c);
+      if (!rec.clients.length) delete rec.clients;
       await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); wishRefresh();
     };
     if (view === 'prices') {
@@ -5920,27 +6154,35 @@ function editWish(id, tab) {
       $('weMore').innerHTML = esc(t(more ? 'Less' : 'More')) + ic('down', B(), 15, 2.6);
       if (more) setTimeout(() => sh.scrollTo({ top: sh.scrollHeight, behavior: 'smooth' }), 260);
     };
-    // Client: a drop-down of the registered clients; typing filters it, and a new name can be added as a client
-    const cIn = $('weClient'), cList = $('cpList');
+    // Clients: one or more — pick registered clients from the drop-down (tap again to take one off), or type a new name to add it
+    const cIn = $('weClient'), cList = $('cpList'), cChips = $('cpChips');
+    const has = n => csel.some(c => c.toLowerCase() === norm(n).toLowerCase());
+    const chipsDraw = () => {
+      cChips.innerHTML = csel.map((c, i) => `<span class="cp-chip" style="--h:${hueOf(c)}"><i>${esc(c.trim().charAt(0).toUpperCase())}</i><b data-notr>${esc(c)}</b><span class="cp-x tap" data-cx="${i}">${ic('x', '#64748B', 12, 3)}</span></span>`).join('');
+      cChips.hidden = !csel.length;
+      cChips.querySelectorAll('[data-cx]').forEach(x => x.onpointerdown = e => { e.preventDefault(); csel.splice(+x.dataset.cx, 1); chipsDraw(); if (!cList.hidden) cpDraw(); });
+    };
+    const pick = name => { if (has(name)) csel = csel.filter(c => c.toLowerCase() !== norm(name).toLowerCase()); else csel.push(name); cIn.value = ''; chipsDraw(); cpDraw(); };
     const cpDraw = () => {
       const v = norm(cIn.value), k = v.toLowerCase(), exact = clients.find(v), all = clients.all();
-      const shown = k && !exact ? all.filter(c => [c.name, c.phone, c.wechat, c.place].join(' ').toLowerCase().includes(k)) : all;
-      cList.innerHTML = shown.map(c => `<div class="cp-it ${exact && exact.id === c.id ? 'on' : ''}" data-cn="${esc(c.name)}">
+      const shown = k ? all.filter(c => [c.name, c.phone, c.wechat, c.place].join(' ').toLowerCase().includes(k)) : all;
+      cList.innerHTML = shown.map(c => `<div class="cp-it ${has(c.name) ? 'on' : ''}" data-cn="${esc(c.name)}">
           <span class="cp-a" style="--h:${hueOf(c.name)}">${esc(c.name.trim().charAt(0).toUpperCase())}</span>
           <div class="cp-t"><b data-notr>${esc(c.name)}</b>${c.phone || c.wechat || c.place ? `<small data-notr>${esc([c.phone || c.wechat, c.place].filter(Boolean).join(' · '))}</small>` : ''}</div>
-          ${exact && exact.id === c.id ? ic('check', B(), 16, 3) : ''}</div>`).join('')
+          <span class="cp-box">${has(c.name) ? ic('check', '#fff', 13, 3.2) : ''}</span></div>`).join('')
         + (v && !exact ? `<div class="cp-it new" data-cnew>${ic('plus', B(), 16, 2.8)}<b>${esc(t('Add “{c}” as a new client', { c: v }))}</b></div>` : '')
         + (!all.length && !v ? `<div class="cp-none">${esc(t('No clients yet — type a name to add one'))}</div>` : '')
-        + (v ? `<div class="cp-it clr" data-cclr>${ic('x', '#94A3B8', 14, 2.6)}<span>${esc(t('No client'))}</span></div>` : '');
-      cList.querySelectorAll('[data-cn]').forEach(x => x.onpointerdown = e => { e.preventDefault(); cIn.value = x.dataset.cn; cpClose(); });
-      const nw = cList.querySelector('[data-cnew]'); if (nw) nw.onpointerdown = async e => { e.preventDefault(); const c = await clients.ensure(v); cIn.value = c.name; cpClose(); toast(t('Client registered ✓')); };
-      const cl = cList.querySelector('[data-cclr]'); if (cl) cl.onpointerdown = e => { e.preventDefault(); cIn.value = ''; cpDraw(); };
+        + (csel.length ? `<div class="cp-it clr" data-cok>${ic('check', B(), 14, 2.8)}<span>${esc(t('Done · {n} chosen', { n: csel.length }))}</span></div>` : '');
+      cList.querySelectorAll('[data-cn]').forEach(x => x.onpointerdown = e => { e.preventDefault(); pick(x.dataset.cn); });
+      const nw = cList.querySelector('[data-cnew]'); if (nw) nw.onpointerdown = async e => { e.preventDefault(); const c = await clients.ensure(v); if (!has(c.name)) pick(c.name); else cpDraw(); toast(t('Client registered ✓')); };
+      const ok = cList.querySelector('[data-cok]'); if (ok) ok.onpointerdown = e => { e.preventDefault(); cpClose(); };
     };
     const cpOpen = () => { cpDraw(); cList.hidden = false; $('cp').classList.add('open'); };
-    const cpClose = () => { cList.hidden = true; $('cp').classList.remove('open'); cIn.blur(); w.client = cIn.value; };
+    const cpClose = () => { cList.hidden = true; $('cp').classList.remove('open'); cIn.blur(); };
+    chipsDraw();
     cIn.onfocus = cpOpen;
     cIn.oninput = () => { if (cList.hidden) cpOpen(); else cpDraw(); };
-    cIn.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); const first = cList.querySelector('[data-cn], [data-cnew]'); if (first) first.onpointerdown(new Event('pointerdown')); else cpClose(); } else if (e.key === 'Escape') cpClose(); };
+    cIn.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); const first = norm(cIn.value) && cList.querySelector('[data-cn]:not(.on), [data-cnew]'); if (first) first.onpointerdown(new Event('pointerdown')); else cpClose(); } else if (e.key === 'Escape') cpClose(); };
     $('cpDd').onpointerdown = e => { e.preventDefault(); if (cList.hidden) { cIn.focus({ preventScroll: true }); cpOpen(); } else cpClose(); };
     $('wem').querySelector('.sheet').addEventListener('pointerdown', e => { if (!cList.hidden && !e.target.closest('#cp')) cpClose(); });
     // Photos: tap the big photo or + to add (several at once, up to MAX_IMAGES); tap a small one to make it the main photo
