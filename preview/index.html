@@ -2600,11 +2600,23 @@ function drawClients() {
             <div class="mk-sub ellipsis" data-notr>${sub.map(esc).join(' · ') || '&nbsp;'}</div></div>
           ${c.phone ? `<a class="mk-act" href="${callNo(c.phone)}" data-stop>${ic('phone', '#16A34A', 16, 2.2)}</a>` : ''}
           ${want ? `<span class="cl-n">${want}</span>` : ''}
+          <div class="mk-act" data-cedit="${c.id}" aria-label="${esc(t('Edit'))}">${ic('edit', '#64748B', 16)}</div>
+          <div class="mk-act" data-cdel="${c.id}" aria-label="${esc(t('Delete'))}">${ic('trash', '#E11D48', 16)}</div>
         </div>`;
       }).join('');
   stagger(el);
   el.querySelectorAll('[data-stop]').forEach(a => a.onclick = e => e.stopPropagation());
   el.querySelectorAll('.mk').forEach(row => row.onclick = () => editClient(row.dataset.id));
+  el.querySelectorAll('[data-cedit]').forEach(b => b.onclick = e => { e.stopPropagation(); editClient(b.dataset.cedit); });
+  el.querySelectorAll('[data-cdel]').forEach(b => b.onclick = e => { e.stopPropagation(); deleteClient(b.dataset.cdel); });
+}
+// Delete a client after asking; their wishes keep the name. Returns true when deleted.
+async function deleteClient(id) {
+  const c = clients.get(id); if (!c) return false;
+  const n = clients.wishesOf(c.name).length;
+  if (!await confirmDel({ title: t('Delete this client?'), text: n ? t('"{c}" is removed from your clients. Their {n} wishes stay, with the name on them.', { c: c.name, n }) : `"${c.name}"`, icon: 'user' })) return false;
+  await clients.remove(c.id); toast(t('Deleted')); if (location.hash === '#clients') renderClients();
+  return true;
 }
 // One client: details, call / copy WeChat, their wishes (tap one to open it)
 function editClient(id) {
@@ -2626,7 +2638,7 @@ function editClient(id) {
         ${wishPics(w).length ? `<img src="${wishPics(w)[0]}" loading="lazy">` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
         <b class="ellipsis" data-notr>${esc(w.title)}</b><span>${esc(t(w.done ? 'Got it' : 'Still want'))}</span></div>`).join('')}</div>` : ''}
     <div class="we-acts"><button class="btn sm soft" id="ceWish">${ic('heart', B(), 15)}${esc(t('Add a wish for this client'))}</button>
-      <button class="btn sm danger" id="ceDel" style="width:44px;flex-shrink:0">${ic('trash', '#E11D48', 16)}</button></div>
+      <button class="btn sm danger" id="ceDel" style="flex-shrink:0">${ic('trash', '#E11D48', 16)}${esc(t('Delete'))}</button></div>
     <div class="sheet-actions"><button class="btn" id="ceNo">${esc(t('Cancel'))}</button><button class="btn primary" id="ceOk">${ic('check', '#fff', 16, 3)}${esc(t('Save'))}</button></div>
   </div></div>`;
   $('clm').onclick = closeOverlay; $('ceNo').onclick = closeOverlay;
@@ -2646,11 +2658,7 @@ function editClient(id) {
     location.hash = 'wishlist';
   };
   document.querySelectorAll('[data-w]').forEach(x => x.onclick = () => { closeOverlay(); setTimeout(() => editWish(x.dataset.w), 60); });
-  $('ceDel').onclick = async () => {
-    const n = ws.length;
-    if (!await confirmDel({ title: t('Delete this client?'), text: n ? t('"{c}" is removed from your clients. Their {n} wishes stay, with the name on them.', { c: old.name, n }) : `"${old.name}"`, icon: 'user' })) return;
-    await clients.remove(old.id); closeOverlay(); toast(t('Deleted')); if (location.hash === '#clients') renderClients();
-  };
+  $('ceDel').onclick = async () => { if (await deleteClient(old.id)) closeOverlay(); };
 }
 let wishClient = ''; // "Add a wish for this client": fills the client on the next new wish
 
