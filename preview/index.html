@@ -1063,14 +1063,17 @@
   .pf-form { display:flex; flex-direction:column; gap:8px; animation:pfOpen .28s var(--ease) both; }
   @keyframes pfOpen { from { opacity:0; transform:translateY(-6px); } }
   .pf-add.edit { border-style:solid; }
-  .pf-btns { display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
-  .pf-x.pf-del:active { background:#FFE4E6; }
-  .pf-it.editing { box-shadow:0 0 0 2px var(--brand-2), var(--shadow); }
+  .pf-sw { position:relative; overflow:hidden; border-radius:15px; box-shadow:var(--shadow); transition:opacity .26s, max-height .3s, transform .26s; max-height:200px; }
+  .pf-sw.bye { opacity:0; max-height:0; transform:translateX(-30px); } .pf-sw.new { animation:wiNew .6s cubic-bezier(.22,1.28,.36,1) both; }
+  .pf-sw .wt-acts .wt-a { width:72px; } .pf-sw .wt-a.wt-ed { background:#4F46E5; }
+  .pf-sw .pf-it { padding-right:12px; position:relative; z-index:1; box-shadow:none; border-radius:0; touch-action:pan-y; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; transition:transform .28s cubic-bezier(.22,1,.36,1); }
+  .pf-sw .pf-it.drag { transition:none; }
+  .pf-sw.editing { box-shadow:0 0 0 2px var(--brand-2), var(--shadow); }
   .pf-add .input { background:var(--card); }
   .pf-row { display:flex; gap:8px; } .pf-go { width:auto; flex-shrink:0; padding:0 16px; }
   .pf-list { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
   .pf-it { display:flex; align-items:center; gap:10px; padding:10px 8px 10px 10px; border-radius:15px; background:var(--card); box-shadow:var(--shadow); transition:transform .26s var(--ease), opacity .26s; }
-  .pf-it.best { box-shadow:0 0 0 1.5px #4ADE80, var(--shadow); }
+  .pf-sw .pf-it.best { box-shadow:inset 0 0 0 1.5px #4ADE80; border-radius:15px; } .pf-sw .pf-it.best.open, .pf-sw .pf-it.best.drag { border-radius:15px 0 0 15px; }
   .pf-it.new { animation:wiNew .6s cubic-bezier(.22,1.28,.36,1) both; } .pf-it.bye { transform:translateX(-30px); opacity:0; }
   .pf-ic { width:36px; height:36px; border-radius:11px; background:var(--mint); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .pf-it.best .pf-ic { background:#DCFCE7; }
@@ -6025,6 +6028,40 @@ function drawWishes(still) { // still: redraw without the entrance animation (wh
   });
   bindSelBar(bar);
 }
+// Prices of a wish: drag a price left to show Edit and Delete behind it; one open at a time; a tap closes it
+let pfSwOpen = null;
+function pfSwipeClose() { if (pfSwOpen) { pfSwOpen.style.transform = ''; pfSwOpen.classList.remove('open'); pfSwOpen = null; } }
+function pfSwipe(el) {
+  pfSwOpen = null; if (!el) return;
+  el.querySelectorAll('.pf-sw').forEach(sw => {
+    const row = sw.querySelector('.pf-it'), acts = sw.querySelector('.wt-acts');
+    let x0 = 0, y0 = 0, dx = 0, mode = '', base = 0;
+    row.addEventListener('pointerdown', e => {
+      if (e.button > 0) return;
+      x0 = e.clientX; y0 = e.clientY; dx = 0; mode = 'wait'; base = row === pfSwOpen ? -acts.offsetWidth : 0;
+      if (pfSwOpen && pfSwOpen !== row) pfSwipeClose();
+    });
+    row.addEventListener('pointermove', e => {
+      if (!mode) return;
+      const mx = e.clientX - x0, my = e.clientY - y0;
+      if (mode === 'wait') { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; mode = Math.abs(mx) > Math.abs(my) ? 'swipe' : ''; if (mode) { row.setPointerCapture(e.pointerId); row.classList.add('drag'); } return; }
+      dx = mx; row.style.transform = `translateX(${Math.min(0, Math.max(-acts.offsetWidth - 30, base + dx))}px)`;
+    });
+    const end = () => {
+      if (mode === 'swipe') {
+        row.classList.remove('drag');
+        const open = base + dx < -acts.offsetWidth / 2;
+        row.style.transform = open ? `translateX(${-acts.offsetWidth}px)` : '';
+        row.classList.toggle('open', open); pfSwOpen = open ? row : null;
+        row.dataset.swiped = '1'; setTimeout(() => delete row.dataset.swiped, 50);
+      }
+      mode = '';
+    };
+    row.addEventListener('pointerup', end); row.addEventListener('pointercancel', end);
+    // after a swipe, or on an open row, a tap only closes it (it does not call the number)
+    row.addEventListener('click', e => { if (row.dataset.swiped || row.classList.contains('open')) { e.stopImmediatePropagation(); e.preventDefault(); if (!row.dataset.swiped) pfSwipeClose(); } }, true);
+  });
+}
 // Swiping rows: drag a row left to show its buttons; one row open at a time; a tap anywhere else closes it
 let wishSwOpen = null;
 function wishSwipeClose() { if (wishSwOpen) { wishSwOpen.style.transform = ''; wishSwOpen.classList.remove('open'); wishSwOpen = null; } }
@@ -6115,14 +6152,15 @@ function editWish(id, tab) {
           <button class="btn primary pf-go" id="pfAdd" type="button">${ic('check', '#fff', 16, 3)}${esc(t(pfEdit ? 'Save' : 'Add'))}</button></div>
         </div>` : ''}
       </div>
-      ${list.length ? `<div class="pf-list">${list.map((p, i) => `<div class="pf-it ${i === 0 && list.length > 1 ? 'best' : ''} ${p.id === pfEdit ? 'editing' : ''}">
+      ${list.length ? `<div class="pf-list">${list.map((p, i) => `<div class="pf-sw ${p.id === pfEdit ? 'editing' : ''}" data-pid="${esc(p.id)}">
+        <div class="wt-acts"><span class="wt-a wt-ed" data-pedit="${p.id}">${ic('edit', '#fff', 17, 2.4)}<small>${esc(t('Edit'))}</small></span><span class="wt-a wt-del" data-del="${p.id}">${ic('trash', '#fff', 17, 2.4)}<small>${esc(t('Delete'))}</small></span></div>
+        <div class="pf-it ${i === 0 && list.length > 1 ? 'best' : ''}">
           <div class="pf-ic">${ic('market', i === 0 && list.length > 1 ? '#16A34A' : B(), 17)}</div>
           <div class="pf-tx"><b data-notr>${esc(p.market || '—')}</b><span>${p.area ? `${ic('pin', '#94A3B8', 11, 2.4)}<em data-notr>${esc(p.area)}</em> · ` : ''}${esc(p.at ? ago(p.at) : '')}</span>
             ${p.contact ? `<span class="pf-num tap" data-num="${esc(p.id)}" data-notr>${ic(isPhoneNo(p.contact) ? 'phone' : 'copy', B(), 12, 2.4)}${esc(p.contact)}</span>`
               : `<span class="pf-num add tap" data-num="${esc(p.id)}">${ic('plus', '#94A3B8', 11, 2.8)}${esc(t('Phone / WeChat'))}</span>`}</div>
           <div class="pf-pr">${money(p)}${i === 0 && list.length > 1 ? `<small>${esc(t('Cheapest'))}</small>` : ''}</div>
-          <div class="pf-btns"><span class="pf-x tap" data-pedit="${p.id}" aria-label="${esc(t('Edit'))}">${ic('edit', '#64748B', 14, 2.4)}</span>
-            <span class="pf-x pf-del tap" data-del="${p.id}" aria-label="${esc(t('Delete'))}">${ic('trash', '#E11D48', 14, 2.4)}</span></div></div>`).join('')}</div>`
+          </div></div>`).join('')}</div>`
       : `<div class="pf-empty">${ic('chart', '#94A3B8', 30, 1.8)}<div>${esc(t('No prices yet. Each time a market tells you a price for this item, add it here.'))}</div></div>`}`;
   };
   const draw = () => {
@@ -6193,11 +6231,12 @@ function editWish(id, tab) {
         pf = pfBlank();
         await keepPrices();
         draw(); toast(t(was ? 'Saved ✓' : 'Price added ✓'));
-        const it = [...document.querySelectorAll('.pf-it')].find(x => x.querySelector(`[data-del="${e.id}"]`)); if (it) { it.classList.add('new'); it.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+        const it = document.querySelector(`.pf-sw[data-pid="${e.id}"]`); if (it) { it.classList.add('new'); it.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
       };
       if ($('pfAdd')) { $('pfAdd').onclick = add; $('pfPrice').onkeydown = e => { if (e.key === 'Enter') add(); }; }
       // Change a price: the form opens with it filled in
-      document.querySelectorAll('[data-pedit]').forEach(x => x.onclick = () => {
+      pfSwipe(document.getElementById('pf'));
+      $('pf').querySelectorAll('[data-pedit]').forEach(x => x.onclick = () => {
         const p = w.prices.find(q => q.id === x.dataset.pedit); if (!p) return;
         pfEdit = p.id; pfOpen = true;
         pf = { market: p.market || '', area: p.area || '', contact: p.contact || '', price: String(Number(p.price)), currency: p.currency || '¥' };
@@ -6205,17 +6244,18 @@ function editWish(id, tab) {
         const f = document.querySelector('.pf-add'); if (f) f.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         setTimeout(() => { const i = $('pfPrice'); if (i) i.focus(); }, 80);
       });
-      document.querySelectorAll('[data-del]').forEach(x => x.onclick = async () => {
+      $('pf').querySelectorAll('[data-del]').forEach(x => x.onclick = async () => {
         keep();
         const p = w.prices.find(q => q.id === x.dataset.del); if (!p) return;
-        if (!await confirmDel({ title: t('Delete this price?'), text: `${p.market || ''} · ${p.currency || '¥'}${TradeReport.money(Number(p.price))}`, icon: 'coins' })) return;
-        const it = x.closest('.pf-it'); it.classList.add('bye');
+        if (!await confirmDel({ title: t('Delete this price?'), text: `${p.market || ''} · ${p.currency || '¥'}${TradeReport.money(Number(p.price))}`, icon: 'coins' })) return pfSwipeClose();
+        if (!x.closest('.pf-sw')) return;
+        const it = x.closest('.pf-sw'); it.classList.add('bye');
         await wait(260);
         if (pfEdit === p.id) { pfEdit = null; pfOpen = false; pf = pfBlank(); }
         w.prices = w.prices.filter(q => q.id !== p.id); await keepPrices(); draw();
       });
       // Phone / WeChat number of a price: tap a number to call it (WeChat ID: copied); long-press or empty → change it
-      document.querySelectorAll('[data-num]').forEach(x => {
+      $('pf').querySelectorAll('[data-num]').forEach(x => {
         const p = w.prices.find(q => q.id === x.dataset.num); if (!p) return;
         const edit = async () => {
           keep();
