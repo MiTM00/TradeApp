@@ -1206,6 +1206,7 @@
   .tr-empty-btn { margin-top:14px; }
   .tr-item { display:flex; align-items:center; gap:12px; padding:10px; margin-bottom:10px; border-radius:18px; background:var(--card); box-shadow:var(--shadow); transition:transform .45s var(--ease), opacity .35s, max-height .4s var(--ease), margin .4s var(--ease), padding .4s var(--ease); max-height:120px; overflow:hidden; }
   .tr-item img, .tr-item .ph { width:60px; height:60px; border-radius:13px; object-fit:cover; flex-shrink:0; background:var(--soft); display:flex; align-items:center; justify-content:center; }
+  .tr-item .ph.cl-av { background:linear-gradient(145deg,hsl(var(--h) 75% 62%),hsl(calc(var(--h) + 45) 70% 48%)); font-size:24px; }
   .tr-item img { filter:saturate(.75); }
   .tr-name { font-size:14px; font-weight:800; } .tr-meta { font-size:11.5px; color:var(--ink-3); margin-top:2px; }
   .tr-kind { display:inline-flex; align-items:center; gap:3px; color:#E11D48; font-weight:700; }
@@ -1392,8 +1393,8 @@ const store = {
     DB.products = DB.products.filter(x => x.id !== id); await DB.write('products', 'delete', id);
   }
 };
-// The Trash holds deleted products and deleted wishes (kind 'products' | 'wishes')
-const TRASH_KINDS = ['products', 'wishes'];
+// The Trash holds deleted products, wishes and clients (kind 'products' | 'wishes' | 'clients')
+const TRASH_KINDS = ['products', 'wishes', 'clients'];
 async function toTrash(kind, item) {
   item = Object.assign({}, item); delete item._rev;
   const rec = { id: item.id, kind, item, trashedAt: Date.now() };
@@ -1406,8 +1407,17 @@ const trash = {
   async restore(id) {
     const rec = DB.trash.find(x => x.id === id); if (!rec) return;
     const p = Object.assign({}, rec.item);
-    if (rec.kind === 'wishes') await wishes.save(p); else await store.upsert(p);
+    if (rec.kind === 'wishes') await wishes.save(p); else if (rec.kind === 'clients') await clients.save(p); else await store.upsert(p);
     DB.trash = DB.trash.filter(x => x.id !== id); await DB.write('trash', 'delete', id);
+  },
+  // Deleting from the Trash for good needs the 6-digit lock PIN (Settings → Lock screen); no lock = set one up first
+  async askPin() {
+    if (!Lock.cfg()) {
+      if (!await dialog({ title: t('A PIN is needed'), text: t('To delete from the Trash for good, first set up the lock with a 6-digit PIN.'), ok: t('Set up lock') })) return false;
+      if (!await Lock.setup()) return false;
+      toast(t('Lock is on ✓'));
+    }
+    return Lock.show(true, 'pin', t('Enter your PIN to delete from the Trash'));
   },
   // Gone from the Trash for good (the computer still keeps a copy in data/deleted)
   async purge(id) { DB.trash = DB.trash.filter(x => x.id !== id); await DB.write('trash', 'delete', id); },
@@ -2546,7 +2556,7 @@ const clients = {
     await DB.write('clients', 'put', c);
     if (oldName && oldName !== c.name) for (const w of this.wishesOf(oldName)) { const cs = wishClients(w).map(x => x.toLowerCase() === norm(oldName).toLowerCase() ? c.name : x); await wishes.save(Object.assign({}, w, { clients: cs, client: cs.join(', ') })); }
   },
-  async remove(id) { DB.clients = DB.clients.filter(c => c.id !== id); await DB.write('clients', 'delete', id); },
+  async remove(id) { const c = this.get(id); if (c) await toTrash('clients', c); DB.clients = DB.clients.filter(c => c.id !== id); await DB.write('clients', 'delete', id); },
   wishesOf(name) { const n = norm(name).toLowerCase(); return DB.wishes.filter(w => wishClients(w).some(c => c.toLowerCase() === n)); }
 };
 const callNo = s => 'tel:' + String(s || '').replace(/[^\d+]/g, '');
@@ -2614,8 +2624,8 @@ function drawClients() {
 async function deleteClient(id) {
   const c = clients.get(id); if (!c) return false;
   const n = clients.wishesOf(c.name).length;
-  if (!await confirmDel({ title: t('Delete this client?'), text: n ? t('"{c}" is removed from your clients. Their {n} wishes stay, with the name on them.', { c: c.name, n }) : `"${c.name}"`, icon: 'user' })) return false;
-  await clients.remove(c.id); toast(t('Deleted')); if (location.hash === '#clients') renderClients();
+  if (!await confirmDel({ title: t('Move to Trash?'), text: (n ? t('"{c}" is removed from your clients. Their {n} wishes stay, with the name on them.', { c: c.name, n }) : `"${c.name}"`) + ' — ' + t('you can put it back from the Trash'), icon: 'user' })) return false;
+  await clients.remove(c.id); toast(t('Moved to Trash')); if (location.hash === '#clients') renderClients();
   return true;
 }
 // One client: details, call / copy WeChat, their wishes (tap one to open it)
@@ -3383,8 +3393,8 @@ async function genieToTrash(src, photo) {
 
 // "3 products · 1 wish" — what is in the Trash
 function trashCountText(list) {
-  const w = list.filter(x => x.kind === 'wishes').length, p = list.length - w;
-  return [p ? plural(p, 'product') : '', w ? plural(w, 'wish') : ''].filter(Boolean).join(' · ');
+  const w = list.filter(x => x.kind === 'wishes').length, c = list.filter(x => x.kind === 'clients').length, p = list.length - w - c;
+  return [p ? plural(p, 'product') : '', w ? plural(w, 'wish') : '', c ? t('{n} clients', { n: c }) : ''].filter(Boolean).join(' · ');
 }
 function renderTrash() {
   simpleNav(t('Trash')); tabbar(null);
@@ -3398,11 +3408,11 @@ function renderTrash() {
       ${list.length ? `<button class="btn soft tr-empty-btn" id="trEmpty">${ic('trash', B(), 16)}${esc(t('Empty Trash'))}</button>` : ''}
     </div>
     <div id="trList">${list.length ? list.map(x => {
-      const p = x.item, wish = x.kind === 'wishes', img = wish ? p.image : (p.images || [])[0];
+      const p = x.item, wish = x.kind === 'wishes', cli = x.kind === 'clients', img = wish ? p.image : cli ? '' : (p.images || [])[0];
       return `<div class="tr-item" data-id="${esc(x.id)}">
-        ${img ? `<img src="${img}" loading="lazy">` : `<div class="ph">${ic(wish ? 'heart' : 'image', wish ? '#FB7185' : '#B6C0CD', 22)}</div>`}
+        ${img ? `<img src="${img}" loading="lazy">` : cli ? `<div class="ph cl-av" style="--h:${hueOf(p.name || '')}">${esc((p.name || '?').trim().charAt(0).toUpperCase())}</div>` : `<div class="ph">${ic(wish ? 'heart' : 'image', wish ? '#FB7185' : '#B6C0CD', 22)}</div>`}
         <div style="flex:1;min-width:0"><div class="tr-name ellipsis" data-notr>${esc((wish ? p.title : p.name) || '')}</div>
-          <div class="tr-meta ellipsis">${wish ? `<span class="tr-kind">${ic('heart', '#E11D48', 11, 2.6)}${esc(t('Wishlist'))}</span> · ` : ''}${esc(t('Deleted {when}', { when: ago(x.trashedAt) }))}</div></div>
+          <div class="tr-meta ellipsis">${wish ? `<span class="tr-kind">${ic('heart', '#E11D48', 11, 2.6)}${esc(t('Wishlist'))}</span> · ` : cli ? `<span class="tr-kind">${ic('user', '#E11D48', 11, 2.6)}${esc(t('Client'))}</span> · ` : ''}${esc(t('Deleted {when}', { when: ago(x.trashedAt) }))}</div></div>
         <div class="tr-acts"><button class="btn soft" data-put="${esc(x.id)}">${ic('undo', B(), 15)}${esc(t('Put back'))}</button>
           <button class="btn icon" data-kill="${esc(x.id)}" aria-label="${esc(t('Delete forever'))}">${ic('x', '#E11D48', 15, 2.6)}</button></div></div>`;
     }).join('') : `<div class="card empty"><div class="empty-art">${ic('trash', B(), 34, 1.6)}</div><div class="empty-title">${esc(t('Trash is empty'))}</div>
@@ -3417,12 +3427,14 @@ function renderTrash() {
   });
   $body.querySelectorAll('[data-kill]').forEach(b => b.onclick = async () => {
     if (!await dialog({ title: t('Delete forever?'), text: t('It is removed from the Trash on every device. The computer still keeps a copy in its data folder.'), ok: t('Delete'), danger: true })) return;
+    if (!await trash.askPin()) return;
     const el = b.closest('.tr-item');
     await trash.purge(b.dataset.kill);
     await leave(el, 'out-x'); renderTrash();
   });
   const em = document.getElementById('trEmpty'); if (em) em.onclick = async () => {
     if (!await dialog({ title: t('Empty Trash?'), text: t('{n} items are removed from the Trash on every device. The computer still keeps a copy in its data folder.', { n: list.length }), ok: t('Empty Trash'), danger: true })) return;
+    if (!await trash.askPin()) return renderTrash();
     const items = [...$body.querySelectorAll('.tr-item')];
     items.forEach((el, i) => setTimeout(() => el.classList.add('out-x'), i * 60));
     await trash.empty();
@@ -5542,7 +5554,7 @@ const Lock = {
     const tick = () => {
       const left = this.waitLeft();
       if (left > 0) { msgEl.textContent = t('Too many tries — wait {n} s', { n: Math.ceil(left / 1000) }); msgEl.classList.add('bad'); }
-      else { clearInterval(this.cd); msgEl.textContent = n ? t('Wrong pattern — try again') : t('Draw your pattern to unlock'); if (!n) msgEl.classList.remove('bad'); }
+      else { clearInterval(this.cd); const pin = this.mode === 'pin'; msgEl.textContent = n ? t(pin ? 'Wrong PIN — try again' : 'Wrong pattern — try again') : t(pin ? 'Enter your PIN' : 'Draw your pattern to unlock'); if (!n) msgEl.classList.remove('bad'); }
     };
     tick(); this.cd = setInterval(tick, 500);
   },
@@ -5552,7 +5564,7 @@ const Lock = {
   type(c) { c = c || this.cfg(); return c && c.type ? c.type : 'pattern'; },
   // The lock screen. cancel=true when it only checks it is you (e.g. before turning the lock off).
   // mode: 'face' | 'pin' | 'pattern' — empty = Face ID first when it is on (it starts by itself, like the iPhone).
-  show(cancel, mode) {
+  show(cancel, mode, why) {
     const c = this.cfg(); if (!c) return Promise.resolve(true);
     const typ = this.type(c), back = typ === 'pattern' ? 'pattern' : 'pin';
     if (!mode) mode = c.face ? 'face' : back;
@@ -5560,7 +5572,7 @@ const Lock = {
     return new Promise(res => {
       if (this.resolve) this.resolve(false);
       this.resolve = res;
-      const swap = m => { const r = this.resolve; this.resolve = null; this.show(cancel, m).then(r); };
+      const swap = m => { const r = this.resolve; this.resolve = null; this.show(cancel, m, why).then(r); };
       const alt = mode === 'face' ? [back, back === 'pin' ? 'Use PIN' : 'Use pattern']
         : mode === 'pin' ? (typ === 'pattern' ? ['pattern', 'Use pattern'] : null) : ['pin', 'Use PIN'];
       const el = this.mount(this.frame(`<div class="lk-msg" id="lkMsg"></div><div class="lk-sub" id="lkSub"></div>${mode === 'face'
@@ -5591,7 +5603,9 @@ const Lock = {
         setTimeout(scan, 350); // starts by itself — when the iPhone knows the face, Trade opens without touching anything
         return;
       }
+      this.mode = mode;
       msg.textContent = mode === 'pin' ? t('Enter your PIN') : t('Draw your pattern to unlock');
+      if (why) sub.textContent = why;
       if (this.waitLeft()) this.countdown(msg, DB.kv.lockFails || 0);
       const check = async (secret, which) => {
         if (this.waitLeft()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); return false; }
