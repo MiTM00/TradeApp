@@ -1057,7 +1057,15 @@
   .pf-sum b { display:block; font-size:16px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pf-sum small { display:block; font-size:10.5px; color:var(--ink-3); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pf-add { display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:16px; border:1.5px dashed var(--brand-2); background:var(--mint); }
-  .pf-h { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:800; color:var(--brand); }
+  .pf-h { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:800; color:var(--brand); cursor:pointer; min-height:22px; }
+  .pf-h .pf-lb { flex:1; } .pf-h > .ic:last-child { transition:transform .25s var(--ease); }
+  .pf-add.open .pf-h > .ic:last-child { transform:rotate(180deg); }
+  .pf-form { display:flex; flex-direction:column; gap:8px; animation:pfOpen .28s var(--ease) both; }
+  @keyframes pfOpen { from { opacity:0; transform:translateY(-6px); } }
+  .pf-add.edit { border-style:solid; }
+  .pf-btns { display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
+  .pf-x.pf-del:active { background:#FFE4E6; }
+  .pf-it.editing { box-shadow:0 0 0 2px var(--brand-2), var(--shadow); }
   .pf-add .input { background:var(--card); }
   .pf-row { display:flex; gap:8px; } .pf-go { width:auto; flex-shrink:0; padding:0 16px; }
   .pf-list { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
@@ -6076,6 +6084,8 @@ function editWish(id, tab) {
   if (!old && wishGroup) w.group = wishGroup;
   let more = !!(csel.length || w.note || Number(w.qty) > 0 || w.group), view = tab === 'prices' ? 'prices' : 'item';
   let pf = { market: '', area: '', contact: '', price: '', currency: (w.prices[w.prices.length - 1] || {}).currency || w.currency || '¥' }; // the "add a price" form
+  let pfOpen = false, pfEdit = null; // the form stays closed until tapped; pfEdit = id of the price being changed
+  const pfBlank = () => ({ market: '', area: pf.area, contact: '', price: '', currency: pf.currency });
   const $ = k => document.getElementById(k);
   const keep = () => {
     if ($('weTitle')) { w.title = $('weTitle').value; w.group = $('weGroup').value; w.note = $('weNote').value; w.qty = $('weQty').value; }
@@ -6093,23 +6103,26 @@ function editWish(id, tab) {
         <div><span>${esc(t('Cheapest'))}</span><b>${money(low)}</b><small data-notr>${esc(low.market)}</small></div>
         <div><span>${esc(t('Highest'))}</span><b>${money(high)}</b><small data-notr>${esc(high.market)}</small></div>
         <div><span>${esc(q ? t('{n} pcs at cheapest', { n: q }) : t('Prices'))}</span><b>${q ? `${esc(low.currency || '¥')}${esc(TradeReport.money(Number(low.price) * q))}` : list.length}</b><small>${esc(q ? t('total') : t('markets seen'))}</small></div></div>` : ''}
-      <div class="pf-add">
-        <div class="pf-h">${ic('plus', B(), 15, 2.8)}${esc(t('Add a price you saw'))}</div>
+      <div class="pf-add ${pfOpen ? 'open' : ''} ${pfEdit ? 'edit' : ''}">
+        <div class="pf-h tap" id="pfToggle">${ic(pfEdit ? 'edit' : 'plus', B(), 15, 2.8)}<span class="pf-lb">${esc(t(pfEdit ? 'Change this price' : 'Add a price you saw'))}</span>${ic('down', B(), 16, 2.6)}</div>
+        ${pfOpen ? `<div class="pf-form">
         <input class="input" id="pfMarket" list="pfMarkets" placeholder="${esc(t('Market name'))}" value="${esc(pf.market)}" maxlength="80" autocomplete="off">
         <datalist id="pfMarkets">${seenM.map(m => `<option value="${esc(m)}">`).join('')}</datalist>
         <input class="input" id="pfArea" list="pfAreas" placeholder="${esc(t('Region / area'))}" value="${esc(pf.area)}" maxlength="80" autocomplete="off">
         <datalist id="pfAreas">${seenA.map(a => `<option value="${esc(a)}">`).join('')}</datalist>
         <div class="pf-ct">${ic('phone', '#94A3B8', 16, 2.2)}<input class="input" id="pfContact" placeholder="${esc(t('Phone / WeChat number (optional)'))}" value="${esc(pf.contact || '')}" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
         <div class="pf-row"><div class="joined" style="flex:1"><select class="addon" id="pfCur">${CURRENCIES.map(c => `<option ${c === pf.currency ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="pfPrice" inputmode="decimal" placeholder="${esc(t('Price they give'))}" value="${esc(pf.price)}"></div>
-          <button class="btn primary pf-go" id="pfAdd" type="button">${ic('check', '#fff', 16, 3)}${esc(t('Add'))}</button></div>
+          <button class="btn primary pf-go" id="pfAdd" type="button">${ic('check', '#fff', 16, 3)}${esc(t(pfEdit ? 'Save' : 'Add'))}</button></div>
+        </div>` : ''}
       </div>
-      ${list.length ? `<div class="pf-list">${list.map((p, i) => `<div class="pf-it ${i === 0 && list.length > 1 ? 'best' : ''}">
+      ${list.length ? `<div class="pf-list">${list.map((p, i) => `<div class="pf-it ${i === 0 && list.length > 1 ? 'best' : ''} ${p.id === pfEdit ? 'editing' : ''}">
           <div class="pf-ic">${ic('market', i === 0 && list.length > 1 ? '#16A34A' : B(), 17)}</div>
           <div class="pf-tx"><b data-notr>${esc(p.market || '—')}</b><span>${p.area ? `${ic('pin', '#94A3B8', 11, 2.4)}<em data-notr>${esc(p.area)}</em> · ` : ''}${esc(p.at ? ago(p.at) : '')}</span>
             ${p.contact ? `<span class="pf-num tap" data-num="${esc(p.id)}" data-notr>${ic(isPhoneNo(p.contact) ? 'phone' : 'copy', B(), 12, 2.4)}${esc(p.contact)}</span>`
               : `<span class="pf-num add tap" data-num="${esc(p.id)}">${ic('plus', '#94A3B8', 11, 2.8)}${esc(t('Phone / WeChat'))}</span>`}</div>
           <div class="pf-pr">${money(p)}${i === 0 && list.length > 1 ? `<small>${esc(t('Cheapest'))}</small>` : ''}</div>
-          <span class="pf-x" data-del="${p.id}">${ic('x', '#94A3B8', 13, 2.6)}</span></div>`).join('')}</div>`
+          <div class="pf-btns"><span class="pf-x tap" data-pedit="${p.id}" aria-label="${esc(t('Edit'))}">${ic('edit', '#64748B', 14, 2.4)}</span>
+            <span class="pf-x pf-del tap" data-del="${p.id}" aria-label="${esc(t('Delete'))}">${ic('trash', '#E11D48', 14, 2.4)}</span></div></div>`).join('')}</div>`
       : `<div class="pf-empty">${ic('chart', '#94A3B8', 30, 1.8)}<div>${esc(t('No prices yet. Each time a market tells you a price for this item, add it here.'))}</div></div>`}`;
   };
   const draw = () => {
@@ -6160,28 +6173,46 @@ function editWish(id, tab) {
       await wishes.save(rec); closeOverlay(); toast(t('Saved ✓')); wishRefresh();
     };
     if (view === 'prices') {
+      // The "add a price" bar: tap to open or close it (closing also stops changing a price)
+      $('pfToggle').onclick = () => {
+        keep();
+        if (pfOpen) { pfOpen = false; if (pfEdit) { pfEdit = null; pf = pfBlank(); } }
+        else pfOpen = true;
+        draw(); if (pfOpen) setTimeout(() => { const m = $('pfMarket'); if (m) m.focus(); }, 60);
+      };
       const add = async () => {
         keep();
         const market = norm(pf.market), price = Number(String(pf.price).replace(',', '.'));
         if (!market) { $('pfMarket').focus(); return toast(t('Write the market name')); }
         if (!(price > 0)) { $('pfPrice').focus(); return toast(t('Write the price they give')); }
-        const e = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), market, area: norm(pf.area), price: String(price), currency: pf.currency || '¥', at: Date.now() };
-        const ct = norm(pf.contact || ''); if (ct) e.contact = ct;
-        w.prices.push(e);
-        pf = { market: '', area: pf.area, contact: '', price: '', currency: pf.currency };
+        const ct = norm(pf.contact || '');
+        let e = pfEdit && w.prices.find(q => q.id === pfEdit);
+        if (e) { Object.assign(e, { market, area: norm(pf.area), price: String(price), currency: pf.currency || '¥', editedAt: Date.now() }); if (ct) e.contact = ct; else delete e.contact; }
+        else { e = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), market, area: norm(pf.area), price: String(price), currency: pf.currency || '¥', at: Date.now() }; if (ct) e.contact = ct; w.prices.push(e); }
+        const was = pfEdit; pfEdit = null; pfOpen = false;
+        pf = pfBlank();
         await keepPrices();
-        draw(); toast(t('Price added ✓'));
-        const it = [...document.querySelectorAll('.pf-it')].find(x => x.querySelector(`[data-del="${e.id}"]`)); if (it) it.classList.add('new');
+        draw(); toast(t(was ? 'Saved ✓' : 'Price added ✓'));
+        const it = [...document.querySelectorAll('.pf-it')].find(x => x.querySelector(`[data-del="${e.id}"]`)); if (it) { it.classList.add('new'); it.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
       };
-      $('pfAdd').onclick = add;
-      $('pfPrice').onkeydown = e => { if (e.key === 'Enter') add(); };
+      if ($('pfAdd')) { $('pfAdd').onclick = add; $('pfPrice').onkeydown = e => { if (e.key === 'Enter') add(); }; }
+      // Change a price: the form opens with it filled in
+      document.querySelectorAll('[data-pedit]').forEach(x => x.onclick = () => {
+        const p = w.prices.find(q => q.id === x.dataset.pedit); if (!p) return;
+        pfEdit = p.id; pfOpen = true;
+        pf = { market: p.market || '', area: p.area || '', contact: p.contact || '', price: String(Number(p.price)), currency: p.currency || '¥' };
+        draw();
+        const f = document.querySelector('.pf-add'); if (f) f.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        setTimeout(() => { const i = $('pfPrice'); if (i) i.focus(); }, 80);
+      });
       document.querySelectorAll('[data-del]').forEach(x => x.onclick = async () => {
         keep();
         const p = w.prices.find(q => q.id === x.dataset.del); if (!p) return;
         if (!await confirmDel({ title: t('Delete this price?'), text: `${p.market || ''} · ${p.currency || '¥'}${TradeReport.money(Number(p.price))}`, icon: 'coins' })) return;
         const it = x.closest('.pf-it'); it.classList.add('bye');
         await wait(260);
-        w.prices = w.prices.filter(p => p.id !== x.dataset.del); await keepPrices(); draw();
+        if (pfEdit === p.id) { pfEdit = null; pfOpen = false; pf = pfBlank(); }
+        w.prices = w.prices.filter(q => q.id !== p.id); await keepPrices(); draw();
       });
       // Phone / WeChat number of a price: tap a number to call it (WeChat ID: copied); long-press or empty → change it
       document.querySelectorAll('[data-num]').forEach(x => {
