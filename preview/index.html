@@ -238,6 +238,7 @@
   .chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
   .where { display:flex; align-items:center; gap:4px; margin-top:6px; font-size:11.5px; color:var(--ink-2); min-width:0; }
   .where.date { margin-top:3px; color:var(--ink-3); font-size:11px; }
+  .nsize { margin-left:6px; font-size:.82em; font-weight:600; color:var(--ink-3); }
   .netv { margin-top:6px; font-size:11.5px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .netv b { color:var(--price); font-weight:800; }
   .bottom { margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; padding-top:5px; }
@@ -2461,9 +2462,9 @@ function productCard(p) {
       ${(p.videos || []).length ? `<div class="thumb-vid">${ic('play', '#fff', 10, 2.6)}${p.videos.length}</div>` : ''}
     </div>
     <div class="body">
-      <div class="name" data-notr>${esc(p.name)}</div>
+      <div class="name" data-notr>${esc(p.name)}${p.size ? `<span class="nsize">${esc(p.size)}</span>` : ''}</div>
       ${fl ? `<div class="fl-note ${fl}">${esc(t(fl === 'red' ? 'Dearer — a cheaper one is saved' : 'Good price'))}</div>` : ''}
-      <div class="chips"><span class="chip teal">MOQ ${esc(groupDigits(p.minOrder))} ${esc(p.unit)}</span>${p.size ? `<span class="chip">${esc(p.size)}</span>` : ''}</div>
+      <div class="chips"><span class="chip teal">MOQ ${esc(groupDigits(p.minOrder))} ${esc(p.unit)}</span></div>
       ${Number(p.price) > 0 && Number(p.minOrder) > 0 ? `<div class="netv">${esc(t('Net value'))} <b>${money(p.currency, Number(p.price) * Number(p.minOrder))}</b></div>` : ''}
       <div class="where">${ic(p.marketName ? 'market' : 'store', '#94A3B8', 13)}<span class="ellipsis">${esc(whereOf(p) || '—')}</span></div>
       <div class="where date">${dateChip(TradeReport.registeredAt(p))}${p.shopWechat === 'yes' ? `<span class="wxchip">${ic('wechat', '#16A34A', 11)}WeChat</span>` : ''}</div>
@@ -4374,7 +4375,7 @@ function doneSheet(title, html) {
 
 // ---------- pages/add ----------
 let form = null, editId = '';
-function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', packQty: '', packing: '', marketName: '', shopName: '', shopWechat: '', wechatId: '', wechatPhoto: '', shopNote: '', location: null }; }
+function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', packQty: '1', packing: 'carton', marketName: '', shopName: '', shopWechat: '', wechatId: '', wechatPhoto: '', shopNote: '', location: null }; }
 
 // ---------- Date card (registration date) ----------
 const WEEKDAYS = { en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], so: ['Axad', 'Isniin', 'Talaado', 'Arbaco', 'Khamiis', 'Jimco', 'Sabti'], zh: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'] };
@@ -4482,7 +4483,7 @@ function renderAdd(id) {
   loadCropPairs(old);
   if (!DB.kv.noCrop || !DB.kv.noAutoFill) Detector.load().catch(() => {}); // get the detector ready while the form is filled in
   if (!DB.kv.noAutoFill) Recognizer.load().catch(() => {});
-  form = old ? Object.assign(emptyForm(), JSON.parse(JSON.stringify(old)), { price: String(old.price), minOrder: String(old.minOrder) }) : emptyForm();
+  form = old ? Object.assign(emptyForm(), { packQty: '', packing: '' }, JSON.parse(JSON.stringify(old)), { price: String(old.price), minOrder: String(old.minOrder) }) : emptyForm();
   if (!old && DB.kv.lastMarket && markets.find(DB.kv.lastMarket)) form.marketName = DB.kv.lastMarket;
   // Opened from a wish ("Save as a product"): start with its name, photo, price and note
   if (!old && wishToProduct) {
