@@ -142,6 +142,20 @@
   /* Price mark: red = dearer (a cheaper one exists), green = good price */
   .pcard.fl-red { background:color-mix(in srgb, #EF4444 15%, var(--card)); box-shadow:inset 0 0 0 2px #EF4444, var(--shadow); }
   .pcard.fl-green { background:color-mix(in srgb, #16A34A 14%, var(--card)); box-shadow:inset 0 0 0 2px #16A34A, var(--shadow); }
+  .selck { display:none; position:absolute; left:6px; top:6px; z-index:3; width:24px; height:24px; border-radius:50%; border:2px solid #fff; background:rgba(15,23,42,.28); align-items:center; justify-content:center; box-shadow:0 1px 4px rgba(15,23,42,.25); }
+  .selck svg { opacity:0; }
+  body.selecting .selck { display:flex; } body.selecting #list { padding-bottom:70px; }
+  body.selecting .pcard { -webkit-user-select:none; user-select:none; }
+  .pcard { -webkit-touch-callout:none; }
+  .swipe.sel .pcard { box-shadow:0 0 0 2.5px var(--brand), var(--shadow); }
+  .swipe.sel .selck { background:var(--brand); } .swipe.sel .selck svg { opacity:1; }
+  .selbar { position:absolute; left:0; right:0; bottom:0; z-index:150; padding:10px 16px calc(12px + var(--safe-bottom)); background:var(--tabbar); border-top:.5px solid var(--line); box-shadow:0 -6px 18px rgba(15,23,42,.1); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); animation:fade .15s; }
+  .sb-top { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+  .sb-x { width:32px; height:32px; border-radius:50%; border:0; background:rgba(100,116,139,.12); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .sb-n { flex:1; font-weight:800; font-size:15px; color:var(--ink); }
+  .sb-all { border:0; background:none; color:var(--brand); font-weight:700; font-size:14px; cursor:pointer; padding:6px 2px; }
+  .sb-acts { display:flex; gap:9px; } .sb-acts .btn { flex:1; gap:6px; }
+  .sb-del { background:linear-gradient(135deg,#F43F5E,#E11D48); color:#fff; }
   .pflag { position:absolute; top:4px; right:4px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; z-index:2; cursor:pointer; }
   .pflag i { width:18px; height:18px; border-radius:50%; border:2px solid var(--ink-3); background:var(--card); transition:transform .25s cubic-bezier(.22,1.4,.36,1), background .2s; }
   .pflag:active i { transform:scale(.8); }
@@ -2344,7 +2358,7 @@ async function setLanguage(l) {
 function route(quiet) {
   const [page, id] = (location.hash.slice(1) || 'index').split('/');
   closeOverlay();
-  Shots.stop(); Draft.leave();
+  Shots.stop(); Draft.leave(); Sel.stop();
   if (page === 'add') renderAdd(id);
   else if (page === 'detail') renderDetail(id);
   else if (page === 'report') renderReport(id);
@@ -2454,8 +2468,9 @@ function productCard(p) {
   return `<div class="swipe" data-id="${p.id}"><div class="sw-acts">
       <button class="sw-btn sw-e" data-act="edit" aria-label="${esc(t('Edit'))}"><i>${ic('edit', '#fff', 20, 2.3)}</i>${esc(t('Edit'))}</button>
       <button class="sw-btn sw-d" data-act="del" aria-label="${esc(t('Delete'))}"><i>${ic('trash', '#fff', 20, 2.3)}</i>${esc(t('Delete'))}</button></div>
-    <div class="pcard ${h != null ? 'mk' : ''} ${fl ? 'fl-' + fl : ''}" ${h != null ? `style="--h:${h}"` : ''} onclick="if(!Swipe.eat())location.hash='detail/${p.id}'">
-    <span class="pflag ${fl}" onclick="event.stopPropagation();if(!Swipe.eat())flagProduct('${p.id}')" aria-label="${esc(t('Price mark'))}"><i></i></span>
+    <div class="pcard ${h != null ? 'mk' : ''} ${fl ? 'fl-' + fl : ''}" ${h != null ? `style="--h:${h}"` : ''} onclick="if(Sel.click('${p.id}'))return;if(!Swipe.eat())location.hash='detail/${p.id}'">
+    <span class="selck">${ic('check', '#fff', 14, 3)}</span>
+    <span class="pflag ${fl}" onclick="event.stopPropagation();if(Sel.click('${p.id}'))return;if(!Swipe.eat())flagProduct('${p.id}')" aria-label="${esc(t('Price mark'))}"><i></i></span>
     <div class="thumb">
       ${p.images.length ? `<img src="${p.images[0]}" loading="lazy">` : `<div class="thumb-ph">${ic('image', '#B6C0CD', 28, 1.6)}</div>`}
       ${p.images.length > 1 ? `<div class="thumb-count">${ic('camera', '#fff', 11, 2.4)}${p.images.length}</div>` : ''}
@@ -2486,11 +2501,22 @@ const Swipe = {
   show(el) { if (this.open && this.open !== el) this.close(); this.set(el, -this.W, true); el.classList.add('open'); this.open = el; },
   bind(list) {
     let el = null, x0 = 0, y0 = 0, dx = 0, base = 0, dir = '', t0 = 0;
+    // Hold a card (~0.5 s): selection mode starts with that product; then taps pick more
+    let lp = null, lx = 0, ly = 0, lpDone = false;
+    const lpStop = () => { clearTimeout(lp); lp = null; };
     list.addEventListener('pointerdown', e => {
+      Sel.eatNext = false; // a new touch: the click of the hold has passed
+      const s0 = e.target.closest('.swipe');
+      if (s0 && !e.target.closest('.sw-btn') && !Sel.on && !s0.classList.contains('open')) {
+        lpStop(); lx = e.clientX; ly = e.clientY; lpDone = false;
+        lp = setTimeout(() => { lp = null; lpDone = true; el = null; Sel.start(s0.dataset.id); }, 480);
+      }
+      if (Sel.on) return;
       const s = e.target.closest('.swipe'); if (!s || e.target.closest('.sw-btn') || document.body.classList.contains('pc')) return;
       el = s; x0 = e.clientX; y0 = e.clientY; dx = 0; dir = ''; t0 = Date.now(); base = s.classList.contains('open') ? -this.W : 0;
     });
     list.addEventListener('pointermove', e => {
+      if (lp && (Math.abs(e.clientX - lx) > 8 || Math.abs(e.clientY - ly) > 8)) lpStop();
       if (!el) return;
       const mx = e.clientX - x0, my = e.clientY - y0;
       if (!dir) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; dir = Math.abs(mx) > Math.abs(my) ? 'x' : 'y'; if (dir === 'x' && this.open && this.open !== el) this.close(); }
@@ -2509,6 +2535,9 @@ const Swipe = {
       if (dx < -this.W * .45 || (fast && dx < base - 30)) this.show(s); else this.close(s);
       setTimeout(() => { this.moved = false; }, 60);
     };
+    const lpEnd = () => { lpStop(); if (lpDone) { lpDone = false; Sel.eatNext = true; } };
+    list.addEventListener('pointerup', lpEnd); list.addEventListener('pointercancel', lpEnd);
+    list.addEventListener('contextmenu', e => { if (e.target.closest('.swipe')) e.preventDefault(); });
     list.addEventListener('pointerup', end); list.addEventListener('pointercancel', end);
     list.addEventListener('click', async e => {
       const b = e.target.closest('.sw-btn'); if (!b) return;
@@ -2531,6 +2560,54 @@ const Swipe = {
       renderIndex();
     });
     document.addEventListener('pointerdown', e => { if (this.open && !e.target.closest('.swipe.open')) this.close(); }, true);
+  }
+};
+// ---------- Select several products (hold a card), then Report or Delete them together ----------
+const Sel = {
+  on: false, ids: new Set(), eatNext: false,
+  start(id) {
+    if (Swipe.open) Swipe.close();
+    this.on = true; this.ids = new Set([id]);
+    try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+    this.paint();
+  },
+  // A tap on a card while selecting: pick / unpick it (returns true = the tap is used here)
+  click(id) {
+    if (this.eatNext) { this.eatNext = false; return true; } // the click that ends the hold
+    if (!this.on) return false;
+    this.ids.has(id) ? this.ids.delete(id) : this.ids.add(id);
+    this.ids.size ? this.paint() : this.stop();
+    return true;
+  },
+  stop() { if (!this.on && !this.ids.size) return; this.on = false; this.ids.clear(); this.paint(); },
+  visible() { return [...document.querySelectorAll('#list .swipe[data-id]')].map(s => s.dataset.id); },
+  all() {
+    const v = this.visible(), every = v.length && v.every(id => this.ids.has(id));
+    if (every) v.forEach(id => this.ids.delete(id)); else v.forEach(id => this.ids.add(id));
+    this.paint();
+  },
+  picked() { return store.all().filter(p => this.ids.has(p.id)); },
+  report() { const l = this.picked(); if (!l.length) return toast(t('Pick products first')); exportMenu(l, {}, t('{n} products', { n: l.length })); },
+  async del() {
+    const l = this.picked(); if (!l.length) return toast(t('Pick products first'));
+    if (!await confirmDel({ title: t('Move {n} products to Trash?', { n: l.length }), text: t('you can put it back from the Trash') })) return;
+    for (const p of l) await store.remove(p.id);
+    this.stop(); toast(t('Moved {n} to Trash', { n: l.length })); renderIndex();
+  },
+  paint() {
+    // keep only products that are still in the list
+    if (this.on) { const v = new Set(this.visible()); [...this.ids].forEach(id => { if (!v.has(id)) this.ids.delete(id); }); }
+    document.body.classList.toggle('selecting', this.on);
+    document.querySelectorAll('#list .swipe[data-id]').forEach(s => s.classList.toggle('sel', this.ids.has(s.dataset.id)));
+    let bar = document.getElementById('selbar');
+    if (!this.on) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = document.createElement('div'); bar.id = 'selbar'; bar.className = 'selbar'; $tabbar.after(bar); }
+    const v = this.visible(), every = v.length && v.every(id => this.ids.has(id));
+    bar.innerHTML = `<div class="sb-top"><button class="sb-x" onclick="Sel.stop()" aria-label="${esc(t('Cancel'))}">${ic('x', '#475569', 16, 2.6)}</button>
+        <div class="sb-n">${esc(t('{n} selected', { n: this.ids.size }))}</div>
+        <button class="sb-all" onclick="Sel.all()">${esc(t(every ? 'Unselect all' : 'Select all'))}</button></div>
+      <div class="sb-acts"><button class="btn soft" onclick="Sel.report()">${ic('chart', B(), 17, 2.3)}${esc(t('Report'))}</button>
+        <button class="btn sb-del" onclick="Sel.del()">${ic('trash', '#fff', 17, 2.3)}${esc(t('Delete'))}</button></div>`;
   }
 };
 function drawList() {
@@ -2558,6 +2635,7 @@ function drawList() {
   stagger(el);
   Swipe.open = null;
   if (!el.dataset.sw) { el.dataset.sw = 1; Swipe.bind(el); }
+  Sel.paint();
 }
 
 // ---------- pages/markets ----------
