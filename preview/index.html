@@ -16,8 +16,6 @@
 <!-- iPhone app on GitHub Pages only: finds the Trade computer (empty everywhere else) -->
 <script src="hub-config.js"></script>
 <script src="remote.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <!-- Shared with the mini program -->
 <script src="utils/zip.js"></script>
 <script src="utils/pdf.js"></script>
@@ -37,6 +35,7 @@
     --ease:cubic-bezier(.2,.8,.2,1);
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { background:#F5F7FA; }
   html, body { height:100%; touch-action:manipulation; } /* taps respond at once: no double-tap zoom wait */
   /* iPhone zooms in on any text box under 16px while typing — keep every one at 16px on touch screens */
   @media (pointer:coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select { font-size:16px !important; } }
@@ -137,6 +136,23 @@
   .pcard { display:flex; gap:12px; background:var(--card); border-radius:var(--radius); padding:10px; box-shadow:var(--shadow); cursor:pointer; position:relative; z-index:1; touch-action:pan-y; will-change:transform; }
   /* Swipe a card to the left: Edit and Delete slide out from under it (spring like macOS) */
   .swipe { position:relative; margin-bottom:11px; border-radius:var(--radius); transition:height .38s cubic-bezier(.32,.72,0,1), margin .38s cubic-bezier(.32,.72,0,1), opacity .3s; }
+  /* Market colour: every product of one market has the same tint and side stripe */
+  .pcard.mk { background:color-mix(in srgb, hsl(var(--h) 80% 55%) 15%, var(--card)); }
+  .pcard.mk::before { content:''; position:absolute; left:0; top:12px; bottom:12px; width:4px; border-radius:0 4px 4px 0; background:hsl(var(--h) 68% 50%); }
+  /* Price mark: red = dearer (a cheaper one exists), green = good price */
+  .pcard.fl-red { background:color-mix(in srgb, #EF4444 15%, var(--card)); box-shadow:inset 0 0 0 2px #EF4444, var(--shadow); }
+  .pcard.fl-green { background:color-mix(in srgb, #16A34A 14%, var(--card)); box-shadow:inset 0 0 0 2px #16A34A, var(--shadow); }
+  .pflag { position:absolute; top:4px; right:4px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; z-index:2; cursor:pointer; }
+  .pflag i { width:18px; height:18px; border-radius:50%; border:2px solid var(--ink-3); background:var(--card); transition:transform .25s cubic-bezier(.22,1.4,.36,1), background .2s; }
+  .pflag:active i { transform:scale(.8); }
+  .pflag.red i { background:#EF4444; border-color:#fff; box-shadow:0 0 0 2px #EF4444; }
+  .pflag.green i { background:#16A34A; border-color:#fff; box-shadow:0 0 0 2px #16A34A; }
+  .pcard .body { padding-right:22px; }
+  .fl-note { font-size:11px; font-weight:800; margin-top:3px; }
+  .fl-note.red { color:#DC2626; } .fl-note.green { color:#15803D; }
+  .swipe.sink { transform:translateY(24px); opacity:0; transition:transform .3s ease-in, opacity .3s; }
+  .swipe.flash .pcard { animation:flFlash 1.2s ease-out; }
+  @keyframes flFlash { 0%,40% { box-shadow:inset 0 0 0 2px #EF4444, 0 0 0 6px rgba(239,68,68,.35); } }
   .swipe .pcard.snap { transition:transform .5s cubic-bezier(.22,1.28,.36,1); }
   /* The tray under the card: two round actions that grow with the finger (--p = 0…1), like iOS */
   .sw-acts { position:absolute; inset:0; display:flex; justify-content:flex-end; align-items:center; gap:14px; padding-right:18px; border-radius:var(--radius);
@@ -175,6 +191,41 @@
   .rec-btn { width:76px; height:76px; border-radius:50%; border:4px solid #fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .rec-btn i { width:58px; height:58px; border-radius:50%; background:#E11D48; transition:all .35s cubic-bezier(.22,1.28,.36,1); }
   .rec-btn.on i { width:28px; height:28px; border-radius:8px; }
+  .shots .sh-flash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; }
+  .shots .sh-flash.on { animation:shFlash .35s ease-out; }
+  @keyframes shFlash { 0% { opacity:.85; } 100% { opacity:0; } }
+  .sh-light { display:flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px; background:rgba(0,0,0,.45); font-size:13px; cursor:pointer; }
+  .sh-light b { width:26px; height:15px; border-radius:99px; background:rgba(255,255,255,.35); position:relative; transition:background .2s; }
+  .sh-light b::after { content:''; position:absolute; top:2px; left:2px; width:11px; height:11px; border-radius:50%; background:#fff; transition:transform .2s; }
+  .sh-light.on { background:rgba(217,119,6,.9); } .sh-light.on b { background:rgba(255,255,255,.55); } .sh-light.on b::after { transform:translateX(11px); }
+  .sh-strip { position:absolute; left:0; right:0; bottom:calc(122px + var(--safe-bottom, 0px)); display:flex; gap:8px; padding:0 14px; overflow-x:auto; scrollbar-width:none; }
+  .sh-th { position:relative; width:58px; height:58px; flex-shrink:0; border-radius:10px; overflow:hidden; border:2px solid #fff; animation:shPop .3s cubic-bezier(.22,1.28,.36,1); }
+  .sh-th img { width:100%; height:100%; object-fit:cover; display:block; }
+  .sh-th span { position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(15,23,42,.7); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  @keyframes shPop { from { transform:scale(.4); opacity:0; } }
+  .sh-btn { width:76px; height:76px; border-radius:50%; border:4px solid #fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .sh-btn i { width:60px; height:60px; border-radius:50%; background:#fff; transition:transform .12s; }
+  .sh-btn:active i { transform:scale(.86); } .sh-btn.full { opacity:.4; }
+  .sh-n { width:84px; color:#fff; font-weight:700; font-size:13px; text-align:center; font-variant-numeric:tabular-nums; }
+  .sh-save { width:84px; height:44px; border:0; border-radius:22px; background:var(--brand); color:#fff; font:inherit; font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; }
+  .sh-save b { background:#fff; color:var(--brand); border-radius:99px; padding:0 6px; font-size:12px; }
+  .sh-save:disabled { opacity:.35; }
+  .wx-pic { margin-top:9px; }
+  .wx-add { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px; border:1.5px dashed rgba(22,163,74,.45); background:rgba(22,163,74,.06); cursor:pointer; font-size:13.5px; }
+  .wx-add .hint { margin-top:1px; }
+  .wx-shot { position:relative; width:120px; border-radius:12px; overflow:hidden; border:1px solid var(--line); background:#fff; margin-bottom:5px; }
+  .wx-shot img { width:100%; display:block; cursor:zoom-in; }
+  .wx-shot.big { width:min(220px,100%); margin-top:8px; }
+  .drafts { padding:10px 16px 0; display:flex; flex-direction:column; gap:8px; }
+  .draft { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:14px; background:var(--card); box-shadow:var(--shadow); border:1.5px dashed rgba(var(--brand-rgb),.45); cursor:pointer; }
+  .dr-pic { width:40px; height:40px; border-radius:10px; overflow:hidden; background:var(--mint); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .dr-pic img { width:100%; height:100%; object-fit:cover; }
+  .dr-k { font-size:11px; color:var(--brand); font-weight:700; }
+  .dr-n { font-size:14px; font-weight:700; }
+  .dr-go { padding:6px 12px; border-radius:99px; background:var(--brand); color:#fff; font-size:12.5px; font-weight:800; flex-shrink:0; }
+  .dr-x { width:26px; height:26px; border-radius:50%; background:var(--soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .draft-on { display:flex; align-items:center; gap:8px; padding:10px 12px; margin-bottom:10px; border-radius:13px; background:var(--mint); color:var(--ink); font-size:13px; font-weight:600; }
+  .dr-drop { color:var(--brand); font-weight:800; cursor:pointer; }
   .rec-side { width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .thumb { position:relative; width:112px; height:112px; border-radius:12px; overflow:hidden; flex-shrink:0; background:var(--soft); }
   .thumb img { width:100%; height:100%; object-fit:contain; display:block; transition:transform .5s var(--ease); }
@@ -188,7 +239,9 @@
   .where { display:flex; align-items:center; gap:4px; margin-top:6px; font-size:11.5px; color:var(--ink-2); min-width:0; }
   .where.date { margin-top:3px; color:var(--ink-3); font-size:11px; }
   .bottom { margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; padding-top:5px; }
-  .price { color:var(--price); font-size:20px; font-weight:800; line-height:1; }
+  .price { color:var(--price); font-size:20px; font-weight:800; line-height:1.15; min-width:0; overflow-wrap:anywhere; }
+  .price .num { white-space:nowrap; }
+  .bottom .price { flex:1; padding-right:6px; }
   .price .cur, .price .dec { font-size:13px; }
   .price .per { font-size:11px; color:var(--ink-3); font-weight:500; }
   .go { width:26px; height:26px; border-radius:9px; background:var(--mint); display:flex; align-items:center; justify-content:center; }
@@ -1290,6 +1343,10 @@
 </style>
 </head>
 <body>
+<div id="boot" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:linear-gradient(150deg,#DC2626,#991B1B);transition:opacity .25s">
+  <img src="icons/icon-180.png" alt="" width="84" height="84" style="border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25)">
+  <div style="color:#fff;font:800 20px -apple-system,'Segoe UI',sans-serif;letter-spacing:.3px">Trade</div>
+</div>
 <div class="phone">
   <div id="nav"></div>
   <div class="screen" id="body"></div>
@@ -1303,7 +1360,7 @@
 // Export uses the same shared modules as the mini program (utils/report.js, pdf.js, xlsx.js, zip.js).
 const UNITS = ['pcs','pair','kg','box','carton','dozen','set','meter','roll','bag'];
 const CURRENCIES = ['¥','$'];
-const MAX_IMAGES = 6;
+const MAX_IMAGES = 12;
 const YIWU = { latitude: 29.3069, longitude: 120.0758 };
 const AMAP_TILES = 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}';
 const OTHER = '__other__';
@@ -2102,13 +2159,26 @@ const $tabbar = document.getElementById('tabbar');
 const $overlay = document.getElementById('overlay');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ic = (name, color, size, stroke) => `<span class="ic" style="width:${size || 20}px;height:${size || 20}px;background-image:url('${TradeIcons.uri(name, color || INK(), stroke)}')"></span>`;
-function priceParts(n) { const s = (Math.round(Number(n) * 100) / 100).toFixed(2).split('.'); return { int: s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','), dec: s[1] }; }
-const priceHtml = (cur, n, unit, cls) => { const pp = priceParts(n); return `<div class="${cls}"><span class="cur">${esc(cur)}</span>${pp.int}<span class="dec">.${pp.dec}</span><span class="per"> /${esc(unit)}</span></div>`; };
+// Prices show exactly as typed — never rounded, never cut short (see TradeReport.exact)
+function priceParts(n) { const e = TradeReport.exact(n); return { int: (e.neg ? '-' : '') + e.int, dec: e.dec }; }
+const priceHtml = (cur, n, unit, cls) => { const pp = priceParts(n); return `<div class="${cls}"><span class="num"><span class="cur">${esc(cur)}</span>${pp.int}${pp.dec ? `<span class="dec">.${pp.dec}</span>` : ''}</span><span class="per"> /${esc(unit)}</span></div>`; };
 const money = (cur, n) => esc(cur) + TradeReport.money(n);
 function toast(msg) {
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
   document.querySelector('.phone').appendChild(t); setTimeout(() => t.remove(), 1900);
+}
+// The map library is loaded only when a map is shown, so Trade opens at once (no wait for the map files)
+let leafletP = null;
+function loadLeaflet() {
+  if (window.L && window.L.map) return Promise.resolve();
+  return leafletP || (leafletP = new Promise((ok, no) => {
+    const base = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = base + 'leaflet.min.css'; document.head.appendChild(css);
+    const js = document.createElement('script'); js.src = base + 'leaflet.min.js';
+    js.onload = () => ok(); js.onerror = () => { leafletP = null; js.remove(); no(new Error('The map could not load')); };
+    document.head.appendChild(js);
+  }));
 }
 function tileLayer() { return L.tileLayer(AMAP_TILES, { subdomains: ['1','2','3','4'], maxZoom: 18 }); }
 const plural = (n, w) => TradeI18n.plural(n, w);
@@ -2257,6 +2327,7 @@ async function setLanguage(l) {
 function route(quiet) {
   const [page, id] = (location.hash.slice(1) || 'index').split('/');
   closeOverlay();
+  Shots.stop(); Draft.leave();
   if (page === 'add') renderAdd(id);
   else if (page === 'detail') renderDetail(id);
   else if (page === 'report') renderReport(id);
@@ -2276,6 +2347,29 @@ window.addEventListener('hashchange', () => route());
 // ---------- pages/index ----------
 let q = '', market = '';
 const SORTS = [['new', 'Newest first'], ['old', 'Oldest first'], ['low', 'Price: low to high'], ['high', 'Price: high to low'], ['name', 'Name A–Z']];
+// Every market has its own card colour: registered markets get well-spread hues in the order they were added
+// (golden angle), so two markets never look alike; a market name not in the list falls back to a hash.
+function marketHue(name) {
+  const n = norm(name || '').toLowerCase(); if (!n) return null;
+  const list = DB.markets.slice().sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }));
+  const i = list.findIndex(m => norm(m.name).toLowerCase() === n);
+  // red and green stay free for the price mark: hues come only from 25–95 (orange, yellow) and 165–330 (teal … pink)
+  const f = i >= 0 ? (0.1 + i * 0.618034) % 1 : hueOf(n) / 360, h = f * 235;
+  return Math.round(h < 70 ? 25 + h : 165 + (h - 70));
+}
+// Price mark on a product card: tap the dot → red (too dear — a cheaper one is in the app, the card goes to the
+// bottom of the list) → green (good price) → no mark
+const FLAGS = ['', 'red', 'green'];
+async function flagProduct(id) {
+  const p = store.get(id); if (!p) return;
+  const next = FLAGS[(FLAGS.indexOf(p.flag || '') + 1) % FLAGS.length];
+  const el = document.querySelector(`.swipe[data-id="${id}"]`);
+  try { await store.upsert(Object.assign({}, p, { flag: next })); } catch (e) { return toast(t('Could not save: ') + (e.message || e)); }
+  toast(t(next === 'red' ? 'Red: dearer — moved to the bottom' : next === 'green' ? 'Green: good price' : 'Mark removed'));
+  if (el && next === 'red') { el.classList.add('sink'); await wait(320); }
+  drawList();
+  if (next === 'red') { const n = document.querySelector(`.swipe[data-id="${id}"]`); if (n) { n.classList.add('flash'); } }
+}
 const hueOf = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) % 9973; return Math.round(h * 137.508) % 360; };
 function sortList(list) {
   const by = DB.kv.sort || 'new', reg = TradeReport.registeredAt;
@@ -2321,10 +2415,11 @@ function renderIndex() {
     <div class="search-wrap"><div id="connBar"></div><div class="search">${ic('search', '#94A3B8', 18)}<input id="q" type="search" placeholder="Search product, market, shop..." value="${esc(q)}"><span id="clr"></span>${all.length ? '<span class="sortbtn" id="sortBtn" aria-label="Sort"></span>' : ''}</div></div>
     ${all.length ? `<div class="fchips" id="filters">
         <span class="fchip ${market === '' ? 'on' : ''}" data-m="">All<b>${all.length}</b></span>
-        ${mlist.map(m => `<span class="fchip ${market === m ? 'on' : ''}" data-m="${esc(m)}" style="--h:${hueOf(m)}"><i class="fdot"></i><span data-notr>${esc(m)}</span><b>${counts[m]}</b></span>`).join('')}
+        ${mlist.map(m => `<span class="fchip ${market === m ? 'on' : ''}" data-m="${esc(m)}" style="--h:${marketHue(m)}"><i class="fdot"></i><span data-notr>${esc(m)}</span><b>${counts[m]}</b></span>`).join('')}
       </div>
     <div class="fres" id="fres"></div>` : ''}
-    <div class="page list" id="list"></div>`;
+    <div class="page list" id="list">${''}</div>`;
+  const $l = document.getElementById('list'); $l.insertAdjacentHTML('beforebegin', draftBanner()); bindDrafts();
   const $q = document.getElementById('q');
   $q.oninput = () => { q = $q.value; drawList(); };
   document.querySelectorAll('.fchip').forEach(el => el.onclick = () => {
@@ -2338,10 +2433,12 @@ function renderIndex() {
   drawList();
 }
 function productCard(p) {
+  const h = marketHue(p.marketName), fl = p.flag === 'red' || p.flag === 'green' ? p.flag : '';
   return `<div class="swipe" data-id="${p.id}"><div class="sw-acts">
       <button class="sw-btn sw-e" data-act="edit" aria-label="${esc(t('Edit'))}"><i>${ic('edit', '#fff', 20, 2.3)}</i>${esc(t('Edit'))}</button>
       <button class="sw-btn sw-d" data-act="del" aria-label="${esc(t('Delete'))}"><i>${ic('trash', '#fff', 20, 2.3)}</i>${esc(t('Delete'))}</button></div>
-    <div class="pcard" onclick="if(!Swipe.eat())location.hash='detail/${p.id}'">
+    <div class="pcard ${h != null ? 'mk' : ''} ${fl ? 'fl-' + fl : ''}" ${h != null ? `style="--h:${h}"` : ''} onclick="if(!Swipe.eat())location.hash='detail/${p.id}'">
+    <span class="pflag ${fl}" onclick="event.stopPropagation();if(!Swipe.eat())flagProduct('${p.id}')" aria-label="${esc(t('Price mark'))}"><i></i></span>
     <div class="thumb">
       ${p.images.length ? `<img src="${p.images[0]}" loading="lazy">` : `<div class="thumb-ph">${ic('image', '#B6C0CD', 28, 1.6)}</div>`}
       ${p.images.length > 1 ? `<div class="thumb-count">${ic('camera', '#fff', 11, 2.4)}${p.images.length}</div>` : ''}
@@ -2349,6 +2446,7 @@ function productCard(p) {
     </div>
     <div class="body">
       <div class="name" data-notr>${esc(p.name)}</div>
+      ${fl ? `<div class="fl-note ${fl}">${esc(t(fl === 'red' ? 'Dearer — a cheaper one is saved' : 'Good price'))}</div>` : ''}
       <div class="chips"><span class="chip teal">MOQ ${esc(p.minOrder)} ${esc(p.unit)}</span>${p.size ? `<span class="chip">${esc(p.size)}</span>` : ''}</div>
       <div class="where">${ic(p.marketName ? 'market' : 'store', '#94A3B8', 13)}<span class="ellipsis">${esc(whereOf(p) || '—')}</span></div>
       <div class="where date">${dateChip(TradeReport.registeredAt(p))}${p.shopWechat === 'yes' ? `<span class="wxchip">${ic('wechat', '#16A34A', 11)}WeChat</span>` : ''}</div>
@@ -2420,9 +2518,10 @@ const Swipe = {
 function drawList() {
   const k = q.trim().toLowerCase();
   document.getElementById('clr').innerHTML = k ? `<div class="clear" onclick="q='';renderIndex();enter()">${ic('x', '#64748B', 13, 2.4)}</div>` : '';
-  const list = sortList(store.all()
+  const sorted = sortList(store.all()
     .filter(p => !market || p.marketName === market)
     .filter(p => !k || [p.name, p.description, p.marketName, p.shopName, p.wechatId, p.shopNote, p.size, p.location && p.location.name, p.location && p.location.address].join(' ').toLowerCase().includes(k)));
+  const list = sorted.filter(p => p.flag !== 'red').concat(sorted.filter(p => p.flag === 'red')); // red (too dear) always at the bottom
   const fr = document.getElementById('fres');
   if (fr) {
     fr.innerHTML = market || k ? `<span class="ellipsis">${esc(plural(list.length, 'product'))}${market ? ` · <span data-notr>${esc(market)}</span>` : ''}</span><span class="fclr" id="fclr">${ic('x', B(), 11, 3)}${esc(t('Clear filter'))}</span>` : '';
@@ -2489,7 +2588,7 @@ function drawMarkets(used) {
         const ps = used[m.name] || [], sh = new Set(ps.map(p => p.shopName)).size;
         const tot = TradeReport.totalsOf(ps);
         return `<div class="mk" data-id="${m.id}">
-          <div class="mk-icon">${esc(m.name.trim().charAt(0).toUpperCase())}</div>
+          <div class="mk-icon" style="background:hsl(${marketHue(m.name)} 68% 50%);box-shadow:none">${esc(m.name.trim().charAt(0).toUpperCase())}</div>
           <div style="flex:1;min-width:0"><div class="mk-name ellipsis" data-notr>${esc(m.name)}</div>
             <div class="mk-sub ellipsis">${m.note ? esc(m.note) + ' · ' : ''}${plural(ps.length, 'product')} · ${plural(sh, 'shop')}</div>
             ${tot.length ? `<div class="mk-sub" style="color:var(--price);font-weight:700">${tot.map(t => money(t.currency, t.value)).join(' · ')}</div>` : ''}</div>
@@ -4258,7 +4357,7 @@ function doneSheet(title, html) {
 
 // ---------- pages/add ----------
 let form = null, editId = '';
-function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', marketName: '', shopName: '', shopWechat: '', wechatId: '', shopNote: '', location: null }; }
+function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', marketName: '', shopName: '', shopWechat: '', wechatId: '', wechatPhoto: '', shopNote: '', location: null }; }
 
 // ---------- Date card (registration date) ----------
 const WEEKDAYS = { en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], so: ['Axad', 'Isniin', 'Talaado', 'Arbaco', 'Khamiis', 'Jimco', 'Sabti'], zh: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'] };
@@ -4290,6 +4389,74 @@ function dateCard(ts, note) {
 }
 const dateChip = ts => ts ? `<span class="dchip">${ic('calendar', B(), 11)}${esc(TradeReport.dateLabel(ts))}<i>· ${esc(ago(ts))}</i></span>` : '';
 
+// ---------- Draft: what is being typed on Add / Edit Product is kept on the phone while it is typed ----------
+// Leaving the page, closing Trade or the phone killing it never loses it: the form opens again as it was,
+// and Products shows "Unfinished product — Continue". Saving the product (or Discard) removes the draft.
+const Draft = {
+  timer: null, sig: '', base: '',
+  key: id => 'draft:' + (id || 'new'),
+  sign(f) {
+    if (!f) return '';
+    const small = Object.assign({}, f, { images: (f.images || []).map(x => x.length + x.slice(-40)), videos: (f.videos || []).map(v => (v.src || '').length), wechatPhoto: (f.wechatPhoto || '').length });
+    return JSON.stringify(small);
+  },
+  live: false,
+  start(id) { this.base = this.sign(form); this.sig = this.base; this.live = true; clearInterval(this.tick); this.tick = setInterval(() => this.check(), 1500); },
+  stop() { this.live = false; clearInterval(this.tick); clearTimeout(this.timer); },
+  soon() { clearTimeout(this.timer); this.timer = setTimeout(() => this.check(), 400); },
+  // The typed text is also written at once to localStorage (synchronous), so even a change made a moment before
+  // the app is closed survives; photos and videos go to the database (a moment later).
+  lsKey: id => 'trade-draft:' + (id || 'new'),
+  quick() {
+    if (!this.live || !form) return;
+    const f = Object.assign({}, form); delete f.images; delete f.videos; delete f.wechatPhoto;
+    try { localStorage.setItem(this.lsKey(editId), JSON.stringify({ at: Date.now(), f, other: !!marketPick.other })); } catch (e) {}
+  },
+  ls(id) { try { const x = JSON.parse(localStorage.getItem(this.lsKey(id)) || 'null'); return x && x.f ? x : null; } catch (e) { return null; } },
+  // leaving Add / Edit (back, a tab, closing Trade): keep the last change too
+  leave() { if (this.live) { this.check(); this.stop(); } },
+  async check() {
+    if (!this.live || !form) return;
+    const sig = this.sign(form); if (sig === this.sig) return;
+    this.sig = sig;
+    if (sig === this.base && !DB.kv[this.key(editId)]) return; // nothing typed yet
+    this.quick();
+    const pairs = form.images.filter(src => cropUndo.has(src)).map(src => [src, cropUndo.get(src)]);
+    try { await DB.setKV(this.key(editId), { id: editId, at: Date.now(), form: JSON.parse(JSON.stringify(form)), crop: pairs, other: !!marketPick.other }); } catch (e) {}
+  },
+  get(id) {
+    const k = DB.kv[this.key(id)], d = k && k.form ? k : null, l = this.ls(id);
+    if (!l || (d && d.at >= l.at)) return d;
+    return { id: id || '', at: l.at, form: Object.assign({}, d ? d.form : {}, l.f), crop: d ? d.crop : [], other: l.other };
+  },
+  async clear(id) {
+    try { localStorage.removeItem(this.lsKey(id)); } catch (e) {}
+    const k = this.key(id); if (!(k in DB.kv)) return; delete DB.kv[k]; try { await DB.write('kv', 'delete', k); } catch (e) {}
+  },
+  all() {
+    const ids = new Set(Object.keys(DB.kv).filter(k => k.startsWith('draft:') && DB.kv[k] && DB.kv[k].form).map(k => k.slice(6)));
+    try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('trade-draft:')) ids.add(k.slice(12)); } } catch (e) {}
+    return [...ids].map(x => this.get(x === 'new' ? '' : x)).filter(Boolean).sort((a, b) => b.at - a.at);
+  }
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden) Draft.check(); });
+document.addEventListener('input', () => { if (Draft.live) { Draft.quick(); Draft.soon(); } });
+document.addEventListener('change', () => { if (Draft.live) { Draft.quick(); Draft.soon(); } });
+window.addEventListener('pagehide', () => Draft.check());
+function draftBanner() {
+  const list = Draft.all().filter(d => !d.id || store.get(d.id)); if (!list.length) return '';
+  return `<div class="drafts">${list.map(d => `<div class="draft tap" data-draft="${esc(d.id || '')}">
+      <div class="dr-pic">${d.form.images && d.form.images[0] ? `<img src="${d.form.images[0]}">` : ic('edit', B(), 18, 2.2)}</div>
+      <div style="flex:1;min-width:0"><div class="dr-k">${esc(t(d.id ? 'Unfinished edit' : 'Unfinished product'))} · ${esc(ago(d.at))}</div><div class="dr-n ellipsis" data-notr>${esc(d.form.name || t('No name yet'))}</div></div>
+      <span class="dr-go">${esc(t('Continue'))}</span><span class="dr-x" data-drx="${esc(d.id || '')}">${ic('x', '#64748B', 12, 2.8)}</span></div>`).join('')}</div>`;
+}
+function bindDrafts() {
+  document.querySelectorAll('[data-draft]').forEach(el => el.onclick = async e => {
+    const x = e.target.closest('[data-drx]');
+    if (x) { e.stopPropagation(); if (!await confirmDel({ title: t('Throw away this draft?'), text: t('What you typed is lost'), ok: t('Throw away') })) return; await Draft.clear(x.dataset.drx); renderIndex(); return; }
+    location.hash = 'add' + (el.dataset.draft ? '/' + el.dataset.draft : '');
+  });
+}
 function renderAdd(id) {
   // The computer only shows products — they are recorded on the iPhone
   if (document.body.classList.contains('pc')) { toast(t('Products are added on the iPhone — the computer only shows them')); location.replace('#' + (id ? 'detail/' + id : '')); return; }
@@ -4305,9 +4472,12 @@ function renderAdd(id) {
     const w = wishToProduct; wishToProduct = null;
     Object.assign(form, { name: w.title || '', images: wishPics(w).slice(0, MAX_IMAGES), price: Number(w.price) > 0 ? String(w.price) : '', currency: CURRENCIES.includes(w.currency) ? w.currency : form.currency, marketName: w.market || form.marketName, minOrder: Number(w.qty) > 0 ? String(w.qty) : form.minOrder, shopNote: [w.client ? t('Client') + ': ' + w.client : '', w.note, w.link].filter(Boolean).join('\n') });
   }
+  const dr = Draft.get(editId); let restored = false;
+  if (dr) { form = Object.assign(emptyForm(), dr.form); (dr.crop || []).forEach(([c, o]) => cropUndo.set(c, o)); restored = true; }
   simpleNav(old ? 'Edit Product' : 'Add Product'); tabbar(null);
   const opt = (arr, v) => arr.map(x => `<option value="${x}" ${x === v ? 'selected' : ''}>${esc(t(x))}</option>`).join('');
   $body.innerHTML = `<div class="page" style="padding-top:4px;padding-bottom:calc(90px + var(--safe-bottom))">
+    ${restored ? `<div class="draft-on">${ic('edit', B(), 15, 2.4)}<span style="flex:1">${esc(t('Your draft is back — saved {t}', { t: ago(dr.at) }))}</span><span class="dr-drop tap" id="drDrop">${esc(t('Discard'))}</span></div>` : ''}
     <div class="scanbox tap" id="scanBtn">
       <div class="scan-ic">${ic('scan', '#fff', 24, 2.2)}<i></i></div>
       <div style="flex:1;min-width:0"><div class="scan-t">Scan product with AI</div><div class="scan-s">Point the camera at the item and its label — name and size are filled in for you</div></div>
@@ -4355,9 +4525,14 @@ function renderAdd(id) {
   document.getElementById('save').onclick = save;
   // "Other" is chosen when the product's market is not in the registered list
   marketPick.other = !!form.marketName && !markets.find(form.marketName);
+  if (restored && dr.other) marketPick.other = true;
+  const dd = document.getElementById('drDrop');
+  if (dd) dd.onclick = async () => { if (!await confirmDel({ title: t('Throw away this draft?'), text: t('What you typed is lost'), ok: t('Throw away') })) return; await Draft.clear(editId); form = null; renderAdd(id); };
   document.getElementById('scanBtn').onclick = () => Scanner.open();
   Scanner.status();
   drawImages(); Video.draw(); drawLoc(); drawMarketPick(); drawWechat();
+  Draft.start(id);
+  if (restored) Draft.base = ''; // a restored draft is kept up to date from the first change
 }
 // ---------- Product videos: recorded in the app (small file, up to 30 s) or picked from the gallery ----------
 const MAX_VIDEOS = 3;
@@ -4468,6 +4643,10 @@ function drawWechat() {
       <div class="tick-btn ${v === 'no' ? 'on no' : ''}" data-v="no"><span class="box">${v === 'no' ? ic('x', '#fff', 12, 3.2) : ''}</span>No WeChat</div>
     </div>
     ${v === 'yes' ? `<div class="reveal wx-in">${ic('wechat', '#16A34A', 18)}<input class="input" id="wxId" value="${esc(form.wechatId)}" placeholder="WeChat ID or number" autocapitalize="off" autocomplete="off"></div>
+      <div class="wx-pic">${form.wechatPhoto
+        ? `<div class="wx-shot"><img src="${form.wechatPhoto}" id="wxView"><div class="del" id="wxDel">${ic('x', '#fff', 11, 3)}</div></div><div class="hint">${esc(t('WeChat picture saved with the shop'))}</div>`
+        : `<div class="wx-add tap" id="wxAdd">${ic('camera', '#16A34A', 18, 2.2)}<div><b>${esc(t('Save WeChat as a picture'))}</b><div class="hint">${esc(t('Photo or screenshot of the shop’s WeChat QR code / card'))}</div></div></div>`}
+        <input type="file" id="wxFile" accept="image/*" hidden></div>
       <div class="hint" style="margin-top:6px">Saved with the shop — copy it later to add them on WeChat.</div>` : ''}`;
   el.querySelectorAll('.tick-btn').forEach(b => b.onclick = () => {
     form.shopWechat = form.shopWechat === b.dataset.v ? '' : b.dataset.v;
@@ -4475,6 +4654,28 @@ function drawWechat() {
     const i = document.getElementById('wxId'); if (i && form.shopWechat === 'yes' && !form.wechatId) i.focus();
   });
   const i = document.getElementById('wxId'); if (i) i.oninput = () => { form.wechatId = i.value; };
+  const add = document.getElementById('wxAdd'), file = document.getElementById('wxFile');
+  if (add) add.onclick = () => {
+    $overlay.innerHTML = `<div class="mask bottom" id="asMask"><div class="as" onclick="event.stopPropagation()"><div class="as-group">
+      <div class="as-title">${esc(t('Save WeChat as a picture'))}</div>
+      <div class="as-item" id="wxCam"><div class="icon-tile">${ic('camera', B(), 17)}</div><div>${esc(t('Take photo'))}</div></div>
+      <div class="as-item" id="wxAlb"><div class="icon-tile">${ic('image', B(), 17)}</div><div>${esc(t('Choose from gallery'))}<div class="sub">${esc(t('e.g. a screenshot of the QR code'))}</div></div></div></div>
+      <div class="as-cancel" id="asCancel">${esc(t('Cancel'))}</div></div></div>`;
+    document.getElementById('asMask').onclick = closeOverlay; document.getElementById('asCancel').onclick = closeOverlay;
+    document.getElementById('wxCam').onclick = () => { closeOverlay(); file.setAttribute('capture', 'environment'); file.click(); };
+    document.getElementById('wxAlb').onclick = () => { closeOverlay(); file.removeAttribute('capture'); file.click(); };
+  };
+  if (file) file.onchange = async () => {
+    const f = file.files[0]; file.value = ''; if (!f) return;
+    const URLs = URL.createObjectURL(f);
+    try { const img = await loadImg(URLs), k = Math.min(1, 1100 / Math.max(img.width, img.height)), c = document.createElement('canvas'); // kept sharp, never brightened, so the QR code still scans
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      form.wechatPhoto = c.toDataURL('image/jpeg', 0.88); drawWechat(); Draft.soon(); toast(t('WeChat picture added ✓'));
+    } catch (e) { toast(t('Could not read one photo')); } finally { URL.revokeObjectURL(URLs); }
+  };
+  const del = document.getElementById('wxDel');
+  if (del) del.onclick = async () => { if (!await confirmDel({ title: t('Remove the WeChat picture?'), ok: t('Remove'), icon: 'image' })) return; form.wechatPhoto = ''; drawWechat(); Draft.soon(); };
+  const vw = document.getElementById('wxView'); if (vw) vw.onclick = () => photoViewer([form.wechatPhoto], 0);
 }
 // Market: pick a registered market, or "Not in the list" to type a new one
 const marketPick = { other: false };
@@ -4503,13 +4704,15 @@ function addPhoto() {
   $overlay.innerHTML = `<div class="mask bottom" id="asMask"><div class="as" onclick="event.stopPropagation()">
     <div class="as-group">
       <div class="as-title">Add a product photo</div>
-      <div class="as-item" id="asCamera"><div class="icon-tile">${ic('camera', B(), 17)}</div><div><div>Take photo</div><div class="sub">Use the camera</div></div></div>
+      <div class="as-item" id="asCamera"><div class="icon-tile">${ic('camera', B(), 17)}</div><div><div>${esc(t('Take photos'))}</div><div class="sub">${esc(t('One or many — then tap Save'))}</div></div></div>
       <div class="as-item" id="asAlbum"><div class="icon-tile">${ic('image', B(), 17)}</div><div><div>Choose from gallery</div><div class="sub">Pick up to ${MAX_IMAGES - form.images.length} photos</div></div></div>
+      <div class="as-item" id="asLight"><div class="icon-tile">${ic('wand', B(), 17)}</div><div style="flex:1"><div>${esc(t('Enhance'))}</div><div class="sub">${esc(t('Auto brightness for dark photos'))}</div></div><div class="switch ${DB.kv.noLight ? '' : 'on'}" id="asLightSw"></div></div>
     </div>
     <div class="as-cancel" id="asCancel">Cancel</div></div></div>`;
   document.getElementById('asMask').onclick = closeOverlay;
   document.getElementById('asCancel').onclick = closeOverlay;
-  document.getElementById('asCamera').onclick = () => { closeOverlay(); document.getElementById('fileCamera').click(); };
+  document.getElementById('asCamera').onclick = () => { closeOverlay(); Shots.open(); };
+  document.getElementById('asLight').onclick = async () => { await DB.setKV('noLight', !DB.kv.noLight); document.getElementById('asLightSw').classList.toggle('on', !DB.kv.noLight); toast(t(DB.kv.noLight ? 'Enhance off' : 'Enhance on')); };
   document.getElementById('asAlbum').onclick = () => { closeOverlay(); document.getElementById('fileAlbum').click(); };
 }
 async function delFormImage(i) {
@@ -5044,8 +5247,76 @@ async function cropExisting() {
   closeOverlay();
   toast(n ? t('{n} photos cropped ✓', { n }) : t('No photo needed cropping'));
 }
-async function onFiles(e) {
-  const files = Array.from(e.target.files).slice(0, MAX_IMAGES - form.images.length);
+function onFiles(e) { const files = Array.from(e.target.files || []); e.target.value = ''; return addFiles(files); }
+// ---------- Multi-shot camera: take one photo or many in a row, then Save adds them all ----------
+const Shots = {
+  stream: null, shots: [], facing: 'environment',
+  live: () => window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia,
+  stop() { if (this.stream) this.stream.getTracks().forEach(tr => tr.stop()); this.stream = null; },
+  room() { return MAX_IMAGES - form.images.length - this.shots.length; },
+  async open() {
+    if (form.images.length >= MAX_IMAGES) return toast(t('Maximum {n} photos', { n: MAX_IMAGES }));
+    if (!this.live()) return document.getElementById('fileCamera').click(); // no live camera here: the phone's own camera
+    this.shots.forEach(x => URL.revokeObjectURL(x.url)); this.shots = [];
+    $overlay.innerHTML = `<div class="rec shots"><video id="shV" autoplay playsinline muted></video><div class="sh-flash" id="shFlash"></div>
+      <div class="rec-top"><span class="rec-side" id="shX">${ic('x', '#fff', 20, 2.6)}</span>
+        <span class="sh-light ${DB.kv.noLight ? '' : 'on'}" id="shLight">${ic('wand', '#fff', 15, 2.4)}<span>${esc(t('Enhance'))}</span><b></b></span>
+        <span class="rec-side" id="shFlip">${ic('refresh', '#fff', 20)}</span></div>
+      <div class="sh-strip" id="shStrip"></div>
+      <div class="rec-bar"><span class="sh-n" id="shN"></span><span class="sh-btn" id="shGo"><i></i></span><button class="sh-save" id="shSave"></button></div></div>`;
+    document.getElementById('shX').onclick = async () => {
+      if (this.shots.length && !await confirmDel({ title: t('Throw away these photos?'), text: plural(this.shots.length, 'photo'), ok: t('Throw away'), icon: 'image' })) return;
+      this.close();
+    };
+    document.getElementById('shFlip').onclick = () => { this.facing = this.facing === 'environment' ? 'user' : 'environment'; this.start(); };
+    document.getElementById('shLight').onclick = async e => { const el = e.currentTarget; await DB.setKV('noLight', !DB.kv.noLight); el.classList.toggle('on', !DB.kv.noLight); toast(t(DB.kv.noLight ? 'Enhance off' : 'Enhance on')); };
+    document.getElementById('shGo').onclick = () => this.snap();
+    document.getElementById('shSave').onclick = () => this.save();
+    this.paint();
+    await this.start();
+  },
+  async start() {
+    this.stop();
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: this.facing }, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false })
+        .catch(() => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: this.facing } }, audio: false }));
+      const v = document.getElementById('shV'); if (!v) return this.stop();
+      v.srcObject = this.stream;
+    } catch (e) { this.close(); toast(t('Could not open the camera')); document.getElementById('fileCamera').click(); }
+  },
+  async snap() {
+    const v = document.getElementById('shV');
+    if (!v || !v.videoWidth) return;
+    if (this.room() <= 0) return toast(t('Maximum {n} photos', { n: MAX_IMAGES }));
+    const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+    const f = document.getElementById('shFlash'); if (f) { f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
+    const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.92));
+    if (!blob) return;
+    this.shots.push({ blob, url: URL.createObjectURL(blob) });
+    this.paint();
+  },
+  paint() {
+    const n = this.shots.length, st = document.getElementById('shStrip'); if (!st) return;
+    st.innerHTML = this.shots.map((x, i) => `<div class="sh-th"><img src="${x.url}"><span data-x="${i}">${ic('x', '#fff', 10, 3)}</span></div>`).join('');
+    st.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { const x = this.shots.splice(+b.dataset.x, 1)[0]; if (x) URL.revokeObjectURL(x.url); this.paint(); });
+    st.scrollLeft = st.scrollWidth;
+    document.getElementById('shN').textContent = (form.images.length + n) + ' / ' + MAX_IMAGES;
+    const sv = document.getElementById('shSave');
+    sv.disabled = !n; sv.innerHTML = `${ic('check', '#fff', 16, 3)}${esc(t('Save'))}${n ? ` <b>${n}</b>` : ''}`;
+    document.getElementById('shGo').classList.toggle('full', this.room() <= 0);
+  },
+  close() { this.stop(); this.shots.forEach(x => URL.revokeObjectURL(x.url)); this.shots = []; closeOverlay(); },
+  save() {
+    const list = this.shots; if (!list.length) return;
+    this.stop(); this.shots = []; closeOverlay();
+    list.forEach(x => setTimeout(() => URL.revokeObjectURL(x.url), 5000));
+    addFiles(list.map(x => x.blob));
+  }
+};
+async function addFiles(list) {
+  const files = list.slice(0, MAX_IMAGES - form.images.length);
+  if (!files.length) return;
   const sharp = [], first = form.images.length;
   let cropped = 0; const lit0 = photosLit;
   photoBusy = files.length;
@@ -5065,7 +5336,7 @@ async function onFiles(e) {
     const u = busyPreviews.shift(); if (u) setTimeout(() => URL.revokeObjectURL(u), 1000);
     drawImages();
   }
-  photoBusy = 0; busyPreviews = []; e.target.value = ''; drawImages();
+  photoBusy = 0; busyPreviews = []; drawImages(); Draft.soon();
   setTimeout(() => { justCropped = ''; }, 1500);
   if (cropped) toast(t('Photo cropped to the product'));
   else if (photosLit > lit0) toast(t('Dark photo brightened ✓'));
@@ -5097,7 +5368,8 @@ async function addressAt(lat, lng) {
 }
 // Like sending your location in WeChat: the map opens where you stand (GPS), the pin stays in the middle,
 // move the map to fine-tune, and the exact point is saved in Amap coordinates.
-function chooseLocation() {
+async function chooseLocation() {
+  try { await loadLeaflet(); } catch (e) { return toast(t('The map could not load — check the internet')); }
   const cur = form.location || YIWU;
   $overlay.innerHTML = `<div class="picker-wrap">
     <div class="nav"><span class="back" id="pback">${ic('left', INK(), 22, 2.4)}</span>${esc(t('Shop location'))}</div>
@@ -5172,7 +5444,7 @@ async function save() {
   const err = !f.name.trim() ? 'Enter the product name'
     : !(Number(f.price) > 0) ? 'Enter a valid price'
     : !(parseInt(f.minOrder, 10) >= 1) ? 'Minimum order must be at least 1'
-    : f.shopWechat === 'yes' && !String(f.wechatId || '').trim() ? 'Enter the shop’s WeChat ID or number' : '';
+    : f.shopWechat === 'yes' && !String(f.wechatId || '').trim() && !f.wechatPhoto ? 'Enter the shop’s WeChat ID or number' : '';
   if (err) return toast(err);
   saving = true;
   const btn = document.getElementById('save'); btn.style.opacity = .6;
@@ -5205,12 +5477,13 @@ async function save() {
     delete f.dupOk;
     await store.upsert(Object.assign({}, f, {
       id: old ? old.id : String(now), name: f.name.trim(), description: (f.description || '').trim(), size: f.size.trim(), marketName, shopName: f.shopName.trim(),
-      shopWechat: f.shopWechat || '', wechatId: f.shopWechat === 'yes' ? String(f.wechatId || '').trim() : '', shopNote: String(f.shopNote || '').trim(),
+      shopWechat: f.shopWechat || '', wechatId: f.shopWechat === 'yes' ? String(f.wechatId || '').trim() : '', wechatPhoto: f.shopWechat === 'yes' ? f.wechatPhoto || '' : '', shopNote: String(f.shopNote || '').trim(),
       price: Number(f.price), minOrder: parseInt(f.minOrder, 10), createdAt: old ? (TradeReport.registeredAt(old) || now) : now, updatedAt: now,
       hashes: sameImages ? old.hashes : await hashImages(f.images),
       origImages: originalsOf(f.images)
     }));
     if (marketName) await DB.setKV('lastMarket', marketName);
+    Draft.stop(); await Draft.clear(editId);
   } catch (e) { saving = false; btn.style.opacity = 1; return toast('Could not save: ' + (e.message || e)); }
   saving = false;
   toast('Saved ✓');
@@ -6380,7 +6653,7 @@ function renderDetail(id) {
           <div class="spec"><div class="icon-tile">${ic('ruler', B(), 16)}</div><div style="min-width:0"><div class="k">Size</div><div class="v">${esc(p.size || '—')}</div></div></div>
           <div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Minimum order</div><div class="v">${esc(p.minOrder)} ${esc(t(p.unit))}</div></div></div>
         </div>
-        <div class="moq"><span>Value at minimum order</span><span class="moq-v">${esc(p.currency)}${moq.int}.${moq.dec}</span></div>
+        <div class="moq"><span>Value at minimum order</span><span class="moq-v">${esc(p.currency)}${moq.int}${moq.dec ? '.' + moq.dec : ''}</span></div>
       </div>
       ${(p.videos || []).length ? `<div class="card d-vids"><div class="card-head"><div class="card-title"><div class="icon-tile">${ic('play', B(), 16)}</div>${esc(t('Videos'))}</div></div>${p.videos.map(v => `<video src="${v.src}" poster="${v.poster || ''}" controls playsinline preload="metadata"></video>`).join('')}</div>` : ''}
       ${dateCard(TradeReport.registeredAt(p))}
@@ -6389,7 +6662,8 @@ function renderDetail(id) {
         ${row('market', 'Market', `<div class="v ${p.marketName ? '' : 'none'}" data-notr>${esc(p.marketName || '')}</div>${p.marketName ? '' : `<div class="v none">${esc(t('Not set'))}</div>`}`, '', true)}
         ${row('store', 'Shop', `<div class="v" data-notr>${esc(p.shopName || '—')}</div>`, p.shopNote ? `<div class="hint shopnote" data-notr>${esc(p.shopNote)}</div>` : '')}
         ${p.shopWechat ? row('wechat', 'WeChat', p.shopWechat === 'yes'
-          ? `<div class="wx-row"><span class="v" data-notr>${esc(p.wechatId)}</span><button class="btn sm soft wx-copy" id="copyWx">${ic('copy', B(), 14)}${esc(t('Copy'))}</button></div><div class="hint">${esc(t('Shop is on WeChat'))}</div>`
+          ? `${p.wechatId ? `<div class="wx-row"><span class="v" data-notr>${esc(p.wechatId)}</span><button class="btn sm soft wx-copy" id="copyWx">${ic('copy', B(), 14)}${esc(t('Copy'))}</button></div>` : ''}<div class="hint">${esc(t('Shop is on WeChat'))}</div>
+            ${p.wechatPhoto ? `<div class="wx-shot big"><img src="${p.wechatPhoto}" id="wxView"></div><button class="btn sm soft" id="wxSave" style="margin-top:8px">${ic('download', B(), 14)}${esc(t('Save picture to the phone'))}</button>` : ''}`
           : `<div class="v none">${esc(t('No WeChat'))}</div>`) : ''}
         ${row('pin', 'Location', `<div class="v ${p.location ? '' : 'none'}">${esc(p.location ? p.location.name : 'Not set')}</div>`, p.location ? `<div class="hint">${esc(p.location.address)}</div>` : '')}
         ${p.location ? `
@@ -6412,18 +6686,30 @@ function renderDetail(id) {
     <button class="btn primary" style="flex:1" onclick="location.hash='add/${p.id}'">${ic('edit', '#fff', 17)}Edit product</button></div>`;
   const sw = document.getElementById('sw'), ctr = document.getElementById('ctr');
   if (sw && ctr) sw.onscroll = () => ctr.textContent = (Math.round(sw.scrollLeft / sw.clientWidth) + 1) + ' / ' + p.images.length;
-  if (p.location && window.L) {
-    const ll = [p.location.latitude, p.location.longitude];
-    const m = L.map('dmap', { attributionControl: false, zoomControl: false, dragging: false, scrollWheelZoom: false }).setView(ll, 16);
-    tileLayer().addTo(m); L.marker(ll).addTo(m);
-    const open = () => window.open(amapUrl(p.location, p.shopName || p.name), '_blank');
-    m.on('click', open);
-    document.getElementById('openAmap').onclick = open;
+  if (p.location) {
+    document.getElementById('openAmap').onclick = () => window.open(amapUrl(p.location, p.shopName || p.name), '_blank');
     document.getElementById('copyAmap').onclick = () => {
       const url = amapUrl(p.location, p.shopName || p.name);
       (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('Link copied'), () => prompt('Copy the link:', url));
     };
   }
+  if (p.location) loadLeaflet().then(() => {
+    const box = document.getElementById('dmap'); if (!box || box._leaflet_id) return;
+    const ll = [p.location.latitude, p.location.longitude];
+    const m = L.map('dmap', { attributionControl: false, zoomControl: false, dragging: false, scrollWheelZoom: false }).setView(ll, 16);
+    tileLayer().addTo(m); L.marker(ll).addTo(m);
+    const open = () => window.open(amapUrl(p.location, p.shopName || p.name), '_blank');
+    m.on('click', open);
+  }).catch(() => {});
+  const wv = document.getElementById('wxView'); if (wv) wv.onclick = () => photoViewer([p.wechatPhoto], 0);
+  const ws = document.getElementById('wxSave');
+  if (ws) ws.onclick = async () => {
+    const b = await (await fetch(p.wechatPhoto)).blob(), name = 'WeChat-' + (p.shopName || p.name || 'shop').replace(/[^\w\u4e00-\u9fff-]+/g, '_') + '.jpg';
+    // iPhone: the share sheet has "Save Image" \u2192 straight into Photos
+    const f = window.File ? new File([b], name, { type: 'image/jpeg' }) : null;
+    if (f && navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    saveFile(b, name);
+  };
   const cw = document.getElementById('copyWx');
   if (cw) cw.onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(p.wechatId) : Promise.reject()).then(() => toast(t('WeChat ID copied — paste it in WeChat → Add contacts')), () => prompt('WeChat', p.wechatId));
   document.getElementById('del').onclick = async () => {
@@ -6531,7 +6817,15 @@ const LiveUpdate = {
     } catch (e) {}
   },
   async apply(j) {
-    try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (e) {}
+    // the new sw.js saves the new files on the phone; wait until it is in charge, so the reload opens the new version
+    try {
+      const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        await reg.update();
+        const w = reg.installing || reg.waiting;
+        if (w) await new Promise(ok => { const done = () => { if (w.state === 'activated' || w.state === 'redundant') ok(); }; w.addEventListener('statechange', done); done(); setTimeout(ok, 12000); });
+      }
+    } catch (e) {}
     const label = t('New version of Trade');
     SyncBar.set('update', { label, total: 0, sub: t('Updating…'), now: true });
     const safe = () => !$overlay.innerHTML.trim() && !/^#add/.test(location.hash) && !Lock.el && !document.querySelector('.mask.cfm') && !document.querySelector('.dock');
@@ -6561,6 +6855,7 @@ const LiveUpdate = {
   const ghL = Cloud.parseLink(location.hash);
   if (ghL) history.replaceState(null, '', location.pathname);
   route();
+  const boot = document.getElementById('boot'); if (boot) { boot.style.opacity = '0'; setTimeout(() => boot.remove(), 260); }
   const ready = Sync.init();
   Cloud.init();
   if (ghL) ready.then(() => Cloud.openLink(ghL)).catch(e => dialog({ title: 'GitHub', text: e.message, ok: t('OK'), cancel: false }));

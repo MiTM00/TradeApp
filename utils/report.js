@@ -49,10 +49,17 @@
   function dateTimeLabel(t) { if (!t) return '—'; const d = new Date(t); return dateLabel(t) + (I18n.getLang() === 'zh' ? ' ' : ', ') + pad(d.getHours()) + ':' + pad(d.getMinutes()) }
   // Excel stores dates as days since 1899-12-30 (local time)
   function excelDate(t) { return (t - new Date(t).getTimezoneOffset() * 60000) / 86400000 + 25569 }
-  function money(n) {
-    const neg = n < 0, s = Math.abs(Math.round(n * 100) / 100).toFixed(2)
+  // A price is shown exactly as it was typed: never rounded, no ".00" added (12 → 12, 0.125 → 0.125)
+  function exact(n) {
+    n = Number(n) || 0
+    let s = String(Math.abs(Number(n.toPrecision(12)))) // drops float noise (0.1 × 3) only
+    if (/e/i.test(s)) s = Math.abs(n).toFixed(12).replace(/\.?0+$/, '')
     const [i, f] = s.split('.')
-    return (neg ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.' + f
+    return { neg: n < 0, int: i.replace(/\B(?=(\d{3})+(?!\d))/g, ','), dec: f || '' }
+  }
+  function money(n) {
+    const e = exact(n)
+    return (e.neg ? '-' : '') + e.int + (e.dec ? '.' + e.dec : '')
   }
   function int(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',') }
 
@@ -471,7 +478,7 @@
     }).join('').toUpperCase()
   }
   const amapLink = (loc, name) => 'https://uri.amap.com/marker?position=' + loc.longitude + ',' + loc.latitude + '&name=' + encodeURIComponent(String(name || loc.name || '').slice(0, 40)) + '&coordinate=gaode&callnative=1'
-  const curFmt = c => '"' + String(c).replace(/"/g, '') + '"#,##0.00'
+  const curFmt = c => '"' + String(c).replace(/"/g, '') + '"#,##0.00########'
 
   // opts.colors = { brand, brandDark } (the app theme); defaults to Jade
   async function buildExcel(products, env, onProgress, opts) {
@@ -921,7 +928,7 @@
         } else if (c.t === 'money') {
           const n = v && isFinite(v.v) ? Math.round(v.v * 100) / 100 : null
           if (n != null && c.total) curTot[v.cur || ''] = (curTot[v.cur || ''] || 0) + n
-          const s = z(i, { font: { b: !!c.bold, color: K.ink }, align: { h: 'right' }, num: '#,##0.00' })
+          const s = z(i, { font: { b: !!c.bold, color: K.ink }, align: { h: 'right' }, num: '#,##0.00########' })
           if (n != null && c.f) cells.push({ f: c.f.replace(/([A-Z]+)/g, m => m + (at + 1)), v: n, s })
           else cells.push({ v: n == null ? '' : n, s })
         } else if (c.t === 'int' || c.t === 'num') cells.push({ v: empty || !v ? (v === 0 ? 0 : '') : v, s: z(i, { align: { h: 'center' }, num: c.t === 'int' ? '#,##0' : '0' }) })
@@ -937,7 +944,7 @@
     // Totals: one row per currency, the sum under the totalled money column
     const ti = xc.findIndex(c => c.total), ci = xc.findIndex(c => c.t === 'cur')
     if (ti > 0) Object.keys(curTot).forEach(cur => {
-      const tot = st({ fill: 'E8EDF3', font: { b: true, color: K.ink }, border: B, align: { h: 'right' }, num: '#,##0.00' })
+      const tot = st({ fill: 'E8EDF3', font: { b: true, color: K.ink }, border: B, align: { h: 'right' }, num: '#,##0.00########' })
       const cells = xc.map(() => ({ v: '', s: tot }))
       cells[1] = { v: L('Total') + (cur ? ' (' + cur + ')' : ''), s: st({ fill: 'E8EDF3', font: { b: true, color: K.ink }, border: B, align: { indent: 1 } }) }
       if (ci > 0) cells[ci] = { v: cur, s: st({ fill: 'E8EDF3', font: { b: true }, border: B, align: { h: 'center' } }) }
@@ -984,5 +991,5 @@
     }
   }
 
-  return { summarize, buildPdf, buildExcel, buildTablePdf, buildTableExcel, money, int, ymd, stamp, totalsText, totalsOf, registeredAt, dateLabel, dateTimeLabel, monthShort, periodKey, periodLabel, byPeriod, NO_MARKET }
+  return { summarize, buildPdf, buildExcel, buildTablePdf, buildTableExcel, money, exact, int, ymd, stamp, totalsText, totalsOf, registeredAt, dateLabel, dateTimeLabel, monthShort, periodKey, periodLabel, byPeriod, NO_MARKET }
 })

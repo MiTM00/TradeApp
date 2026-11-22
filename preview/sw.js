@@ -1,5 +1,5 @@
 // Service worker: keeps the app working offline once it has been opened.
-// Network first for the app files (so updates arrive), cache as fallback.
+// The saved copy of the app opens at once; it is refreshed in the background and by LiveUpdate.
 const CACHE = 'trade-v32'
 const SHELL = [
   './', 'index.html', 'remote.js', 'hub-config.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
@@ -37,14 +37,18 @@ self.addEventListener('fetch', e => {
     e.respondWith(caches.open('trade-tiles').then(c => c.match(req).then(hit => hit || fetch(req).then(r => { c.put(req, r.clone()); return r }))))
     return
   }
-  // Saved copy: used when there is no network, the address is gone (an old iPhone tunnel answers with an error page)
-  // or the network is too slow — so the installed app always opens.
-  const saved = () => caches.match(req, { ignoreSearch: req.mode === 'navigate' }).then(hit => hit || (req.mode === 'navigate' ? caches.match('index.html').then(h => h || caches.match('./')) : undefined))
-  // no-cache: ask the server every time (GitHub Pages lets browsers keep files 10 min), so a new version arrives at once
-  const net = fetch(req, url.origin === location.origin ? { cache: 'no-cache' } : undefined).then(r => {
-    if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return r }
-    return saved().then(hit => hit || r)
+  // App files: the copy saved on the phone opens at once (no white or black screen while the network is slow),
+  // and a fresh copy is fetched in the background for next time. New versions come through LiveUpdate
+  // (version.json → a new sw.js installs the new files → reload).
+  const navigate = req.mode === 'navigate'
+  const saved = () => caches.match(req, { ignoreSearch: navigate }).then(hit => hit || (navigate ? caches.match('index.html').then(h => h || caches.match('./')) : undefined))
+  // no-cache: ask the server every time (GitHub Pages lets browsers keep files 10 min)
+  const net = () => fetch(req, url.origin === location.origin ? { cache: 'no-cache' } : undefined).then(r => {
+    if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)) }
+    return r
   })
-  const slow = new Promise(ok => setTimeout(ok, url.origin === location.origin ? 4000 : 8000)).then(() => saved().then(hit => hit || net))
-  e.respondWith(Promise.race([net.catch(() => saved().then(hit => hit || Response.error())), slow]))
+  e.respondWith(saved().then(hit => {
+    if (hit) { e.waitUntil(net().catch(() => {})); return hit }
+    return net().then(r => r.ok ? r : saved().then(h => h || r)).catch(() => saved().then(h => h || Response.error()))
+  }))
 })
