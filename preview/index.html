@@ -3062,7 +3062,7 @@ const totalsTxt = ts => ts.map(x => curOf(x.currency) + TradeReport.money(x.valu
 function productRow(p, best) {
   const reg = TradeReport.registeredAt(p), unit = t(p.unit || 'pcs');
   return { name: p.name || '—', sub: [String(p.description || '').replace(/\s+/g, ' ').trim(), p.size ? t('Size {x}', { x: p.size }) : ''].filter(Boolean).join(' · '),
-    photo: (p.images || [])[0] || '', photos: (p.images || []).length, best: !!best,
+    photo: (p.images || [])[0] || '', photos: (p.images || []).length, pics: (p.images || []).slice(), price: { v: Number(p.price) || 0, cur: curOf(p.currency) }, best: !!best,
     x: [p.name || '', '', String(p.description || '').replace(/\s+/g, ' ').trim(), p.size || '', p.marketName || t('No market'), p.shopName || '', String(p.shopNote || '').replace(/\s+/g, ' ').trim(),
       p.shopWechat === 'yes' ? (p.wechatId || t('Yes')) : p.shopWechat === 'no' ? t('No WeChat') : '',
       p.location ? [p.location.name, p.location.address].filter(Boolean).join(' — ') : '', Number(p.minOrder) || 0, unit, curOf(p.currency),
@@ -3089,7 +3089,7 @@ function productSpec(list, opts, label) {
 }
 function wishRow(w) {
   const p = wishPriceOf(w), q = Number(w.qty) > 0 ? Number(w.qty) : 0, n = (w.prices || []).filter(x => Number(x.price) > 0).length, cs = wishClients(w), pics = wishPics(w);
-  return { name: w.title || '—', sub: String(w.note || '').replace(/\s+/g, ' ').trim(), photo: pics[0] || '', photos: pics.length,
+  return { name: w.title || '—', sub: String(w.note || '').replace(/\s+/g, ' ').trim(), photo: pics[0] || '', photos: pics.length, pics: pics.slice(), price: p ? { v: p.v, cur: p.cur } : null,
     x: [w.title || '', '', String(w.note || '').replace(/\s+/g, ' ').trim(), cs.join(', '), q, p ? p.cur : '', p ? { v: p.v, cur: p.cur } : null, p && p.mk || '',
       p && q ? { v: p.v * q, cur: p.cur } : null, { v: t(w.done ? 'Got it' : 'Still want'), ok: !!w.done }, w.createdAt || 0, w.done && w.doneAt || 0],
     cells: {

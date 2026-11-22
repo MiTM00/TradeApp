@@ -959,8 +959,33 @@
       autoFilter: all.length ? 'A1:' + last + lastData : null,
       footer: '&L&8Trade · ' + String(spec.title).replace(/&/g, '&&') + '&R&8' + L('Page {a} of {b}', { a: '&P', b: '&N' })
     }
+    // Second sheet "Photos": No. · name · price, then every photo of that row side by side
+    const sheets = [sheet]
+    const withPics = all.filter(r => (r.pics || []).length)
+    if (hasPhoto && withPics.length) {
+      const maxN = Math.max.apply(null, withPics.map(r => r.pics.length))
+      const PW = 17, cw = Math.floor(PW * 7 + 0.5), rh = Math.round(PHOTO_ROW * 4 / 3), S = Math.min(cw, rh) - 12
+      const phead = [{ v: L('No.'), s: head }, { v: spec.kind === 'wishes' ? L('Item') : L('Product'), s: head }, { v: L('Price'), s: head }]
+      for (let k = 0; k < maxN; k++) phead.push({ v: L('Photo') + ' ' + (k + 1), s: head })
+      const prows = [{ height: 32, cells: phead }], pimages = []
+      for (let i = 0; i < withPics.length; i++) {
+        const r = withPics[i], at = prows.length, pr = r.price && isFinite(r.price.v) && r.price.v ? r.price : null
+        const cells = [{ v: i + 1, s: z(i, { align: { h: 'center' } }) },
+          { v: String(r.name || ''), s: z(i, { font: { b: true, color: K.ink }, align: { h: 'left', wrap: true, indent: 1 } }) },
+          { v: pr ? (pr.cur || '') + money(pr.v) : '', s: z(i, { font: { b: true, color: K.ink }, align: { h: 'right' } }) }]
+        for (let k = 0; k < maxN; k++) {
+          cells.push({ v: '', s: z(i) })
+          const src = r.pics[k], jpg = src ? await thumbnail(env, load, src) : null
+          if (jpg) pimages.push({ row: at, col: k + 3, data: jpg, w: S, h: S, dx: Math.floor((cw - S) / 2), dy: Math.floor((rh - S) / 2), inCell: true })
+        }
+        prows.push({ height: PHOTO_ROW, cells })
+      }
+      const pcols = [6, 28, 14]; for (let k = 0; k < maxN; k++) pcols.push(PW)
+      sheets.push({ name: L('Photos').slice(0, 31), tabColor: K.dark, cols: pcols, rows: prows, images: pimages, freezeRow: 1, printTitleRows: [1, 1],
+        footer: '&L&8Trade · ' + L('Photos') + '&R&8' + L('Page {a} of {b}', { a: '&P', b: '&N' }) })
+    }
     const base = String(spec.fileBase || 'Report-' + ymd(Date.now())).replace(/[^\w.-]+/g, '-')
-    return { bytes: Xlsx.build([sheet], { title: spec.title }, ST), fileName: base + '.xlsx' }
+    return { bytes: Xlsx.build(sheets, { title: spec.title }, ST), fileName: base + '.xlsx' }
   }
 
   function drawTableCover(ctx, spec) {
