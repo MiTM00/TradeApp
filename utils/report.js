@@ -928,7 +928,9 @@
         } else if (c.t === 'money') {
           const n = v && isFinite(v.v) ? Math.round(v.v * 100) / 100 : null
           if (n != null && c.total) curTot[v.cur || ''] = (curTot[v.cur || ''] || 0) + n
-          const s = z(i, { font: { b: !!c.bold, color: K.ink }, align: { h: 'right' }, num: '#,##0.00########' })
+          // curFmt: the currency sign is part of the number format ("¥9.60"), so the cell stays a number
+          const cur = c.curFmt && v && v.cur ? '"' + String(v.cur).replace(/"/g, '') + '"' : ''
+          const s = z(i, { font: { b: !!c.bold, color: K.ink }, align: { h: 'right' }, num: cur + '#,##0.00########' })
           if (n != null && c.f) cells.push({ f: c.f.replace(/([A-Z]+)/g, m => m + (at + 1)), v: n, s })
           else cells.push({ v: n == null ? '' : n, s })
         } else if (c.t === 'int' || c.t === 'num') cells.push({ v: empty || !v ? (v === 0 ? 0 : '') : v, s: z(i, { align: { h: 'center' }, num: c.t === 'int' ? '#,##0' : '0' }) })
@@ -944,12 +946,14 @@
     // Totals: one row per currency, the sum under the totalled money column
     const ti = xc.findIndex(c => c.total), ci = xc.findIndex(c => c.t === 'cur')
     if (ti > 0) Object.keys(curTot).forEach(cur => {
-      const tot = st({ fill: 'E8EDF3', font: { b: true, color: K.ink }, border: B, align: { h: 'right' }, num: '#,##0.00########' })
+      const tot = st({ fill: 'E8EDF3', font: { b: true, color: K.ink }, border: B, align: { h: 'right' }, num: (xc[ti].curFmt && cur ? '"' + cur.replace(/"/g, '') + '"' : '') + '#,##0.00########' })
       const cells = xc.map(() => ({ v: '', s: tot }))
       cells[1] = { v: L('Total') + (cur ? ' (' + cur + ')' : ''), s: st({ fill: 'E8EDF3', font: { b: true, color: K.ink }, border: B, align: { indent: 1 } }) }
       if (ci > 0) cells[ci] = { v: cur, s: st({ fill: 'E8EDF3', font: { b: true }, border: B, align: { h: 'center' } }) }
       const L1 = Xlsx.colName(ti), LC = ci > 0 ? Xlsx.colName(ci) : null
-      cells[ti] = { f: LC ? 'SUMIF(' + LC + '2:' + LC + lastData + ',"' + cur.replace(/"/g, '') + '",' + L1 + '2:' + L1 + lastData + ')' : 'SUM(' + L1 + '2:' + L1 + lastData + ')', v: Math.round(curTot[cur] * 100) / 100, s: tot }
+      // No currency column: one total per currency is the plain sum (a SUM formula would add ¥ and $ together)
+      if (!LC && Object.keys(curTot).length > 1) cells[ti] = { v: Math.round(curTot[cur] * 100) / 100, s: tot }
+      else cells[ti] = { f: LC ?'SUMIF(' + LC + '2:' + LC + lastData + ',"' + cur.replace(/"/g, '') + '",' + L1 + '2:' + L1 + lastData + ')' : 'SUM(' + L1 + '2:' + L1 + lastData + ')', v: Math.round(curTot[cur] * 100) / 100, s: tot }
       rows.push({ height: 24, cells })
     })
     const sheet = {
