@@ -238,6 +238,8 @@
   .chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
   .where { display:flex; align-items:center; gap:4px; margin-top:6px; font-size:11.5px; color:var(--ink-2); min-width:0; }
   .where.date { margin-top:3px; color:var(--ink-3); font-size:11px; }
+  .netv { margin-top:6px; font-size:11.5px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .netv b { color:var(--price); font-weight:800; }
   .bottom { margin-top:auto; display:flex; align-items:flex-end; justify-content:space-between; padding-top:5px; }
   .price { color:var(--price); font-size:20px; font-weight:800; line-height:1.15; min-width:0; overflow-wrap:anywhere; }
   .price .num { white-space:nowrap; }
@@ -2462,6 +2464,7 @@ function productCard(p) {
       <div class="name" data-notr>${esc(p.name)}</div>
       ${fl ? `<div class="fl-note ${fl}">${esc(t(fl === 'red' ? 'Dearer — a cheaper one is saved' : 'Good price'))}</div>` : ''}
       <div class="chips"><span class="chip teal">MOQ ${esc(groupDigits(p.minOrder))} ${esc(p.unit)}</span>${p.size ? `<span class="chip">${esc(p.size)}</span>` : ''}</div>
+      ${Number(p.price) > 0 && Number(p.minOrder) > 0 ? `<div class="netv">${esc(t('Net value'))} <b>${money(p.currency, Number(p.price) * Number(p.minOrder))}</b></div>` : ''}
       <div class="where">${ic(p.marketName ? 'market' : 'store', '#94A3B8', 13)}<span class="ellipsis">${esc(whereOf(p) || '—')}</span></div>
       <div class="where date">${dateChip(TradeReport.registeredAt(p))}${p.shopWechat === 'yes' ? `<span class="wxchip">${ic('wechat', '#16A34A', 11)}WeChat</span>` : ''}</div>
       <div class="bottom">${priceHtml(p.currency, p.price, p.unit, 'price')}<div class="go">${ic('right', B(), 14, 2.6)}</div></div>
