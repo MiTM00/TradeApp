@@ -1359,6 +1359,8 @@
 // Data is kept in IndexedDB on this device (asked to be persistent) and can be backed up to a file.
 // Export uses the same shared modules as the mini program (utils/report.js, pdf.js, xlsx.js, zip.js).
 const UNITS = ['pcs','pair','kg','box','carton','dozen','set','meter','roll','bag'];
+// The unit box offers only pcs / kg; boxes, cartons and every other packing go in the free-text "Packing" box above it.
+const BASE_UNITS = ['pcs','kg'];
 const CURRENCIES = ['¥','$'];
 const MAX_IMAGES = 12;
 const YIWU = { latitude: 29.3069, longitude: 120.0758 };
@@ -4357,7 +4359,7 @@ function doneSheet(title, html) {
 
 // ---------- pages/add ----------
 let form = null, editId = '';
-function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', marketName: '', shopName: '', shopWechat: '', wechatId: '', wechatPhoto: '', shopNote: '', location: null }; }
+function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', packing: '', marketName: '', shopName: '', shopWechat: '', wechatId: '', wechatPhoto: '', shopNote: '', location: null }; }
 
 // ---------- Date card (registration date) ----------
 const WEEKDAYS = { en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], so: ['Axad', 'Isniin', 'Talaado', 'Arbaco', 'Khamiis', 'Jimco', 'Sabti'], zh: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'] };
@@ -4502,8 +4504,10 @@ function renderAdd(id) {
       <div class="field"><div class="label">Size</div><input class="input" data-f="size" value="${esc(form.size)}" placeholder="e.g. 38-45 / M, L, XL / 30x40cm"></div>
       <div class="field"><div class="label">Price <span class="req">*</span></div>
         <div class="joined"><select class="addon" data-f="currency">${opt(CURRENCIES, form.currency)}</select><input class="input" data-f="price" inputmode="decimal" value="${esc(form.price)}" placeholder="0.00"></div></div>
-      <div class="field" style="margin-bottom:2px"><div class="label">Minimum order (MOQ) <span class="req">*</span></div>
-        <div class="joined"><input class="input" data-f="minOrder" inputmode="numeric" value="${esc(form.minOrder)}" placeholder="1"><select class="addon right" data-f="unit">${opt(UNITS, form.unit)}</select></div></div>
+      <div class="field"><div class="label">Packing</div><input class="input" data-f="packing" value="${esc(form.packing || '')}" placeholder="e.g. 10 boxes, 1 carton = 50 pcs, bag, dozen…"></div>
+      <div style="display:flex;gap:10px;margin-bottom:2px">
+        <div class="field" style="flex:1.5;min-width:0;margin:0"><div class="label">Minimum order (MOQ) <span class="req">*</span></div><input class="input" data-f="minOrder" inputmode="numeric" value="${esc(form.minOrder)}" placeholder="1"></div>
+        <div class="field" style="flex:1;min-width:0;margin:0"><div class="label">Unit</div><select class="input" data-f="unit">${opt(BASE_UNITS.includes(form.unit) ? BASE_UNITS : BASE_UNITS.concat(form.unit), form.unit)}</select></div></div>
     </div>
     <div class="card">
       <div class="card-head"><div class="card-title"><div class="icon-tile">${ic('market', B(), 16)}</div>Market &amp; shop</div></div>
@@ -5476,7 +5480,7 @@ async function save() {
     const sameImages = old && JSON.stringify(old.images) === JSON.stringify(f.images) && old.hashes;
     delete f.dupOk;
     await store.upsert(Object.assign({}, f, {
-      id: old ? old.id : String(now), name: f.name.trim(), description: (f.description || '').trim(), size: f.size.trim(), marketName, shopName: f.shopName.trim(),
+      id: old ? old.id : String(now), name: f.name.trim(), description: (f.description || '').trim(), size: f.size.trim(), packing: String(f.packing || '').trim(), marketName, shopName: f.shopName.trim(),
       shopWechat: f.shopWechat || '', wechatId: f.shopWechat === 'yes' ? String(f.wechatId || '').trim() : '', wechatPhoto: f.shopWechat === 'yes' ? f.wechatPhoto || '' : '', shopNote: String(f.shopNote || '').trim(),
       price: Number(f.price), minOrder: parseInt(f.minOrder, 10), createdAt: old ? (TradeReport.registeredAt(old) || now) : now, updatedAt: now,
       hashes: sameImages ? old.hashes : await hashImages(f.images),
@@ -5709,9 +5713,10 @@ const Scanner = {
       const on = k => { const c = $overlay.querySelector(`input[data-k="${k}"]`); return c && c.checked; };
       if (on('name')) form.name = r.name;
       if (on('size')) form.size = r.size;
-      if (on('unit') && UNITS.includes(r.unit)) form.unit = r.unit;
+      if (on('unit') && BASE_UNITS.includes(r.unit)) form.unit = r.unit;
+      else if (on('unit') && UNITS.includes(r.unit) && !String(form.packing || '').trim()) form.packing = t(r.unit);
       if (on('price')) { form.price = String(r.price); if (CURRENCIES.includes(r.currency)) form.currency = r.currency; }
-      ['name', 'size', 'unit', 'price', 'currency'].forEach(k => { const el = $body.querySelector(`[data-f="${k}"]`); if (el) el.value = form[k]; });
+      ['name', 'size', 'packing', 'unit', 'price', 'currency'].forEach(k => { const el = $body.querySelector(`[data-f="${k}"]`); if (el) el.value = form[k]; });
       closeOverlay(); toast(t('Filled in ✓ — check and save'));
       const n = $body.querySelector('[data-f="name"]'); if (n) { n.classList.add('flash'); setTimeout(() => n.classList.remove('flash'), 1400); }
     };
@@ -6653,6 +6658,7 @@ function renderDetail(id) {
           <div class="spec"><div class="icon-tile">${ic('ruler', B(), 16)}</div><div style="min-width:0"><div class="k">Size</div><div class="v">${esc(p.size || '—')}</div></div></div>
           <div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Minimum order</div><div class="v">${esc(p.minOrder)} ${esc(t(p.unit))}</div></div></div>
         </div>
+        ${p.packing ? `<div class="specs" style="margin-top:9px"><div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Packing</div><div class="v" data-notr>${esc(p.packing)}</div></div></div></div>` : ''}
         <div class="moq"><span>Value at minimum order</span><span class="moq-v">${esc(p.currency)}${moq.int}${moq.dec ? '.' + moq.dec : ''}</span></div>
       </div>
       ${(p.videos || []).length ? `<div class="card d-vids"><div class="card-head"><div class="card-title"><div class="icon-tile">${ic('play', B(), 16)}</div>${esc(t('Videos'))}</div></div>${p.videos.map(v => `<video src="${v.src}" poster="${v.poster || ''}" controls playsinline preload="metadata"></video>`).join('')}</div>` : ''}
