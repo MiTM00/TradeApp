@@ -2461,7 +2461,7 @@ function productCard(p) {
     <div class="body">
       <div class="name" data-notr>${esc(p.name)}</div>
       ${fl ? `<div class="fl-note ${fl}">${esc(t(fl === 'red' ? 'Dearer — a cheaper one is saved' : 'Good price'))}</div>` : ''}
-      <div class="chips"><span class="chip teal">MOQ ${esc(p.minOrder)} ${esc(p.unit)}</span>${p.size ? `<span class="chip">${esc(p.size)}</span>` : ''}</div>
+      <div class="chips"><span class="chip teal">MOQ ${esc(groupDigits(p.minOrder))} ${esc(p.unit)}</span>${p.size ? `<span class="chip">${esc(p.size)}</span>` : ''}</div>
       <div class="where">${ic(p.marketName ? 'market' : 'store', '#94A3B8', 13)}<span class="ellipsis">${esc(whereOf(p) || '—')}</span></div>
       <div class="where date">${dateChip(TradeReport.registeredAt(p))}${p.shopWechat === 'yes' ? `<span class="wxchip">${ic('wechat', '#16A34A', 11)}WeChat</span>` : ''}</div>
       <div class="bottom">${priceHtml(p.currency, p.price, p.unit, 'price')}<div class="go">${ic('right', B(), 14, 2.6)}</div></div>
@@ -2897,7 +2897,7 @@ function drawPeriods(el, kind) {
           ${p.products.map(x => `<div class="mini" onclick="location.hash='detail/${x.id}'">
             ${thumbOf(x) ? `<img src="${thumbOf(x)}" loading="lazy">` : `<div class="ph">${ic('image', '#B6C0CD', 18)}</div>`}
             <div style="flex:1;min-width:0"><div class="mini-name ellipsis" data-notr>${esc(x.name)}</div><div class="mini-sub ellipsis" data-notr>${esc(whereOf(x))}</div></div>
-            <div class="mini-price">${money(x.currency, x.price)}<div class="mini-sub">MOQ ${esc(x.minOrder)} ${esc(x.unit)}</div></div></div>`).join('')}
+            <div class="mini-price">${money(x.currency, x.price)}<div class="mini-sub">MOQ ${esc(groupDigits(x.minOrder))} ${esc(x.unit)}</div></div></div>`).join('')}
           <div class="row-btns">
             <button class="btn sm soft" data-ex="1">${ic('sheet', B(), 15, 2.2)}${esc(t('Report'))}</button>
           </div>
@@ -3003,7 +3003,7 @@ async function drawSimilar(el) {
         <div class="group-strip">${g.products.map(p => thumbOf(p) ? `<img src="${thumbOf(p)}" class="${best.has(p) ? 'best' : ''}" loading="lazy">` : `<div class="ph ${best.has(p) ? 'best' : ''}">${ic('image', '#B6C0CD', 18)}</div>`).join('')}</div>
         ${g.products.map(p => `<div class="mini" onclick="location.hash='detail/${p.id}'">
           <div style="flex:1;min-width:0"><div class="mini-name ellipsis"><span data-notr>${esc(p.name)}</span> ${best.has(p) ? '<span class="chip green">Best price</span>' : ''}</div>
-            <div class="mini-sub ellipsis">${esc(whereOf(p) ? whereOf(p) + ' · ' : '')}MOQ ${esc(p.minOrder)} ${esc(p.unit)}</div></div>
+            <div class="mini-sub ellipsis">${esc(whereOf(p) ? whereOf(p) + ' · ' : '')}MOQ ${esc(groupDigits(p.minOrder))} ${esc(p.unit)}</div></div>
           <div class="mini-price">${money(p.currency, p.price)}</div></div>`).join('')}
       </div>`;
     }).join('') : `<div class="card empty"><div class="empty-art">${ic('similar', B(), 34, 1.6)}</div><div class="empty-title">No matches</div><div class="muted">When two products have a similar name or photo they are grouped here.</div></div>`}</div>`;
@@ -4519,7 +4519,7 @@ function renderAdd(id) {
       <div class="field"><div class="label">Packing</div>
         <div class="joined"><input class="input" data-f="packQty" inputmode="numeric" value="${esc(form.packQty || '')}" placeholder="1"><select class="addon right" data-f="packing"><option value="" ${form.packing ? '' : 'selected'}>—</option>${opt(PACKINGS.includes(form.packing) || !form.packing ? PACKINGS : PACKINGS.concat(form.packing), form.packing)}</select></div></div>
       <div style="display:flex;gap:10px;margin-bottom:2px">
-        <div class="field" style="flex:1.5;min-width:0;margin:0"><div class="label">Minimum order (MOQ) <span class="req">*</span></div><input class="input" data-f="minOrder" inputmode="numeric" value="${esc(form.minOrder)}" placeholder="1"></div>
+        <div class="field" style="flex:1.5;min-width:0;margin:0"><div class="label">Minimum order (MOQ) <span class="req">*</span></div><input class="input" data-f="minOrder" data-money inputmode="numeric" value="${esc(groupDigits(form.minOrder))}" placeholder="1"></div>
         <div class="field" style="flex:1;min-width:0;margin:0"><div class="label">Unit</div><select class="input" data-f="unit">${opt(BASE_UNITS.includes(form.unit) ? BASE_UNITS : BASE_UNITS.concat(form.unit), form.unit)}</select></div></div>
     </div>
     <div class="card">
@@ -6203,7 +6203,7 @@ function wishCardPrice(w) {
   const c = wishCheapest(w), n = (w.prices || []).length, q = Number(w.qty) > 0 ? Number(w.qty) : 0;
   const pr = c ? `${esc(c.currency || '¥')}${esc(TradeReport.money(Number(c.price)))}` : Number(w.price) > 0 ? `${esc(w.currency || '¥')}${esc(TradeReport.money(Number(w.price)))}` : '';
   if (!pr && !q) return '';
-  return `<div class="wi-f">${pr ? `<span class="pr">${pr}</span>` : ''}${q ? `<span class="qty">${esc(q)} ${esc(t('pcs'))}</span>` : ''}${n ? `<span class="mk">${ic('market', '#94A3B8', 10, 2.4)}${n}</span>` : ''}</div>`;
+  return `<div class="wi-f">${pr ? `<span class="pr">${pr}</span>` : ''}${q ? `<span class="qty">${esc(groupDigits(q))} ${esc(t('pcs'))}</span>` : ''}${n ? `<span class="mk">${ic('market', '#94A3B8', 10, 2.4)}${n}</span>` : ''}</div>`;
 }
 // Price of a wish: the cheapest market price seen, else the price written on it
 const wishPriceOf = w => { const c = wishCheapest(w); return c ? { cur: c.currency || '¥', v: Number(c.price), mk: c.market } : Number(w.price) > 0 ? { cur: w.currency || '¥', v: Number(w.price) } : null; };
@@ -6220,7 +6220,7 @@ function wishTableHtml(list, title) {
       <div class="wt-r wi ${i % 2 ? '' : 'odd'} ${w.done ? 'done' : ''} ${on ? 'sel' : ''}" data-wid="${w.id}">
       <div class="wt-it"><span class="wt-n">${i + 1}</span>${wishPics(w).length ? `<span class="wt-pic" data-view="${w.id}"><img src="${wishPics(w)[0]}" loading="lazy">${wishPics(w).length > 1 ? `<b>${wishPics(w).length}</b>` : ''}</span>` : `<div class="ph" style="--h:${hueOf(w.title)}">${esc((w.title || '?').trim().charAt(0).toUpperCase())}</div>`}
         <div class="wt-tx"><b data-notr>${esc(w.title)}</b><small data-notr>${[got && w.doneAt ? '✓ ' + TradeReport.dateLabel(w.doneAt) : '', w.client ? '👤 ' + w.client : '', p && p.mk ? p.mk : ''].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</small></div></div>
-      <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : `<span class="nop" title="${esc(t('No price yet'))}"><i></i>${esc(t('No price'))}</span>`}${q ? `<small>× ${esc(q)} ${esc(t('pcs'))}</small>` : ''}</div>
+      <div class="wt-pr">${p ? `<b>${esc(p.cur)}${esc(TradeReport.money(p.v))}</b>` : `<span class="nop" title="${esc(t('No price yet'))}"><i></i>${esc(t('No price'))}</span>`}${q ? `<small>× ${esc(groupDigits(q))} ${esc(t('pcs'))}</small>` : ''}</div>
       <span class="ck wt-ck" data-tick="${w.id}" title="${esc(t(got ? 'Still want' : 'Got it'))}">${ic('check', got || on ? '#fff' : '#94A3B8', 14, 3)}</span></div></div>`; }).join('')}
     ${got || wlSel ? '' : `<div class="wt-add"><span class="wt-n">${ic('plus', B(), 14, 2.8)}</span><input data-addg="${esc(title == null ? wishGroup : title)}" maxlength="120" enterkeyhint="done" placeholder="${esc(title ? t('Add to {g}…', { g: title }) : t('Add an item…'))}"><span class="go tap">${ic('plus', '#fff', 16, 2.8)}</span></div>`}
     ${tot.size ? `<div class="wt-tot"><span>${esc(t('Total'))}</span><b>${[...tot].map(([c, v]) => esc(c) + esc(TradeReport.money(v))).join(' · ')}</b></div>` : ''}
@@ -6416,7 +6416,7 @@ function editWish(id, tab) {
   const pfBlank = () => ({ market: '', area: pf.area, contact: '', price: '', currency: pf.currency });
   const $ = k => document.getElementById(k);
   const keep = () => {
-    if ($('weTitle')) { w.title = $('weTitle').value; w.group = $('weGroup').value; w.note = $('weNote').value; w.qty = $('weQty').value; }
+    if ($('weTitle')) { w.title = $('weTitle').value; w.group = $('weGroup').value; w.note = $('weNote').value; w.qty = rawDigits($('weQty').value); }
     if ($('pfMarket')) pf = { market: $('pfMarket').value, area: $('pfArea').value, contact: $('pfContact').value, price: $('pfPrice').value, currency: $('pfCur').value };
   };
   // Prices are kept at once on a wish that already exists, so none is lost if the sheet is closed without Save
@@ -6471,7 +6471,7 @@ function editWish(id, tab) {
           <div class="cp-chips" id="cpChips"></div>
           <div class="cp-in"><span class="cp-ic">${ic('user', B(), 16, 2.4)}</span><input class="input" id="weClient" value="" maxlength="80" autocomplete="off" placeholder="${esc(t('Choose or type a client'))}"><span class="cp-dd tap" id="cpDd">${ic('down', '#64748B', 16, 2.6)}</span></div>
           <div class="cp-list" id="cpList" hidden></div></div></div>
-        <div class="field"><div class="label">${esc(t('Pieces needed'))}</div><div class="joined"><input class="input" id="weQty" inputmode="numeric" value="${esc(w.qty)}" placeholder="${esc(t('How many pieces?'))}"><span class="addon" style="display:flex;align-items:center;padding:0 14px">${esc(t('pcs'))}</span></div></div>
+        <div class="field"><div class="label">${esc(t('Pieces needed'))}</div><div class="joined"><input class="input" id="weQty" oninput="moneyInput(this)" inputmode="numeric" value="${esc(groupDigits(w.qty))}" placeholder="${esc(t('How many pieces?'))}"><span class="addon" style="display:flex;align-items:center;padding:0 14px">${esc(t('pcs'))}</span></div></div>
         <div class="field"><div class="label">${esc(t('Other information'))}</div><textarea class="input textarea big" id="weNote" rows="6" maxlength="3000" placeholder="${esc(t('Colour, size, when it is needed…'))}">${esc(w.note)}</textarea></div>
       </div></div></div>
       ${old ? `<div class="we-acts">
@@ -6669,7 +6669,7 @@ function renderDetail(id) {
         ${priceHtml(p.currency, p.price, p.unit, 'd-price')}
         <div class="specs">
           <div class="spec"><div class="icon-tile">${ic('ruler', B(), 16)}</div><div style="min-width:0"><div class="k">Size</div><div class="v">${esc(p.size || '—')}</div></div></div>
-          <div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Minimum order</div><div class="v">${esc(p.minOrder)} ${esc(t(p.unit))}</div></div></div>
+          <div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Minimum order</div><div class="v">${esc(groupDigits(p.minOrder))} ${esc(t(p.unit))}</div></div></div>
         </div>
         ${p.packing ? `<div class="specs" style="margin-top:9px"><div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Packing</div><div class="v">${esc((p.packQty ? p.packQty + ' ' : '') + t(p.packing))}</div></div></div></div>` : ''}
         <div class="moq"><span>Value at minimum order</span><span class="moq-v">${esc(p.currency)}${moq.int}${moq.dec ? '.' + moq.dec : ''}</span></div>
