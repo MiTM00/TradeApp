@@ -2166,6 +2166,17 @@ const ic = (name, color, size, stroke) => `<span class="ic" style="width:${size 
 function priceParts(n) { const e = TradeReport.exact(n); return { int: (e.neg ? '-' : '') + e.int, dec: e.dec }; }
 const priceHtml = (cur, n, unit, cls) => { const pp = priceParts(n); return `<div class="${cls}"><span class="num"><span class="cur">${esc(cur)}</span>${pp.int}${pp.dec ? `<span class="dec">.${pp.dec}</span>` : ''}</span><span class="per"> /${esc(unit)}</span></div>`; };
 const money = (cur, n) => esc(cur) + TradeReport.money(n);
+// Price boxes show thousands commas while you type (1,000 · 10,000 · 100,000); the saved value has none.
+const rawDigits = s => { const v = String(s == null ? '' : s).replace(/[^\d.]/g, ''), i = v.indexOf('.'); return i < 0 ? v : v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, ''); };
+const groupDigits = s => { const v = rawDigits(s), i = v.indexOf('.'), a = i < 0 ? v : v.slice(0, i); return a.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (i < 0 ? '' : v.slice(i)); };
+function moneyInput(el) {
+  const pos = el.selectionStart == null ? el.value.length : el.selectionStart;
+  const keep = el.value.slice(0, pos).replace(/[^\d.]/g, '').length, out = groupDigits(el.value);
+  if (out === el.value) return;
+  el.value = out;
+  let c = 0, n = 0; while (c < out.length && n < keep) { if (/[\d.]/.test(out[c])) n++; c++; }
+  try { el.setSelectionRange(c, c); } catch (e) {}
+}
 function toast(msg) {
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
@@ -4360,7 +4371,7 @@ function doneSheet(title, html) {
 
 // ---------- pages/add ----------
 let form = null, editId = '';
-function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', packing: '', marketName: '', shopName: '', shopWechat: '', wechatId: '', wechatPhoto: '', shopNote: '', location: null }; }
+function emptyForm() { return { images: [], videos: [], name: '', description: '', size: '', price: '', currency: '¥', minOrder: '1', unit: 'pcs', packQty: '', packing: '', marketName: '', shopName: '', shopWechat: '', wechatId: '', wechatPhoto: '', shopNote: '', location: null }; }
 
 // ---------- Date card (registration date) ----------
 const WEEKDAYS = { en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], so: ['Axad', 'Isniin', 'Talaado', 'Arbaco', 'Khamiis', 'Jimco', 'Sabti'], zh: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'] };
@@ -4504,8 +4515,9 @@ function renderAdd(id) {
       <div class="field"><div class="label">Product name <span class="req">*</span></div><input class="input" data-f="name" value="${esc(form.name)}" placeholder="e.g. Sports shoes"></div>
       <div class="field"><div class="label">Size</div><input class="input" data-f="size" value="${esc(form.size)}" placeholder="e.g. 38-45 / M, L, XL / 30x40cm"></div>
       <div class="field"><div class="label">Price <span class="req">*</span></div>
-        <div class="joined"><select class="addon" data-f="currency">${opt(CURRENCIES, form.currency)}</select><input class="input" data-f="price" inputmode="decimal" value="${esc(form.price)}" placeholder="0.00"></div></div>
-      <div class="field"><div class="label">Packing</div><select class="input" data-f="packing"><option value="" ${form.packing ? '' : 'selected'}>${esc(t('None'))}</option>${opt(PACKINGS.includes(form.packing) || !form.packing ? PACKINGS : PACKINGS.concat(form.packing), form.packing)}</select></div>
+        <div class="joined"><select class="addon" data-f="currency">${opt(CURRENCIES, form.currency)}</select><input class="input" data-f="price" data-money inputmode="decimal" value="${esc(groupDigits(form.price))}" placeholder="0.00"></div></div>
+      <div class="field"><div class="label">Packing</div>
+        <div class="joined"><input class="input" data-f="packQty" inputmode="numeric" value="${esc(form.packQty || '')}" placeholder="1"><select class="addon right" data-f="packing"><option value="" ${form.packing ? '' : 'selected'}>—</option>${opt(PACKINGS.includes(form.packing) || !form.packing ? PACKINGS : PACKINGS.concat(form.packing), form.packing)}</select></div></div>
       <div style="display:flex;gap:10px;margin-bottom:2px">
         <div class="field" style="flex:1.5;min-width:0;margin:0"><div class="label">Minimum order (MOQ) <span class="req">*</span></div><input class="input" data-f="minOrder" inputmode="numeric" value="${esc(form.minOrder)}" placeholder="1"></div>
         <div class="field" style="flex:1;min-width:0;margin:0"><div class="label">Unit</div><select class="input" data-f="unit">${opt(BASE_UNITS.includes(form.unit) ? BASE_UNITS : BASE_UNITS.concat(form.unit), form.unit)}</select></div></div>
@@ -4515,14 +4527,14 @@ function renderAdd(id) {
       <div class="field"><div class="label">Market</div><div id="mkPick"></div></div>
       <div class="field"><div class="label">Shop name <span class="hint" style="font-weight:500">(optional)</span></div><input class="input" data-f="shopName" value="${esc(form.shopName)}" placeholder="e.g. Shop No. 1234"></div>
       <div class="field"><div class="label">Shop on WeChat?</div><div id="wxPick"></div></div>
-      <div class="field"><div class="label">Shop notes</div><textarea class="input textarea" data-f="shopNote" rows="2" maxlength="600" placeholder="Owner name, opening hours, how they deliver…">${esc(form.shopNote)}</textarea></div>
+      <div class="field"><div class="label">Description</div><textarea class="input textarea" data-f="shopNote" rows="2" maxlength="600" placeholder="Anything about this product or shop…">${esc(form.shopNote)}</textarea></div>
       <div class="label">Shop location</div>
       <div class="loc tap" id="loc"></div>
     </div>
     ${dateCard(old ? TradeReport.registeredAt(old) : 0, old ? t('Kept when you edit') : t('Set automatically when you save'))}
   </div>`;
   $tabbar.innerHTML = `<div class="bar-fixed"><button class="btn primary" id="save">${ic('check', '#fff', 18, 2.8)}Save product</button></div>`;
-  $body.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { form[el.dataset.f] = el.value; });
+  $body.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { if (el.dataset.money !== undefined) moneyInput(el); form[el.dataset.f] = el.dataset.money !== undefined ? rawDigits(el.value) : el.value; });
   document.getElementById('fileCamera').onchange = onFiles;
   document.getElementById('fileAlbum').onchange = onFiles;
   document.getElementById('fileVideo').onchange = e => { const fl = e.target.files[0]; e.target.value = ''; if (fl) Video.fromFile(fl); };
@@ -5481,7 +5493,7 @@ async function save() {
     const sameImages = old && JSON.stringify(old.images) === JSON.stringify(f.images) && old.hashes;
     delete f.dupOk;
     await store.upsert(Object.assign({}, f, {
-      id: old ? old.id : String(now), name: f.name.trim(), description: (f.description || '').trim(), size: f.size.trim(), packing: String(f.packing || '').trim(), marketName, shopName: f.shopName.trim(),
+      id: old ? old.id : String(now), name: f.name.trim(), description: (f.description || '').trim(), size: f.size.trim(), packing: String(f.packing || '').trim(), packQty: f.packing && parseInt(rawDigits(f.packQty), 10) > 0 ? parseInt(rawDigits(f.packQty), 10) : '', marketName, shopName: f.shopName.trim(),
       shopWechat: f.shopWechat || '', wechatId: f.shopWechat === 'yes' ? String(f.wechatId || '').trim() : '', wechatPhoto: f.shopWechat === 'yes' ? f.wechatPhoto || '' : '', shopNote: String(f.shopNote || '').trim(),
       price: Number(f.price), minOrder: parseInt(f.minOrder, 10), createdAt: old ? (TradeReport.registeredAt(old) || now) : now, updatedAt: now,
       hashes: sameImages ? old.hashes : await hashImages(f.images),
@@ -5717,7 +5729,7 @@ const Scanner = {
       if (on('unit') && BASE_UNITS.includes(r.unit)) form.unit = r.unit;
       else if (on('unit') && UNITS.includes(r.unit) && !form.packing) form.packing = r.unit;
       if (on('price')) { form.price = String(r.price); if (CURRENCIES.includes(r.currency)) form.currency = r.currency; }
-      ['name', 'size', 'packing', 'unit', 'price', 'currency'].forEach(k => { const el = $body.querySelector(`[data-f="${k}"]`); if (el) el.value = form[k]; });
+      ['name', 'size', 'packing', 'unit', 'price', 'currency'].forEach(k => { const el = $body.querySelector(`[data-f="${k}"]`); if (el) el.value = k === 'price' ? groupDigits(form[k]) : form[k]; });
       closeOverlay(); toast(t('Filled in ✓ — check and save'));
       const n = $body.querySelector('[data-f="name"]'); if (n) { n.classList.add('flash'); setTimeout(() => n.classList.remove('flash'), 1400); }
     };
@@ -6427,7 +6439,7 @@ function editWish(id, tab) {
         <input class="input" id="pfArea" list="pfAreas" placeholder="${esc(t('Region / area'))}" value="${esc(pf.area)}" maxlength="80" autocomplete="off">
         <datalist id="pfAreas">${seenA.map(a => `<option value="${esc(a)}">`).join('')}</datalist>
         <div class="pf-ct">${ic('phone', '#94A3B8', 16, 2.2)}<input class="input" id="pfContact" placeholder="${esc(t('Phone / WeChat number (optional)'))}" value="${esc(pf.contact || '')}" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-        <div class="pf-row"><div class="joined" style="flex:1"><select class="addon" id="pfCur">${CURRENCIES.map(c => `<option ${c === pf.currency ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="pfPrice" inputmode="decimal" placeholder="${esc(t('Price they give'))}" value="${esc(pf.price)}"></div>
+        <div class="pf-row"><div class="joined" style="flex:1"><select class="addon" id="pfCur">${CURRENCIES.map(c => `<option ${c === pf.currency ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="pfPrice" inputmode="decimal" placeholder="${esc(t('Price they give'))}" value="${esc(groupDigits(pf.price))}"></div>
           <button class="btn primary pf-go" id="pfAdd" type="button">${ic('check', '#fff', 16, 3)}${esc(t(pfEdit ? 'Save' : 'Add'))}</button></div>
         </div>` : ''}
       </div>
@@ -6499,7 +6511,7 @@ function editWish(id, tab) {
       };
       const add = async () => {
         keep();
-        const market = norm(pf.market), price = Number(String(pf.price).replace(',', '.'));
+        const market = norm(pf.market), price = Number(rawDigits(pf.price));
         if (!market) { $('pfMarket').focus(); return toast(t('Write the market name')); }
         if (!(price > 0)) { $('pfPrice').focus(); return toast(t('Write the price they give')); }
         const ct = norm(pf.contact || '');
@@ -6512,7 +6524,7 @@ function editWish(id, tab) {
         draw(); toast(t(was ? 'Saved ✓' : 'Price added ✓'));
         const it = document.querySelector(`.pf-sw[data-pid="${e.id}"]`); if (it) { it.classList.add('new'); it.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
       };
-      if ($('pfAdd')) { $('pfAdd').onclick = add; $('pfPrice').onkeydown = e => { if (e.key === 'Enter') add(); }; }
+      if ($('pfAdd')) { $('pfAdd').onclick = add; $('pfPrice').onkeydown = e => { if (e.key === 'Enter') add(); }; $('pfPrice').addEventListener('input', () => moneyInput($('pfPrice'))); }
       // Change a price: the form opens with it filled in
       pfSwipe(document.getElementById('pf'));
       $('pf').querySelectorAll('[data-pedit]').forEach(x => x.onclick = () => {
@@ -6659,7 +6671,7 @@ function renderDetail(id) {
           <div class="spec"><div class="icon-tile">${ic('ruler', B(), 16)}</div><div style="min-width:0"><div class="k">Size</div><div class="v">${esc(p.size || '—')}</div></div></div>
           <div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Minimum order</div><div class="v">${esc(p.minOrder)} ${esc(t(p.unit))}</div></div></div>
         </div>
-        ${p.packing ? `<div class="specs" style="margin-top:9px"><div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Packing</div><div class="v">${esc(t(p.packing))}</div></div></div></div>` : ''}
+        ${p.packing ? `<div class="specs" style="margin-top:9px"><div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Packing</div><div class="v">${esc((p.packQty ? p.packQty + ' ' : '') + t(p.packing))}</div></div></div></div>` : ''}
         <div class="moq"><span>Value at minimum order</span><span class="moq-v">${esc(p.currency)}${moq.int}${moq.dec ? '.' + moq.dec : ''}</span></div>
       </div>
       ${(p.videos || []).length ? `<div class="card d-vids"><div class="card-head"><div class="card-title"><div class="icon-tile">${ic('play', B(), 16)}</div>${esc(t('Videos'))}</div></div>${p.videos.map(v => `<video src="${v.src}" poster="${v.poster || ''}" controls playsinline preload="metadata"></video>`).join('')}</div>` : ''}
