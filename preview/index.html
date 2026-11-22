@@ -1361,6 +1361,7 @@
 const UNITS = ['pcs','pair','kg','box','carton','dozen','set','meter','roll','bag'];
 // The unit box offers only pcs / kg; boxes, cartons and every other packing go in the free-text "Packing" box above it.
 const BASE_UNITS = ['pcs','kg'];
+const PACKINGS = ['box','carton','bag','sack','pack','dozen','pair','set','roll','meter','crate','bundle'];
 const CURRENCIES = ['¥','$'];
 const MAX_IMAGES = 12;
 const YIWU = { latitude: 29.3069, longitude: 120.0758 };
@@ -4504,7 +4505,7 @@ function renderAdd(id) {
       <div class="field"><div class="label">Size</div><input class="input" data-f="size" value="${esc(form.size)}" placeholder="e.g. 38-45 / M, L, XL / 30x40cm"></div>
       <div class="field"><div class="label">Price <span class="req">*</span></div>
         <div class="joined"><select class="addon" data-f="currency">${opt(CURRENCIES, form.currency)}</select><input class="input" data-f="price" inputmode="decimal" value="${esc(form.price)}" placeholder="0.00"></div></div>
-      <div class="field"><div class="label">Packing</div><input class="input" data-f="packing" value="${esc(form.packing || '')}" placeholder="e.g. 10 boxes, 1 carton = 50 pcs, bag, dozen…"></div>
+      <div class="field"><div class="label">Packing</div><select class="input" data-f="packing"><option value="" ${form.packing ? '' : 'selected'}>${esc(t('None'))}</option>${opt(PACKINGS.includes(form.packing) || !form.packing ? PACKINGS : PACKINGS.concat(form.packing), form.packing)}</select></div>
       <div style="display:flex;gap:10px;margin-bottom:2px">
         <div class="field" style="flex:1.5;min-width:0;margin:0"><div class="label">Minimum order (MOQ) <span class="req">*</span></div><input class="input" data-f="minOrder" inputmode="numeric" value="${esc(form.minOrder)}" placeholder="1"></div>
         <div class="field" style="flex:1;min-width:0;margin:0"><div class="label">Unit</div><select class="input" data-f="unit">${opt(BASE_UNITS.includes(form.unit) ? BASE_UNITS : BASE_UNITS.concat(form.unit), form.unit)}</select></div></div>
@@ -5714,7 +5715,7 @@ const Scanner = {
       if (on('name')) form.name = r.name;
       if (on('size')) form.size = r.size;
       if (on('unit') && BASE_UNITS.includes(r.unit)) form.unit = r.unit;
-      else if (on('unit') && UNITS.includes(r.unit) && !String(form.packing || '').trim()) form.packing = t(r.unit);
+      else if (on('unit') && UNITS.includes(r.unit) && !form.packing) form.packing = r.unit;
       if (on('price')) { form.price = String(r.price); if (CURRENCIES.includes(r.currency)) form.currency = r.currency; }
       ['name', 'size', 'packing', 'unit', 'price', 'currency'].forEach(k => { const el = $body.querySelector(`[data-f="${k}"]`); if (el) el.value = form[k]; });
       closeOverlay(); toast(t('Filled in ✓ — check and save'));
@@ -6658,7 +6659,7 @@ function renderDetail(id) {
           <div class="spec"><div class="icon-tile">${ic('ruler', B(), 16)}</div><div style="min-width:0"><div class="k">Size</div><div class="v">${esc(p.size || '—')}</div></div></div>
           <div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Minimum order</div><div class="v">${esc(p.minOrder)} ${esc(t(p.unit))}</div></div></div>
         </div>
-        ${p.packing ? `<div class="specs" style="margin-top:9px"><div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Packing</div><div class="v" data-notr>${esc(p.packing)}</div></div></div></div>` : ''}
+        ${p.packing ? `<div class="specs" style="margin-top:9px"><div class="spec"><div class="icon-tile">${ic('box', B(), 16)}</div><div style="min-width:0"><div class="k">Packing</div><div class="v">${esc(t(p.packing))}</div></div></div></div>` : ''}
         <div class="moq"><span>Value at minimum order</span><span class="moq-v">${esc(p.currency)}${moq.int}${moq.dec ? '.' + moq.dec : ''}</span></div>
       </div>
       ${(p.videos || []).length ? `<div class="card d-vids"><div class="card-head"><div class="card-title"><div class="icon-tile">${ic('play', B(), 16)}</div>${esc(t('Videos'))}</div></div>${p.videos.map(v => `<video src="${v.src}" poster="${v.poster || ''}" controls playsinline preload="metadata"></video>`).join('')}</div>` : ''}
